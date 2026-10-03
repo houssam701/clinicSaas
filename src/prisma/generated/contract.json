@@ -44,17 +44,92 @@
   "domain": {
     "namespaces": {
       "public": {
+        "enum": {
+          "AppointmentStatus": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "Scheduled",
+                "value": "Scheduled"
+              },
+              {
+                "name": "Completed",
+                "value": "Completed"
+              },
+              {
+                "name": "Canceled",
+                "value": "Canceled"
+              },
+              {
+                "name": "NoShow",
+                "value": "NoShow"
+              }
+            ]
+          },
+          "InvoiceStatus": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "Unpaid",
+                "value": "Unpaid"
+              },
+              {
+                "name": "Partial",
+                "value": "Partial"
+              },
+              {
+                "name": "Paid",
+                "value": "Paid"
+              }
+            ]
+          },
+          "PaymentMethod": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "Cash",
+                "value": "Cash"
+              },
+              {
+                "name": "Card",
+                "value": "Card"
+              },
+              {
+                "name": "Transfer",
+                "value": "Transfer"
+              },
+              {
+                "name": "Insurance",
+                "value": "Insurance"
+              }
+            ]
+          },
+          "UserRole": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "SuperAdmin",
+                "value": "SuperAdmin"
+              },
+              {
+                "name": "Admin",
+                "value": "Admin"
+              },
+              {
+                "name": "Staff",
+                "value": "Staff"
+              }
+            ]
+          }
+        },
         "models": {
           "Appointment": {
             "fields": {
               "clinic_id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "sql/char@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "created_at": {
@@ -74,21 +149,15 @@
               "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "sql/char@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "patient_id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "sql/char@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "reason_for_visit": {
@@ -101,18 +170,21 @@
               "scheduled_time": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/text@1",
+                  "codecId": "pg/timestamptz-string@1",
                   "kind": "scalar"
                 }
               },
               "status": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/enum@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "typeName": "AppointmentStatus"
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "AppointmentStatus",
+                  "namespaceId": "public",
+                  "plane": "domain"
                 }
               },
               "updated_at": {
@@ -125,11 +197,8 @@
               "user_id": {
                 "nullable": true,
                 "type": {
-                  "codecId": "sql/char@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               }
             },
@@ -254,11 +323,8 @@
               "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "sql/char@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "name": {
@@ -380,21 +446,15 @@
               "appointment_id": {
                 "nullable": true,
                 "type": {
-                  "codecId": "sql/char@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "clinic_id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "sql/char@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "created_at": {
@@ -407,45 +467,46 @@
               "due_date": {
                 "nullable": true,
                 "type": {
-                  "codecId": "pg/text@1",
+                  "codecId": "pg/date-string@1",
                   "kind": "scalar"
                 }
               },
               "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "sql/char@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "patient_id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "sql/char@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "status": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/enum@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "typeName": "InvoiceStatus"
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "InvoiceStatus",
+                  "namespaceId": "public",
+                  "plane": "domain"
                 }
               },
               "total_amount": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/numeric@1",
-                  "kind": "scalar"
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 12,
+                    "scale": 2
+                  }
                 }
               },
               "updated_at": {
@@ -560,11 +621,8 @@
               "clinic_id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "sql/char@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "created_at": {
@@ -577,7 +635,7 @@
               "date_of_birth": {
                 "nullable": true,
                 "type": {
-                  "codecId": "pg/text@1",
+                  "codecId": "pg/date-string@1",
                   "kind": "scalar"
                 }
               },
@@ -605,11 +663,8 @@
               "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "sql/char@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "last_name": {
@@ -629,7 +684,7 @@
               "specialized_data": {
                 "nullable": true,
                 "type": {
-                  "codecId": "pg/jsonb@1",
+                  "codecId": "pg/json@1",
                   "kind": "scalar"
                 }
               },
@@ -779,11 +834,8 @@
               "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "sql/char@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "name": {
@@ -796,11 +848,8 @@
               "patient_id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "sql/char@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "uploaded_at": {
@@ -860,37 +909,32 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/numeric@1",
-                  "kind": "scalar"
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 12,
+                    "scale": 2
+                  }
                 }
               },
               "clinic_id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "sql/char@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "sql/char@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "invoice_id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "sql/char@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "notes": {
@@ -910,11 +954,14 @@
               "payment_method": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/enum@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "typeName": "PaymentMethod"
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "PaymentMethod",
+                  "namespaceId": "public",
+                  "plane": "domain"
                 }
               }
             },
@@ -1013,11 +1060,8 @@
               "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "sql/char@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "last_updated": {
@@ -1030,11 +1074,8 @@
               "patient_id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "sql/char@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               }
             },
@@ -1089,11 +1130,8 @@
               "clinic_id": {
                 "nullable": true,
                 "type": {
-                  "codecId": "sql/char@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "created_at": {
@@ -1120,11 +1158,8 @@
               "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "sql/char@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "last_name": {
@@ -1144,11 +1179,14 @@
               "role": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/enum@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "typeName": "UserRole"
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "UserRole",
+                  "namespaceId": "public",
+                  "plane": "domain"
                 }
               },
               "updated_at": {
@@ -1274,11 +1312,8 @@
               "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "sql/char@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "module_name": {
@@ -1298,11 +1333,8 @@
               "user_id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "sql/char@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               }
             },
@@ -1363,56 +1395,20 @@
     "namespaces": {
       "public": {
         "entries": {
-          "native_enum": {
-            "AppointmentStatus": {
-              "kind": "postgres-enum",
-              "members": [
-                "Scheduled",
-                "Completed",
-                "Canceled",
-                "NoShow"
-              ],
-              "typeName": "AppointmentStatus"
-            },
-            "InvoiceStatus": {
-              "kind": "postgres-enum",
-              "members": [
-                "Unpaid",
-                "Partial",
-                "Paid"
-              ],
-              "typeName": "InvoiceStatus"
-            },
-            "PaymentMethod": {
-              "kind": "postgres-enum",
-              "members": [
-                "Cash",
-                "Card",
-                "Transfer",
-                "Insurance"
-              ],
-              "typeName": "PaymentMethod"
-            },
-            "UserRole": {
-              "kind": "postgres-enum",
-              "members": [
-                "SuperAdmin",
-                "Admin",
-                "Staff"
-              ],
-              "typeName": "UserRole"
-            }
-          },
           "table": {
             "Appointment": {
+              "checks": [
+                {
+                  "expression": "\"status\" IN ('Scheduled', 'Completed', 'Canceled', 'NoShow')",
+                  "name": "Appointment_status_check_9d570c59",
+                  "prefix": "Appointment_status_check"
+                }
+              ],
               "columns": {
                 "clinic_id": {
-                  "codecId": "sql/char@1",
-                  "nativeType": "character",
-                  "nullable": false,
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
                 },
                 "created_at": {
                   "codecId": "pg/timestamptz-string@1",
@@ -1429,20 +1425,14 @@
                   "nullable": false
                 },
                 "id": {
-                  "codecId": "sql/char@1",
-                  "nativeType": "character",
-                  "nullable": false,
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
                 },
                 "patient_id": {
-                  "codecId": "sql/char@1",
-                  "nativeType": "character",
-                  "nullable": false,
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
                 },
                 "reason_for_visit": {
                   "codecId": "pg/text@1",
@@ -1450,21 +1440,18 @@
                   "nullable": true
                 },
                 "scheduled_time": {
-                  "codecId": "pg/text@1",
-                  "nativeType": "text",
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
                   "nullable": false
                 },
                 "status": {
-                  "codecId": "pg/enum@1",
+                  "codecId": "pg/text@1",
                   "default": {
                     "kind": "literal",
                     "value": "Scheduled"
                   },
-                  "nativeType": "AppointmentStatus",
+                  "nativeType": "text",
                   "nullable": false,
-                  "typeParams": {
-                    "typeName": "AppointmentStatus"
-                  },
                   "valueSet": {
                     "entityKind": "valueSet",
                     "entityName": "AppointmentStatus",
@@ -1478,16 +1465,96 @@
                   "nullable": false
                 },
                 "user_id": {
-                  "codecId": "sql/char@1",
-                  "nativeType": "character",
-                  "nullable": true,
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 }
               },
-              "foreignKeys": [],
-              "indexes": [],
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "clinic_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Appointment"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Clinic"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "patient_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Appointment"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Patient"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "user_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Appointment"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "User"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "clinic_id"
+                  ],
+                  "name": "Appointment_clinic_id_idx_4265e318",
+                  "prefix": "Appointment_clinic_id_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "clinic_id",
+                    "scheduled_time"
+                  ],
+                  "name": "Appointment_clinic_id_scheduled_time_idx_691e13c2",
+                  "prefix": "Appointment_clinic_id_scheduled_time_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "patient_id"
+                  ],
+                  "name": "Appointment_patient_id_idx_2f641dda",
+                  "prefix": "Appointment_patient_id_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "user_id"
+                  ],
+                  "name": "Appointment_user_id_idx_6c952402",
+                  "prefix": "Appointment_user_id_idx",
+                  "unique": false
+                }
+              ],
               "primaryKey": {
                 "columns": [
                   "id"
@@ -1508,12 +1575,9 @@
                   "nullable": false
                 },
                 "id": {
-                  "codecId": "sql/char@1",
-                  "nativeType": "character",
-                  "nullable": false,
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
                 },
                 "name": {
                   "codecId": "pg/text@1",
@@ -1536,22 +1600,23 @@
               "uniques": []
             },
             "Invoice": {
+              "checks": [
+                {
+                  "expression": "\"status\" IN ('Unpaid', 'Partial', 'Paid')",
+                  "name": "Invoice_status_check_ee68904d",
+                  "prefix": "Invoice_status_check"
+                }
+              ],
               "columns": {
                 "appointment_id": {
-                  "codecId": "sql/char@1",
-                  "nativeType": "character",
-                  "nullable": true,
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "clinic_id": {
-                  "codecId": "sql/char@1",
-                  "nativeType": "character",
-                  "nullable": false,
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
                 },
                 "created_at": {
                   "codecId": "pg/timestamptz-string@1",
@@ -1559,37 +1624,28 @@
                   "nullable": false
                 },
                 "due_date": {
-                  "codecId": "pg/text@1",
-                  "nativeType": "text",
+                  "codecId": "pg/date-string@1",
+                  "nativeType": "date",
                   "nullable": true
                 },
                 "id": {
-                  "codecId": "sql/char@1",
-                  "nativeType": "character",
-                  "nullable": false,
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
                 },
                 "patient_id": {
-                  "codecId": "sql/char@1",
-                  "nativeType": "character",
-                  "nullable": false,
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
                 },
                 "status": {
-                  "codecId": "pg/enum@1",
+                  "codecId": "pg/text@1",
                   "default": {
                     "kind": "literal",
                     "value": "Unpaid"
                   },
-                  "nativeType": "InvoiceStatus",
+                  "nativeType": "text",
                   "nullable": false,
-                  "typeParams": {
-                    "typeName": "InvoiceStatus"
-                  },
                   "valueSet": {
                     "entityKind": "valueSet",
                     "entityName": "InvoiceStatus",
@@ -1600,7 +1656,11 @@
                 "total_amount": {
                   "codecId": "pg/numeric@1",
                   "nativeType": "numeric",
-                  "nullable": false
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 12,
+                    "scale": 2
+                  }
                 },
                 "updated_at": {
                   "codecId": "pg/timestamptz-string@1",
@@ -1608,8 +1668,82 @@
                   "nullable": false
                 }
               },
-              "foreignKeys": [],
-              "indexes": [],
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "clinic_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Invoice"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Clinic"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "patient_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Invoice"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Patient"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "appointment_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Invoice"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Appointment"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "appointment_id"
+                  ],
+                  "name": "Invoice_appointment_id_idx_5a77e0f0",
+                  "prefix": "Invoice_appointment_id_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "clinic_id"
+                  ],
+                  "name": "Invoice_clinic_id_idx_4265e318",
+                  "prefix": "Invoice_clinic_id_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "patient_id"
+                  ],
+                  "name": "Invoice_patient_id_idx_2f641dda",
+                  "prefix": "Invoice_patient_id_idx",
+                  "unique": false
+                }
+              ],
               "primaryKey": {
                 "columns": [
                   "id"
@@ -1620,12 +1754,9 @@
             "Patient": {
               "columns": {
                 "clinic_id": {
-                  "codecId": "sql/char@1",
-                  "nativeType": "character",
-                  "nullable": false,
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
                 },
                 "created_at": {
                   "codecId": "pg/timestamptz-string@1",
@@ -1633,8 +1764,8 @@
                   "nullable": false
                 },
                 "date_of_birth": {
-                  "codecId": "pg/text@1",
-                  "nativeType": "text",
+                  "codecId": "pg/date-string@1",
+                  "nativeType": "date",
                   "nullable": true
                 },
                 "email": {
@@ -1653,12 +1784,9 @@
                   "nullable": true
                 },
                 "id": {
-                  "codecId": "sql/char@1",
-                  "nativeType": "character",
-                  "nullable": false,
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
                 },
                 "last_name": {
                   "codecId": "pg/text@1",
@@ -1671,8 +1799,8 @@
                   "nullable": true
                 },
                 "specialized_data": {
-                  "codecId": "pg/jsonb@1",
-                  "nativeType": "jsonb",
+                  "codecId": "pg/json@1",
+                  "nativeType": "json",
                   "nullable": true
                 },
                 "updated_at": {
@@ -1681,8 +1809,34 @@
                   "nullable": false
                 }
               },
-              "foreignKeys": [],
-              "indexes": [],
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "clinic_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Patient"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Clinic"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "clinic_id"
+                  ],
+                  "name": "Patient_clinic_id_idx_4265e318",
+                  "prefix": "Patient_clinic_id_idx",
+                  "unique": false
+                }
+              ],
               "primaryKey": {
                 "columns": [
                   "id"
@@ -1703,12 +1857,9 @@
                   "nullable": false
                 },
                 "id": {
-                  "codecId": "sql/char@1",
-                  "nativeType": "character",
-                  "nullable": false,
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
                 },
                 "name": {
                   "codecId": "pg/text@1",
@@ -1716,12 +1867,9 @@
                   "nullable": false
                 },
                 "patient_id": {
-                  "codecId": "sql/char@1",
-                  "nativeType": "character",
-                  "nullable": false,
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
                 },
                 "uploaded_at": {
                   "codecId": "pg/timestamptz-string@1",
@@ -1729,8 +1877,34 @@
                   "nullable": false
                 }
               },
-              "foreignKeys": [],
-              "indexes": [],
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "patient_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "PatientDocument"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Patient"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "patient_id"
+                  ],
+                  "name": "PatientDocument_patient_id_idx_2f641dda",
+                  "prefix": "PatientDocument_patient_id_idx",
+                  "unique": false
+                }
+              ],
               "primaryKey": {
                 "columns": [
                   "id"
@@ -1739,35 +1913,37 @@
               "uniques": []
             },
             "Payment": {
+              "checks": [
+                {
+                  "expression": "\"payment_method\" IN ('Cash', 'Card', 'Transfer', 'Insurance')",
+                  "name": "Payment_payment_method_check_d203589d",
+                  "prefix": "Payment_payment_method_check"
+                }
+              ],
               "columns": {
                 "amount": {
                   "codecId": "pg/numeric@1",
                   "nativeType": "numeric",
-                  "nullable": false
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 12,
+                    "scale": 2
+                  }
                 },
                 "clinic_id": {
-                  "codecId": "sql/char@1",
-                  "nativeType": "character",
-                  "nullable": false,
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
                 },
                 "id": {
-                  "codecId": "sql/char@1",
-                  "nativeType": "character",
-                  "nullable": false,
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
                 },
                 "invoice_id": {
-                  "codecId": "sql/char@1",
-                  "nativeType": "character",
-                  "nullable": false,
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
                 },
                 "notes": {
                   "codecId": "pg/text@1",
@@ -1780,12 +1956,9 @@
                   "nullable": false
                 },
                 "payment_method": {
-                  "codecId": "pg/enum@1",
-                  "nativeType": "PaymentMethod",
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
                   "nullable": false,
-                  "typeParams": {
-                    "typeName": "PaymentMethod"
-                  },
                   "valueSet": {
                     "entityKind": "valueSet",
                     "entityName": "PaymentMethod",
@@ -1794,8 +1967,58 @@
                   }
                 }
               },
-              "foreignKeys": [],
-              "indexes": [],
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "clinic_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Payment"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Clinic"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "invoice_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Payment"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Invoice"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "clinic_id"
+                  ],
+                  "name": "Payment_clinic_id_idx_4265e318",
+                  "prefix": "Payment_clinic_id_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "invoice_id"
+                  ],
+                  "name": "Payment_invoice_id_idx_a3b7555d",
+                  "prefix": "Payment_invoice_id_idx",
+                  "unique": false
+                }
+              ],
               "primaryKey": {
                 "columns": [
                   "id"
@@ -1826,12 +2049,9 @@
                   "nullable": true
                 },
                 "id": {
-                  "codecId": "sql/char@1",
-                  "nativeType": "character",
-                  "nullable": false,
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
                 },
                 "last_updated": {
                   "codecId": "pg/timestamptz-string@1",
@@ -1839,15 +2059,29 @@
                   "nullable": false
                 },
                 "patient_id": {
-                  "codecId": "sql/char@1",
-                  "nativeType": "character",
-                  "nullable": false,
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
                 }
               },
-              "foreignKeys": [],
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "patient_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "SharedMedicalHistory"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Patient"
+                  }
+                }
+              ],
               "indexes": [],
               "primaryKey": {
                 "columns": [
@@ -1863,14 +2097,18 @@
               ]
             },
             "User": {
+              "checks": [
+                {
+                  "expression": "\"role\" IN ('SuperAdmin', 'Admin', 'Staff')",
+                  "name": "User_role_check_0a39af16",
+                  "prefix": "User_role_check"
+                }
+              ],
               "columns": {
                 "clinic_id": {
-                  "codecId": "sql/char@1",
-                  "nativeType": "character",
-                  "nullable": true,
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "created_at": {
                   "codecId": "pg/timestamptz-string@1",
@@ -1888,12 +2126,9 @@
                   "nullable": false
                 },
                 "id": {
-                  "codecId": "sql/char@1",
-                  "nativeType": "character",
-                  "nullable": false,
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
                 },
                 "last_name": {
                   "codecId": "pg/text@1",
@@ -1906,12 +2141,9 @@
                   "nullable": false
                 },
                 "role": {
-                  "codecId": "pg/enum@1",
-                  "nativeType": "UserRole",
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
                   "nullable": false,
-                  "typeParams": {
-                    "typeName": "UserRole"
-                  },
                   "valueSet": {
                     "entityKind": "valueSet",
                     "entityName": "UserRole",
@@ -1925,8 +2157,34 @@
                   "nullable": false
                 }
               },
-              "foreignKeys": [],
-              "indexes": [],
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "clinic_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "User"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Clinic"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "clinic_id"
+                  ],
+                  "name": "User_clinic_id_idx_4265e318",
+                  "prefix": "User_clinic_id_idx",
+                  "unique": false
+                }
+              ],
               "primaryKey": {
                 "columns": [
                   "id"
@@ -1979,12 +2237,9 @@
                   "nullable": false
                 },
                 "id": {
-                  "codecId": "sql/char@1",
-                  "nativeType": "character",
-                  "nullable": false,
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
                 },
                 "module_name": {
                   "codecId": "pg/text@1",
@@ -1997,16 +2252,39 @@
                   "nullable": false
                 },
                 "user_id": {
-                  "codecId": "sql/char@1",
-                  "nativeType": "character",
-                  "nullable": false,
-                  "typeParams": {
-                    "length": 36
-                  }
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
                 }
               },
-              "foreignKeys": [],
-              "indexes": [],
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "user_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "UserPermission"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "User"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "user_id"
+                  ],
+                  "name": "UserPermission_user_id_idx_6c952402",
+                  "prefix": "UserPermission_user_id_idx",
+                  "unique": false
+                }
+              ],
               "primaryKey": {
                 "columns": [
                   "id"
@@ -2056,7 +2334,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "ef301bafd84498c6c557954def972e14e2c8822a8e4ab13f52142aecd2d15743"
+    "storageHash": "6b9ccd02771aa9cdb89ac3132fa71a0e774c23ade6642035247a65fdf8466771"
   },
   "execution": {
     "executionHash": "fc7af3bf263e5f916e995e6f017c0d15764d1e9c4f31fe36d1f5e0ecfc50d7fa",
