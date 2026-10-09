@@ -923,6 +923,13 @@
                   "kind": "scalar"
                 }
               },
+              "created_at": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -962,6 +969,13 @@
                   "entityName": "PaymentMethod",
                   "namespaceId": "public",
                   "plane": "domain"
+                }
+              },
+              "updated_at": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
                 }
               }
             },
@@ -1007,6 +1021,9 @@
                 "clinic_id": {
                   "column": "clinic_id"
                 },
+                "created_at": {
+                  "column": "created_at"
+                },
                 "id": {
                   "column": "id"
                 },
@@ -1021,6 +1038,9 @@
                 },
                 "payment_method": {
                   "column": "payment_method"
+                },
+                "updated_at": {
+                  "column": "updated_at"
                 }
               },
               "namespaceId": "public",
@@ -1935,6 +1955,11 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "created_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
                 "id": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -1965,6 +1990,11 @@
                     "namespaceId": "public",
                     "plane": "storage"
                   }
+                },
+                "updated_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
                 }
               },
               "foreignKeys": [
@@ -2290,7 +2320,14 @@
                   "id"
                 ]
               },
-              "uniques": []
+              "uniques": [
+                {
+                  "columns": [
+                    "user_id",
+                    "module_name"
+                  ]
+                }
+              ]
             }
           },
           "valueSet": {
@@ -2334,10 +2371,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "6b9ccd02771aa9cdb89ac3132fa71a0e774c23ade6642035247a65fdf8466771"
+    "storageHash": "1a0d3668c8549e01bf7c0b5333b10e990569c225c85e0f4258507f68016c851d"
   },
   "execution": {
-    "executionHash": "fc7af3bf263e5f916e995e6f017c0d15764d1e9c4f31fe36d1f5e0ecfc50d7fa",
+    "executionHash": "b1966046a8c8f9506ea34c852271609f898197dc54e6eb3477191f0a804493c8",
     "mutations": {
       "defaults": [
         {
@@ -2512,6 +2549,17 @@
         },
         {
           "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "created_at",
+            "namespace": "public",
+            "table": "Payment"
+          }
+        },
+        {
+          "onCreate": {
             "id": "uuidv4",
             "kind": "generator"
           },
@@ -2526,8 +2574,12 @@
             "id": "timestampNow",
             "kind": "generator"
           },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
           "ref": {
-            "column": "payment_date",
+            "column": "updated_at",
             "namespace": "public",
             "table": "Payment"
           }

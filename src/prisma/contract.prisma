@@ -41,7 +41,7 @@ model Clinic {
   patients     Patient[]
   appointments Appointment[]
   invoices     Invoice[]
-  payments     Payment[]
+  payments     Payment[]  
 }
 
 model User {
@@ -73,6 +73,7 @@ model UserPermission {
   can_delete  Boolean                    @default(false)
   updated_at  temporal.updatedAtString()
 
+  @@unique([user_id, module_name])
   @@index([user_id])
 }
 
@@ -172,8 +173,10 @@ model Payment {
   invoice        Invoice                    @relation(fields: [invoice_id], references: [id])
   amount         Numeric(12, 2)
   payment_method PaymentMethod
-  payment_date   temporal.createdAtString()
+  payment_date   TimestamptzString
   notes          String?
+  created_at     temporal.createdAtString()
+  updated_at     temporal.updatedAtString()
 
   @@index([clinic_id])
   @@index([invoice_id])

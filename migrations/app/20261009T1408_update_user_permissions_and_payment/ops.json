@@ -1,0 +1,287 @@
+[
+  {
+    "id": "column.public.Payment.created_at",
+    "label": "Add column \"created_at\" to \"Payment\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "created_at",
+        "table": "Payment"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"created_at\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Payment",
+          "created_at"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"created_at\"",
+        "sql": "ALTER TABLE \"public\".\"Payment\" ADD COLUMN \"created_at\" timestamptz"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"created_at\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Payment",
+          "created_at"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Payment.updated_at",
+    "label": "Add column \"updated_at\" to \"Payment\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "updated_at",
+        "table": "Payment"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"updated_at\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Payment",
+          "updated_at"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"updated_at\"",
+        "sql": "ALTER TABLE \"public\".\"Payment\" ADD COLUMN \"updated_at\" timestamptz"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"updated_at\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Payment",
+          "updated_at"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "data_migration.backfill-Payment-created_at",
+    "label": "Data transform: backfill-Payment-created_at",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [
+      {
+        "description": "Check backfill-Payment-created_at has work to do",
+        "sql": "SELECT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"Payment\" WHERE \"created_at\" IS NULL LIMIT 1) AS ok",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "Run backfill-Payment-created_at",
+        "sql": "UPDATE \"public\".\"Payment\" SET \"created_at\" = $1, \"updated_at\" = $2 WHERE \"created_at\" IS NULL",
+        "params": [
+          "2026-10-09T00:00:00Z",
+          "2026-10-09T00:00:00Z"
+        ]
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Verify backfill-Payment-created_at resolved all violations",
+        "sql": "SELECT NOT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"Payment\" WHERE \"created_at\" IS NULL LIMIT 1) AS ok",
+        "params": []
+      }
+    ]
+  },
+  {
+    "id": "data_migration.backfill-Payment-updated_at",
+    "label": "Data transform: backfill-Payment-updated_at",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [
+      {
+        "description": "Check backfill-Payment-updated_at has work to do",
+        "sql": "SELECT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"Payment\" WHERE \"updated_at\" IS NULL LIMIT 1) AS ok",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "Run backfill-Payment-updated_at",
+        "sql": "UPDATE \"public\".\"Payment\" SET \"updated_at\" = $1 WHERE \"updated_at\" IS NULL",
+        "params": [
+          "2026-10-09T00:00:00Z"
+        ]
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Verify backfill-Payment-updated_at resolved all violations",
+        "sql": "SELECT NOT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"Payment\" WHERE \"updated_at\" IS NULL LIMIT 1) AS ok",
+        "params": []
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.setNotNull.Payment.created_at",
+    "label": "Set NOT NULL on \"Payment\".\"created_at\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "created_at",
+        "table": "Payment"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"created_at\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Payment",
+          "created_at"
+        ]
+      },
+      {
+        "description": "ensure no NULL values in \"created_at\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"public\".\"Payment\" WHERE \"created_at\" IS NULL) AS \"result\"",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "set NOT NULL on \"created_at\"",
+        "sql": "ALTER TABLE \"public\".\"Payment\" ALTER COLUMN \"created_at\" SET NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"created_at\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "Payment",
+          "created_at",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.setNotNull.Payment.updated_at",
+    "label": "Set NOT NULL on \"Payment\".\"updated_at\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "updated_at",
+        "table": "Payment"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"updated_at\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Payment",
+          "updated_at"
+        ]
+      },
+      {
+        "description": "ensure no NULL values in \"updated_at\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"public\".\"Payment\" WHERE \"updated_at\" IS NULL) AS \"result\"",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "set NOT NULL on \"updated_at\"",
+        "sql": "ALTER TABLE \"public\".\"Payment\" ALTER COLUMN \"updated_at\" SET NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"updated_at\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "Payment",
+          "updated_at",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.UserPermission.UserPermission_user_id_module_name_key",
+    "label": "Add unique constraint on \"UserPermission\" (user_id, module_name)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "UserPermission_user_id_module_name_key",
+        "table": "UserPermission"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"UserPermission_user_id_module_name_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "UserPermission_user_id_module_name_key",
+          "public",
+          "\"public\".\"UserPermission\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"UserPermission_user_id_module_name_key\"",
+        "sql": "ALTER TABLE \"public\".\"UserPermission\" ADD CONSTRAINT \"UserPermission_user_id_module_name_key\" UNIQUE (\"user_id\", \"module_name\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"UserPermission_user_id_module_name_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "UserPermission_user_id_module_name_key",
+          "public",
+          "\"public\".\"UserPermission\""
+        ]
+      }
+    ]
+  }
+]

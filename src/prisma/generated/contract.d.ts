@@ -34,9 +34,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'6b9ccd02771aa9cdb89ac3132fa71a0e774c23ade6642035247a65fdf8466771'>;
+  StorageHashBase<'1a0d3668c8549e01bf7c0b5333b10e990569c225c85e0f4258507f68016c851d'>;
 export type ExecutionHash =
-  ExecutionHashBase<'fc7af3bf263e5f916e995e6f017c0d15764d1e9c4f31fe36d1f5e0ecfc50d7fa'>;
+  ExecutionHashBase<'b1966046a8c8f9506ea34c852271609f898197dc54e6eb3477191f0a804493c8'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -304,11 +304,13 @@ export type FieldOutputTypes = {
     readonly Payment: {
       readonly amount: Numeric<12, 2>;
       readonly clinic_id: CodecTypes['pg/text@1']['output'];
+      readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly invoice_id: CodecTypes['pg/text@1']['output'];
       readonly notes: CodecTypes['pg/text@1']['output'] | null;
       readonly payment_date: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly payment_method: 'Cash' | 'Card' | 'Transfer' | 'Insurance';
+      readonly updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
     };
     readonly SharedMedicalHistory: {
       readonly allergies: CodecTypes['pg/text@1']['output'] | null;
@@ -398,11 +400,13 @@ export type FieldInputTypes = {
     readonly Payment: {
       readonly amount: CodecTypes['pg/numeric@1']['input'];
       readonly clinic_id: CodecTypes['pg/text@1']['input'];
+      readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly invoice_id: CodecTypes['pg/text@1']['input'];
       readonly notes: CodecTypes['pg/text@1']['input'] | null;
       readonly payment_date: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly payment_method: 'Cash' | 'Card' | 'Transfer' | 'Insurance';
+      readonly updated_at: CodecTypes['pg/timestamptz-string@1']['input'];
     };
     readonly SharedMedicalHistory: {
       readonly allergies: CodecTypes['pg/text@1']['input'] | null;
@@ -492,11 +496,13 @@ export type StorageColumnTypes = {
     readonly Payment: {
       readonly amount: Numeric<12, 2>;
       readonly clinic_id: CodecTypes['pg/text@1']['output'];
+      readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly invoice_id: CodecTypes['pg/text@1']['output'];
       readonly notes: CodecTypes['pg/text@1']['output'] | null;
       readonly payment_date: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly payment_method: 'Cash' | 'Card' | 'Transfer' | 'Insurance';
+      readonly updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
     };
     readonly SharedMedicalHistory: {
       readonly allergies: CodecTypes['pg/text@1']['output'] | null;
@@ -586,11 +592,13 @@ export type StorageColumnInputTypes = {
     readonly Payment: {
       readonly amount: CodecTypes['pg/numeric@1']['input'];
       readonly clinic_id: CodecTypes['pg/text@1']['input'];
+      readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly invoice_id: CodecTypes['pg/text@1']['input'];
       readonly notes: CodecTypes['pg/text@1']['input'] | null;
       readonly payment_date: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly payment_method: 'Cash' | 'Card' | 'Transfer' | 'Insurance';
+      readonly updated_at: CodecTypes['pg/timestamptz-string@1']['input'];
     };
     readonly SharedMedicalHistory: {
       readonly allergies: CodecTypes['pg/text@1']['input'] | null;
@@ -705,11 +713,13 @@ export namespace Models {
   export type public_Payment = {
     amount: Numeric<12, 2>;
     clinic_id: CodecTypes['pg/text@1']['output'];
+    created_at: CodecTypes['pg/timestamptz-string@1']['output'];
     id: CodecTypes['pg/text@1']['output'];
     invoice_id: CodecTypes['pg/text@1']['output'];
     notes: CodecTypes['pg/text@1']['output'] | null;
     payment_date: CodecTypes['pg/timestamptz-string@1']['output'];
     payment_method: 'Cash' | 'Card' | 'Transfer' | 'Insurance';
+    updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
     clinic: public_Clinic;
     invoice: public_Invoice;
     readonly [RelationKeys]?: 'clinic' | 'invoice';
@@ -1215,6 +1225,11 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
                 };
+                readonly created_at: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                };
                 readonly id: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
@@ -1238,6 +1253,11 @@ type ContractBase = Omit<
                 readonly payment_method: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly updated_at: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
                   readonly nullable: false;
                 };
               };
@@ -1473,7 +1493,7 @@ type ContractBase = Omit<
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [];
+              uniques: readonly [{ readonly columns: readonly ['user_id', 'module_name'] }];
               indexes: readonly [
                 {
                   readonly name: 'UserPermission_user_id_idx_6c952402';
@@ -2077,6 +2097,13 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly created_at: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
               readonly id: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -2099,6 +2126,13 @@ type ContractBase = Omit<
               readonly payment_method: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly updated_at: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
               };
             };
             readonly relations: {
@@ -2133,11 +2167,13 @@ type ContractBase = Omit<
               readonly fields: {
                 readonly amount: { readonly column: 'amount' };
                 readonly clinic_id: { readonly column: 'clinic_id' };
+                readonly created_at: { readonly column: 'created_at' };
                 readonly id: { readonly column: 'id' };
                 readonly invoice_id: { readonly column: 'invoice_id' };
                 readonly notes: { readonly column: 'notes' };
                 readonly payment_date: { readonly column: 'payment_date' };
                 readonly payment_method: { readonly column: 'payment_method' };
+                readonly updated_at: { readonly column: 'updated_at' };
               };
             };
           };
@@ -2546,6 +2582,14 @@ type ContractBase = Omit<
           };
         },
         {
+          readonly onCreate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly column: 'created_at';
+            readonly namespace: 'public';
+            readonly table: 'Payment';
+          };
+        },
+        {
           readonly onCreate: { readonly id: 'uuidv4'; readonly kind: 'generator' };
           readonly ref: {
             readonly column: 'id';
@@ -2555,8 +2599,9 @@ type ContractBase = Omit<
         },
         {
           readonly onCreate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
+          readonly onUpdate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
           readonly ref: {
-            readonly column: 'payment_date';
+            readonly column: 'updated_at';
             readonly namespace: 'public';
             readonly table: 'Payment';
           };
