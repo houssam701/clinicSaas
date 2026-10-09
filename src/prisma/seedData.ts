@@ -99,6 +99,7 @@ async function main() {
     amount: "150.00" as any,
     payment_method: "Card",
     notes: "Paid in full via Visa ending in 4242",
+    payment_date: new Date().toISOString(),
   });
 
   // 10. Update the Invoice Status to 'Paid' using the v8 chaining API
