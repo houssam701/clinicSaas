@@ -1,0 +1,183 @@
+// use prisma-8
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  SuperAdmin
+  Admin
+  Staff
+}
+
+enum AppointmentStatus {
+  Scheduled
+  Completed
+  Canceled
+  NoShow
+}
+
+enum InvoiceStatus {
+  Unpaid
+  Partial
+  Paid
+}
+
+enum PaymentMethod {
+  Cash
+  Card
+  Transfer
+  Insurance
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model Clinic {
+  id          String                     @id @default(uuid())
+  name        String
+  clinic_type String // e.g., Dentistry, Therapy
+  created_at  temporal.createdAtString()
+  updated_at  temporal.updatedAtString()
+
+  users        User[]
+  patients     Patient[]
+  appointments Appointment[]
+  invoices     Invoice[]
+  payments     Payment[]  
+}
+
+model User {
+  id            String                     @id @default(uuid())
+  clinic_id     String? // Null for SuperAdmin
+  clinic        Clinic?                    @relation(fields: [clinic_id], references: [id])
+  role          UserRole
+  first_name    String
+  last_name     String
+  email         String                     @unique
+  password_hash String
+  created_at    temporal.createdAtString()
+  updated_at    temporal.updatedAtString()
+
+  permissions  UserPermission[]
+  appointments Appointment[]
+
+  @@index([clinic_id])
+}
+
+model UserPermission {
+  id          String                     @id @default(uuid())
+  user_id     String
+  user        User                       @relation(fields: [user_id], references: [id])
+  module_name String // e.g., Appointments, Patients, Invoices, Settings
+  can_view    Boolean                    @default(false)
+  can_create  Boolean                    @default(false)
+  can_edit    Boolean                    @default(false)
+  can_delete  Boolean                    @default(false)
+  updated_at  temporal.updatedAtString()
+
+  @@unique([user_id, module_name])
+  @@index([user_id])
+}
+
+model Patient {
+  id               String                     @id @default(uuid())
+  clinic_id        String
+  clinic           Clinic                     @relation(fields: [clinic_id], references: [id])
+  first_name       String
+  last_name        String
+  email            String?
+  phone            String?
+  date_of_birth    DateString?
+  gender           String?
+  specialized_data Json? // Clinic-specific data
+  created_at       temporal.createdAtString()
+  updated_at       temporal.updatedAtString()
+
+  medicalHistory SharedMedicalHistory?
+  documents      PatientDocument[]
+  appointments   Appointment[]
+  invoices       Invoice[]
+
+  @@index([clinic_id])
+}
+
+model SharedMedicalHistory {
+  id                  String                     @id @default(uuid())
+  patient_id          String                     @unique
+  patient             Patient                    @relation(fields: [patient_id], references: [id])
+  blood_type          String?
+  allergies           String?
+  chronic_conditions  String?
+  current_medications String?
+  last_updated        temporal.updatedAtString()
+}
+
+model PatientDocument {
+  id            String                     @id @default(uuid())
+  patient_id    String
+  patient       Patient                    @relation(fields: [patient_id], references: [id])
+  name          String
+  file_url      String
+  document_type String?
+  uploaded_at   temporal.createdAtString()
+
+  @@index([patient_id])
+}
+
+model Appointment {
+  id               String                     @id @default(uuid())
+  clinic_id        String
+  clinic           Clinic                     @relation(fields: [clinic_id], references: [id])
+  patient_id       String
+  patient          Patient                    @relation(fields: [patient_id], references: [id])
+  user_id          String? // Nullable if booked online but not yet assigned to specific staff
+  staff            User?                      @relation(fields: [user_id], references: [id])
+  scheduled_time   TimestamptzString
+  duration_minutes Int                        @default(30)
+  status           AppointmentStatus          @default(Scheduled)
+  reason_for_visit String?
+  created_at       temporal.createdAtString()
+  updated_at       temporal.updatedAtString()
+
+  invoices Invoice[]
+
+  @@index([clinic_id, scheduled_time])
+  @@index([patient_id])
+  @@index([user_id])
+}
+
+model Invoice {
+  id             String                     @id @default(uuid())
+  clinic_id      String
+  clinic         Clinic                     @relation(fields: [clinic_id], references: [id])
+  patient_id     String
+  patient        Patient                    @relation(fields: [patient_id], references: [id])
+  appointment_id String? // Nullable for walk-in payments, standalone products, or generic consultations
+  appointment    Appointment?               @relation(fields: [appointment_id], references: [id])
+  total_amount   Numeric(12, 2)
+  status         InvoiceStatus              @default(Unpaid)
+  due_date       DateString?
+  created_at     temporal.createdAtString()
+  updated_at     temporal.updatedAtString()
+
+  payments Payment[]
+
+  @@index([clinic_id])
+  @@index([patient_id])
+  @@index([appointment_id])
+}
+
+model Payment {
+  id             String                     @id @default(uuid())
+  clinic_id      String
+  clinic         Clinic                     @relation(fields: [clinic_id], references: [id])
+  invoice_id     String
+  invoice        Invoice                    @relation(fields: [invoice_id], references: [id])
+  amount         Numeric(12, 2)
+  payment_method PaymentMethod
+  payment_date   TimestamptzString
+  notes          String?
+  created_at     temporal.createdAtString()
+  updated_at     temporal.updatedAtString()
+
+  @@index([clinic_id])
+  @@index([invoice_id])
+}
