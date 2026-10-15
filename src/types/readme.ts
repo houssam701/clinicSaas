@@ -1,1 +1,0 @@
-//this folder "Types" will contains all types we need for our application!

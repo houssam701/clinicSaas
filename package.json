@@ -29,11 +29,14 @@
     "@prisma/composer-prisma-cloud": "0.24.0",
     "@prisma/orm-postgres": "8.0.0-rc.12",
     "alchemy": "2.0.0-beta.78",
+    "argon2": "^0.45.1",
     "dotenv": "^18.0.5",
     "next": "16.1.6",
+    "next-auth": "^5.0.0-beta.32",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "temporal-polyfill": "^1.0.4"
+    "temporal-polyfill": "^1.0.4",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@prisma/dev": "0.25.2",
