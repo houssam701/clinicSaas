@@ -28,7 +28,7 @@ import { CreateStaffSchema, UserRole } from "../../../../types/users";
  *   201  { user: PublicUser }
  *   400  Zod validation error
  *   401  Not authenticated
- *   403  Not Admin / clinic mismatch attempt
+ *   403  Not Admin / Admin has no associated clinic
  *   409  Email already in use
  */
 export async function POST(request: NextRequest) {
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
   }
 
   // 2. Authorization — only Admin role may use this endpoint
-  const callerRole = (session.user as any).role as UserRole;
+  const callerRole = session.user.role;
   if (callerRole !== UserRole.Admin) {
     return NextResponse.json(
       { error: "Forbidden: Admin role required" },
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 3. Parse and validate with CreateStaffSchema (role is z.literal("Staff"))
+  // 3. Parse and validate with CreateStaffSchema (role is z.literal("Staff"), clinic_id is omitted)
   const body = await request.json();
   const parsed = CreateStaffSchema.safeParse(body);
   if (!parsed.success) {
@@ -57,24 +57,22 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 4. Pull clinic_id from the JWT — never trust the client for this
-  const callerClinicId = (session.user as any).clinic_id as string;
-
-  // 5. Guard: if the client sent a clinic_id, it must match the Admin's clinic
-  if (parsed.data.clinic_id && parsed.data.clinic_id !== callerClinicId) {
+  // 4. Pull clinic_id from the verified session — never trust the client for this
+  const callerClinicId = session.user.clinic_id;
+  if (!callerClinicId) {
     return NextResponse.json(
-      { error: "Forbidden: cannot create staff for a different clinic" },
+      { error: "Forbidden: Admin has no associated clinic" },
       { status: 403 }
     );
   }
 
-  // 6. Check email uniqueness
+  // 5. Check email uniqueness
   const exists = await UserRepository.emailExists(parsed.data.email);
   if (exists) {
     return NextResponse.json({ error: "Email already in use" }, { status: 409 });
   }
 
-  // 7. Hash password with Argon2id
+  // 6. Hash password with Argon2id
   const password_hash = await argon2.hash(parsed.data.password, {
     type:        argon2.argon2id,
     memoryCost:  65536, // 64 MB
@@ -82,7 +80,7 @@ export async function POST(request: NextRequest) {
     parallelism: 4,
   });
 
-  // 8. Persist — clinic_id is injected from session, not from request body
+  // 7. Persist — clinic_id is injected from session, not from request body
   const newUser = await UserRepository.createUser({
     ...parsed.data,
     clinic_id: callerClinicId,

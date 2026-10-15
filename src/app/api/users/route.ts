@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
   }
 
   // 2. Authorization — only SuperAdmin may use this endpoint
-  const callerRole = (session.user as any).role as UserRole;
+  const callerRole = session.user.role;
   if (callerRole !== UserRole.SuperAdmin) {
     return NextResponse.json(
       { error: "Forbidden: SuperAdmin role required" },

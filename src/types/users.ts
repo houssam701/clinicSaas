@@ -32,8 +32,10 @@ export const CreateUserSchema = z.object({
   clinic_id:  z.string().uuid().optional(),
 });
 
-// Admin can only create Staff — role is locked at the schema level
-export const CreateStaffSchema = CreateUserSchema.extend({
+// Admin can only create Staff for their own clinic.
+// Role is locked to "Staff" and clinic_id is omitted because the client cannot specify it;
+// it is always injected securely from the calling Admin's verified session.
+export const CreateStaffSchema = CreateUserSchema.omit({ clinic_id: true }).extend({
   role: z.literal(UserRole.Staff),
 });
 

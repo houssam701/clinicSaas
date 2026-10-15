@@ -19,7 +19,7 @@ export async function GET() {
   }
 
   // 2. Fetch fresh data from DB — ensures we return up-to-date info
-  const user = await UserRepository.findById((session.user as any).id);
+  const user = await UserRepository.findById(session.user.id);
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }

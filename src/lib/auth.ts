@@ -1,8 +1,33 @@
-import NextAuth, { type NextAuthConfig } from "next-auth";
+import NextAuth, { type NextAuthConfig, type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import * as argon2 from "argon2";
 import { UserRepository } from "../repository/user-repository";
-import { LoginSchema } from "../types/users";
+import { LoginSchema, UserRole } from "../types/users";
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      role: UserRole;
+      clinic_id?: string | null;
+    } & DefaultSession["user"];
+  }
+
+  interface User {
+    role: UserRole;
+    clinic_id?: string | null;
+  }
+}
+
+declare module "@auth/core/jwt" {
+  interface JWT {
+    id?: string;
+    role?: UserRole;
+    clinic_id?: string | null;
+  }
+}
+
+
 
 export const authConfig: NextAuthConfig = {
   providers: [
@@ -32,7 +57,7 @@ export const authConfig: NextAuthConfig = {
           id:        user.id,
           email:     user.email,
           name:      `${user.first_name} ${user.last_name}`,
-          role:      user.role,
+          role:      user.role as UserRole,
           clinic_id: user.clinic_id,
         };
       },
@@ -48,18 +73,18 @@ export const authConfig: NextAuthConfig = {
     // Persist role + clinic_id into the JWT at sign-in
     jwt({ token, user }) {
       if (user) {
-        token.role      = (user as any).role;
-        token.clinic_id = (user as any).clinic_id;
-        token.id        = (user as any).id;
+        token.role      = user.role;
+        token.clinic_id = user.clinic_id;
+        token.id        = user.id;
       }
       return token;
     },
     // Expose role + clinic_id + id on the session object readable in route handlers
     session({ session, token }) {
       if (session.user) {
-        (session.user as any).role      = token.role;
-        (session.user as any).clinic_id = token.clinic_id;
-        (session.user as any).id        = token.id;
+        session.user.role      = token.role as UserRole;
+        session.user.clinic_id = token.clinic_id;
+        session.user.id        = token.id as string;
       }
       return session;
     },
