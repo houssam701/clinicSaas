@@ -1,5 +1,6 @@
 import { db } from "../prisma/db";
-import type { UsersModel, PublicUser, CreateUserInput } from "../types/users";
+import type { UsersModel, PublicUser, CreateUserInput, UpdateUserData } from "../types/users";
+import { UserRole } from "../types/users";
 
 export class UserRepository {
 
@@ -48,12 +49,98 @@ export class UserRepository {
     return user;
   }
 
+  // ── Queries ──────────────────────────────────────────────────────────────────
+
+  /**
+   * Returns a list of public users filtered by optional clinic_id and/or role.
+   * Can exclude a specific user ID (e.g. the calling SuperAdmin).
+   * Results are sorted by creation date descending.
+   */
+  static async findAll(filter?: {
+    clinic_id?: string;
+    role?: UserRole;
+    excludeUserId?: string;
+  }): Promise<PublicUser[]> {
+    let query = db.orm.public.User.select(
+      "id",
+      "clinic_id",
+      "role",
+      "first_name",
+      "last_name",
+      "email",
+      "created_at",
+      "updated_at"
+    );
+
+    const clinicId = filter?.clinic_id;
+    if (clinicId) {
+      query = query.where({ clinic_id: clinicId });
+    }
+
+    const role = filter?.role;
+    if (role) {
+      query = query.where({ role });
+    }
+
+    const excludeUserId = filter?.excludeUserId;
+    if (excludeUserId) {
+      query = query.where((u) => u.id.neq(excludeUserId));
+    }
+
+    const users = await query.orderBy((u) => u.created_at.desc()).all();
+    return users;
+  }
+
+  // ── User Mutation ────────────────────────────────────────────────────────────
+
+  /**
+   * Updates an existing user and returns the updated public user shape.
+   */
+  static async updateUser(
+    id: string,
+    data: UpdateUserData
+  ): Promise<PublicUser | null> {
+    const updated = await db.orm.public.User
+      .where({ id })
+      .select("id", "clinic_id", "role", "first_name", "last_name", "email", "created_at", "updated_at")
+      .update(data);
+    return updated ?? null;
+  }
+
+  /**
+   * Deletes a user by ID. Cleans up dependent user_permissions and unlinks appointments
+   * inside a transaction to maintain referential integrity.
+   */
+  static async deleteUser(id: string): Promise<boolean> {
+    return await db.transaction(async (tx) => {
+      // 1. Delete associated permissions if any exist
+      await tx.orm.public.UserPermission.where({ user_id: id }).delete();
+
+      // 2. Unassign staff from appointments (set user_id to null)
+      await tx.orm.public.Appointment.where({ user_id: id }).update({ user_id: null });
+
+      // 3. Delete user
+      await tx.orm.public.User.where({ id }).delete();
+
+      return true;
+    });
+  }
+
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
   /** Returns true if an account with this email already exists. */
   static async emailExists(email: string): Promise<boolean> {
     const result = await db.orm.public.User
       .where((u) => u.email.eq(email))
+      .aggregate((a) => ({ count: a.count() }));
+    return result.count > 0;
+  }
+
+  /** Returns true if an account with this email already exists for another user. */
+  static async emailExistsExcept(email: string, excludeUserId: string): Promise<boolean> {
+    const result = await db.orm.public.User
+      .where((u) => u.email.eq(email))
+      .where((u) => u.id.neq(excludeUserId))
       .aggregate((a) => ({ count: a.count() }));
     return result.count > 0;
   }
@@ -65,4 +152,4 @@ export class UserRepository {
       .aggregate((a) => ({ count: a.count() }));
     return result.count > 0;
   }
-}
+}
