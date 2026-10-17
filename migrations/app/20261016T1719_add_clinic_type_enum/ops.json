@@ -1,0 +1,44 @@
+[
+  {
+    "id": "checkConstraint.Clinic.Clinic_clinic_type_check_fe1cbc12",
+    "label": "Add check constraint \"Clinic_clinic_type_check_fe1cbc12\" on \"Clinic\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "Clinic_clinic_type_check_fe1cbc12",
+        "table": "Clinic"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Clinic_clinic_type_check_fe1cbc12\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Clinic_clinic_type_check_fe1cbc12",
+          "public",
+          "\"public\".\"Clinic\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"Clinic_clinic_type_check_fe1cbc12\"",
+        "sql": "ALTER TABLE \"public\".\"Clinic\" ADD CONSTRAINT \"Clinic_clinic_type_check_fe1cbc12\" CHECK (\"clinic_type\" IN ('Dentistry', 'Therapy'))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"Clinic_clinic_type_check_fe1cbc12\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Clinic_clinic_type_check_fe1cbc12",
+          "public",
+          "\"public\".\"Clinic\""
+        ]
+      }
+    ]
+  }
+]
