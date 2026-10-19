@@ -7,13 +7,11 @@ import {
   BulkReplacePermissionsSchema,
   CreatePermissionSchema,
 } from "../../../../../types/permissions";
+import { UUID_REGEX } from "../../../../../services/api-guard";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
-
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * GET /api/users/[id]/permissions
