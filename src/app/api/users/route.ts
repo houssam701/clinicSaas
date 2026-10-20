@@ -2,7 +2,85 @@ import { NextRequest, NextResponse } from "next/server";
 import * as argon2 from "argon2";
 import { auth } from "../../../lib/auth";
 import { UserRepository } from "../../../repository/user-repository";
-import { CreateUserSchema, UserRole } from "../../../types/users";
+import { CreateUserSchema, ListUsersQuerySchema, UserRole } from "../../../types/users";
+
+/**
+ * GET /api/users
+ *
+ * Lists users according to role permissions and tenant boundary:
+ *   - SuperAdmin: Returns all users across all clinics, excluding the calling SuperAdmin. Can optionally filter by ?clinic_id=... and ?role=...
+ *   - Admin: Strictly scoped to their own clinic's staff (returns only Staff users for their session's clinic_id).
+ *   - Staff: Forbidden (403).
+ *
+ * Auth:          Required
+ * Authorization: SuperAdmin or Admin
+ *
+ * Query Params:
+ *   clinic_id?: string (UUID — SuperAdmin only)
+ *   role?:      "SuperAdmin" | "Admin" | "Staff" (SuperAdmin only)
+ *
+ * Responses:
+ *   200  { users: PublicUser[] }
+ *   400  Invalid query parameters
+ *   401  Not authenticated
+ *   403  Forbidden
+ */
+export async function GET(request: NextRequest) {
+  // 1. Auth guard
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const callerRole = session.user.role;
+
+  // 2. SuperAdmin flow: can view all users, optionally filtered
+  if (callerRole === UserRole.SuperAdmin) {
+    const searchParams = request.nextUrl.searchParams;
+    const clinic_id = searchParams.get("clinic_id") ?? undefined;
+    const role = searchParams.get("role") ?? undefined;
+
+    const parsedQuery = ListUsersQuerySchema.safeParse({ clinic_id, role });
+    if (!parsedQuery.success) {
+      return NextResponse.json(
+        { error: "Invalid query parameters", details: parsedQuery.error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    const users = await UserRepository.findAll({
+      clinic_id:     parsedQuery.data.clinic_id,
+      role:          parsedQuery.data.role,
+      excludeUserId: session.user.id,
+    });
+
+    return NextResponse.json({ users }, { status: 200 });
+  }
+
+  // 3. Admin flow: strictly scoped to staff members in the Admin's clinic
+  if (callerRole === UserRole.Admin) {
+    const callerClinicId = session.user.clinic_id;
+    if (!callerClinicId) {
+      return NextResponse.json(
+        { error: "Forbidden: Admin is not associated with a clinic" },
+        { status: 403 }
+      );
+    }
+
+    const users = await UserRepository.findAll({
+      clinic_id: callerClinicId,
+      role: UserRole.Staff,
+    });
+
+    return NextResponse.json({ users }, { status: 200 });
+  }
+
+  // 4. Staff cannot list users
+  return NextResponse.json(
+    { error: "Forbidden: Admin or SuperAdmin role required" },
+    { status: 403 }
+  );
+}
 
 /**
  * POST /api/users
@@ -22,7 +100,7 @@ import { CreateUserSchema, UserRole } from "../../../types/users";
  *
  * Responses:
  *   201  { user: PublicUser }
- *   400  Zod validation error
+ *   400  Zod validation error or malformed JSON
  *   401  Not authenticated
  *   403  Not SuperAdmin
  *   409  Email already in use
@@ -44,7 +122,12 @@ export async function POST(request: NextRequest) {
   }
 
   // 3. Parse and validate request body with Zod
-  const body = await request.json();
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
   const parsed = CreateUserSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
@@ -74,4 +157,4 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json({ user: newUser }, { status: 201 });
-}
+}

@@ -39,7 +39,39 @@ export const CreateStaffSchema = CreateUserSchema.omit({ clinic_id: true }).exte
   role: z.literal(UserRole.Staff),
 });
 
+// ─── Update User Schema ────────────────────────────────────────────────────────
+export const UpdateUserSchema = z.object({
+  email:      z.string().email().optional(),
+  password:   z.string().min(8).optional(),
+  first_name: z.string().min(1).optional(),
+  last_name:  z.string().min(1).optional(),
+  role:       z.nativeEnum(UserRole).optional(),
+  clinic_id:  z.string().uuid().nullable().optional(),
+}).refine(
+  (data) => Object.keys(data).length > 0,
+  { message: "At least one field must be provided for update" }
+);
+
+// ─── Query Schema for listing users ───────────────────────────────────────────
+export const ListUsersQuerySchema = z.object({
+  clinic_id: z.string().uuid().optional(),
+  role:      z.nativeEnum(UserRole).optional(),
+});
+
 // ─── Inferred Request Types ───────────────────────────────────────────────────
-export type LoginInput       = z.infer<typeof LoginSchema>;
-export type CreateUserInput  = z.infer<typeof CreateUserSchema>;
-export type CreateStaffInput = z.infer<typeof CreateStaffSchema>;
+export type LoginInput          = z.infer<typeof LoginSchema>;
+export type CreateUserInput     = z.infer<typeof CreateUserSchema>;
+export type CreateStaffInput    = z.infer<typeof CreateStaffSchema>;
+export type UpdateUserInput     = z.infer<typeof UpdateUserSchema>;
+export type ListUsersQueryInput = z.infer<typeof ListUsersQuerySchema>;
+
+export type UpdateUserData = {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  role?: UserRole;
+  clinic_id?: string | null;
+  password_hash?: string;
+};
+
+

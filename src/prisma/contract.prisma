@@ -28,12 +28,17 @@ enum PaymentMethod {
   Insurance
 }
 
+enum ClinicType {
+  Dentistry
+  Therapy
+}
+
 // ─── Models ──────────────────────────────────────────────────────────────────
 
 model Clinic {
   id          String                     @id @default(uuid())
   name        String
-  clinic_type String // e.g., Dentistry, Therapy
+  clinic_type ClinicType
   created_at  temporal.createdAtString()
   updated_at  temporal.updatedAtString()
 

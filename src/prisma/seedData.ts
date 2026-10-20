@@ -86,6 +86,7 @@ async function main() {
     clinic_id: clinic.id,
     patient_id: patient.id,
     appointment_id: appointment.id,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     total_amount: "150.00" as any, // Prisma 8 requires string representation for Numeric fields to prevent precision loss
     status: "Unpaid",
     due_date: nextWeek.toISOString().split("T")[0], // YYYY-MM-DD DateString
@@ -96,6 +97,7 @@ async function main() {
   await db.orm.public.Payment.create({
     clinic_id: clinic.id,
     invoice_id: invoice.id,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     amount: "150.00" as any,
     payment_method: "Card",
     notes: "Paid in full via Visa ending in 4242",

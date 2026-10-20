@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'1a0d3668c8549e01bf7c0b5333b10e990569c225c85e0f4258507f68016c851d'>;
+  StorageHashBase<'e2a95c79f288f62a4d749a103a5d0c6b0f5a2fdc01b70f4ab2bcd3141eff5337'>;
 export type ExecutionHash =
   ExecutionHashBase<'b1966046a8c8f9506ea34c852271609f898197dc54e6eb3477191f0a804493c8'>;
 export type ProfileHash =
@@ -263,7 +263,7 @@ export type FieldOutputTypes = {
       readonly user_id: CodecTypes['pg/text@1']['output'] | null;
     };
     readonly Clinic: {
-      readonly clinic_type: CodecTypes['pg/text@1']['output'];
+      readonly clinic_type: 'Dentistry' | 'Therapy';
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
@@ -359,7 +359,7 @@ export type FieldInputTypes = {
       readonly user_id: CodecTypes['pg/text@1']['input'] | null;
     };
     readonly Clinic: {
-      readonly clinic_type: CodecTypes['pg/text@1']['input'];
+      readonly clinic_type: 'Dentistry' | 'Therapy';
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
@@ -455,7 +455,7 @@ export type StorageColumnTypes = {
       readonly user_id: CodecTypes['pg/text@1']['output'] | null;
     };
     readonly Clinic: {
-      readonly clinic_type: CodecTypes['pg/text@1']['output'];
+      readonly clinic_type: 'Dentistry' | 'Therapy';
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
@@ -551,7 +551,7 @@ export type StorageColumnInputTypes = {
       readonly user_id: CodecTypes['pg/text@1']['input'] | null;
     };
     readonly Clinic: {
-      readonly clinic_type: CodecTypes['pg/text@1']['input'];
+      readonly clinic_type: 'Dentistry' | 'Therapy';
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
@@ -652,7 +652,7 @@ export namespace Models {
     readonly [RelationKeys]?: 'clinic' | 'invoices' | 'patient' | 'staff';
   };
   export type public_Clinic = {
-    clinic_type: CodecTypes['pg/text@1']['output'];
+    clinic_type: 'Dentistry' | 'Therapy';
     created_at: CodecTypes['pg/timestamptz-string@1']['output'];
     id: CodecTypes['pg/text@1']['output'];
     name: CodecTypes['pg/text@1']['output'];
@@ -1522,6 +1522,10 @@ type ContractBase = Omit<
             readonly AppointmentStatus: {
               readonly kind: 'valueSet';
               readonly values: readonly ['Scheduled', 'Completed', 'Canceled', 'NoShow'];
+            };
+            readonly ClinicType: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['Dentistry', 'Therapy'];
             };
             readonly InvoiceStatus: {
               readonly kind: 'valueSet';
@@ -2409,6 +2413,13 @@ type ContractBase = Omit<
               { readonly name: 'Completed'; readonly value: 'Completed' },
               { readonly name: 'Canceled'; readonly value: 'Canceled' },
               { readonly name: 'NoShow'; readonly value: 'NoShow' },
+            ];
+          };
+          readonly ClinicType: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'Dentistry'; readonly value: 'Dentistry' },
+              { readonly name: 'Therapy'; readonly value: 'Therapy' },
             ];
           };
           readonly InvoiceStatus: {
