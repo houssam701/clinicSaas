@@ -23,7 +23,6 @@ export const CreateClinicSchema = z.object({
 
 export const UpdateClinicSchema = z
   .object({
-    id: z.string().uuid("Invalid clinic ID format").optional(),
     name: z.string().trim().min(1, "Clinic name cannot be empty").optional(),
     clinic_type: z
       .nativeEnum(ClinicType, {
