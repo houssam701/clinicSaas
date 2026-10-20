@@ -116,14 +116,13 @@ export class ClinicRepository {
 
       await tx.orm.public.Patient.where({ clinic_id: id }).delete();
 
-      // 5. Clean up permissions and unassign appointments for users tied to this clinic
+      // 5. Delete permissions for users tied to this clinic before removing the users
       const users = await tx.orm.public.User
         .where({ clinic_id: id })
         .select("id")
         .all();
 
       for (const user of users) {
-        await tx.orm.public.Appointment.where({ user_id: user.id }).update({ user_id: null });
         await tx.orm.public.UserPermission.where({ user_id: user.id }).delete();
       }
 
