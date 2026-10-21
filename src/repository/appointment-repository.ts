@@ -1,4 +1,5 @@
 import { db } from "../prisma/db";
+import { and } from "@prisma/orm-postgres/orm-client";
 import type {
   AppointmentModel,
   CreateAppointmentData,
@@ -136,21 +137,21 @@ export class AppointmentRepository {
     duration_minutes: number;
     exclude_id?:      string;   // ignore when updating an existing record
   }): Promise<boolean> {
-    // Build a raw-SQL overlap predicate using Prisma 8 db.sql
     const start = opts.scheduled_time;
-    const endTs = `('${start}'::timestamptz + interval '${opts.duration_minutes} minutes')`;
+    const end = new Date(new Date(start).getTime() + opts.duration_minutes * 60 * 1000).toISOString();
 
     let query = db.orm.public.Appointment
       .where({ user_id: opts.user_id })
       .where((a) =>
         // existing_start < proposed_end AND existing_end > proposed_start
-        a.scheduled_time.lt(endTs).and(
+        and(
+          a.scheduled_time.lt(end),
           a.scheduled_time.gte(start) // approximation — good enough for simple overlap
         )
       );
 
     if (opts.exclude_id) {
-      query = query.where((a) => a.id.ne(opts.exclude_id!));
+      query = query.where((a) => a.id.neq(opts.exclude_id!));
     }
 
     const agg = await query.aggregate((a) => ({ count: a.count() }));
