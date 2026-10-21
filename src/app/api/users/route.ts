@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
  *
  * Responses:
  *   201  { user: PublicUser }
- *   400  Zod validation error
+ *   400  Zod validation error or malformed JSON
  *   401  Not authenticated
  *   403  Not SuperAdmin
  *   409  Email already in use
@@ -122,7 +122,12 @@ export async function POST(request: NextRequest) {
   }
 
   // 3. Parse and validate request body with Zod
-  const body = await request.json();
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
   const parsed = CreateUserSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(

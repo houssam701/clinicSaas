@@ -16,12 +16,17 @@ import { LoginSchema } from "../../../../types/users";
  *
  * Responses:
  *   200  { message: "Logged in successfully" }
- *   400  Zod validation error
+ *   400  Zod validation error or malformed JSON
  *   401  Invalid email or password
  */
 export async function POST(request: NextRequest) {
   // 1. Parse + validate body with Zod
-  const body = await request.json();
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
   const parsed = LoginSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(

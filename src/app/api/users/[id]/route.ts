@@ -78,7 +78,7 @@ export async function GET(
  *
  * Responses:
  *   200  { message: "User updated successfully", user: PublicUser }
- *   400  Validation error
+ *   400  Malformed JSON or validation error
  *   401  Unauthorized
  *   403  Forbidden
  *   404  User not found
@@ -95,7 +95,13 @@ export async function PATCH(
 
   const { id } = await context.params;
 
-  const body = await request.json();
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
   const parsed = UpdateUserSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
@@ -208,7 +214,7 @@ export async function PATCH(
  *   - Staff: Forbidden (403).
  *
  * Responses:
- *   200  { message: "User deleted successfully", id }
+ *   204  No Content (user deleted successfully)
  *   400  Bad request (self-deletion or deleting last SuperAdmin)
  *   401  Unauthorized
  *   403  Forbidden
@@ -275,20 +281,5 @@ export async function DELETE(
   }
 
   await UserRepository.deleteUser(id);
-  return NextResponse.json(
-    { message: "User deleted successfully", id },
-    { status: 200 }
-  );
-}
-
-/**
- * POST /api/users/[id]
- *
- * Supports POST requests for deletion to accommodate RPC-style clients.
- */
-export async function POST(
-  request: NextRequest,
-  context: RouteContext
-) {
-  return DELETE(request, context);
+  return new NextResponse(null, { status: 204 });
 }

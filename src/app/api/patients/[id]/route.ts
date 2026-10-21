@@ -137,6 +137,6 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
   if (accessError) return accessError;
 
   await PatientRepository.deletePatient(id);
-  return NextResponse.json({ message: "Patient deleted successfully" }, { status: 200 });
+  return new NextResponse(null, { status: 204 });
 }
   

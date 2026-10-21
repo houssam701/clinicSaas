@@ -26,7 +26,7 @@ import { CreateStaffSchema, UserRole } from "../../../../types/users";
  *
  * Responses:
  *   201  { user: PublicUser }
- *   400  Zod validation error
+ *   400  Zod validation error or malformed JSON
  *   401  Not authenticated
  *   403  Not Admin / Admin has no associated clinic
  *   409  Email already in use
@@ -48,7 +48,12 @@ export async function POST(request: NextRequest) {
   }
 
   // 3. Parse and validate with CreateStaffSchema (role is z.literal("Staff"), clinic_id is omitted)
-  const body = await request.json();
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
   const parsed = CreateStaffSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(

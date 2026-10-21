@@ -144,7 +144,7 @@ export async function PATCH(
  * Authorized for SuperAdmin only.
  *
  * Responses:
- *   200  { message: "Clinic deleted successfully", id: string }
+ *   204  No Content (clinic deleted successfully)
  *   400  Invalid clinic ID format
  *   401  Unauthorized
  *   403  Forbidden
@@ -187,20 +187,5 @@ export async function DELETE(
   // 5. Delete clinic transactionally
   await ClinicRepository.deleteClinic(id);
 
-  return NextResponse.json(
-    { message: "Clinic deleted successfully", id },
-    { status: 200 }
-  );
-}
-
-/**
- * POST /api/clinics/[id]
- *
- * Supports POST requests for deletion to accommodate RPC-style clients.
- */
-export async function POST(
-  request: NextRequest,
-  context: RouteContext
-) {
-  return DELETE(request, context);
+  return new NextResponse(null, { status: 204 });
 }

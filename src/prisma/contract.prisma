@@ -95,6 +95,7 @@ model Patient {
   specialized_data Json? // Clinic-specific data
   created_at       temporal.createdAtString()
   updated_at       temporal.updatedAtString()
+  deleted_at       TimestamptzString?
 
   medicalHistory SharedMedicalHistory?
   documents      PatientDocument[]
@@ -162,6 +163,7 @@ model Invoice {
   due_date       DateString?
   created_at     temporal.createdAtString()
   updated_at     temporal.updatedAtString()
+  deleted_at     TimestamptzString?
 
   payments Payment[]
 
@@ -182,6 +184,7 @@ model Payment {
   notes          String?
   created_at     temporal.createdAtString()
   updated_at     temporal.updatedAtString()
+  deleted_at     TimestamptzString?
 
   @@index([clinic_id])
   @@index([invoice_id])
