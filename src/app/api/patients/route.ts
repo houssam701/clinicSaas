@@ -94,10 +94,10 @@ export async function GET(request: NextRequest) {
  *
  * Responses:
  *   201  { patient: PatientModel }
- *   400  Validation error / Invalid JSON
+ *   400  Invalid JSON
  *   401  Unauthorized
- *   403  Forbidden
- *   422  clinic_id mismatch for Admin
+ *   403  Forbidden (clinic mismatch for Admin or unauthorized role)
+ *   422  Validation error
  */
 export async function POST(request: NextRequest) {
   // 1. Auth & role guard (Admin or SuperAdmin)

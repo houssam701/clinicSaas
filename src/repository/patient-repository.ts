@@ -17,21 +17,22 @@ export class PatientRepository {
   // ── Queries ─────────────────────────────────────────────────────────────────
 
   /**
-   * Retrieves a single patient by ID.
+   * Retrieves a single patient by ID (excluding soft-deleted records).
    * Returns null if not found.
    */
   static async findById(id: string): Promise<PatientModel | null> {
     const patient = await db.orm.public.Patient
       .select(
         "id", "clinic_id", "first_name", "last_name", "email", "phone",
-        "date_of_birth", "gender", "specialized_data", "created_at", "updated_at"
+        "date_of_birth", "gender", "specialized_data", "created_at", "updated_at", "deleted_at"
       )
+      .where((p) => p.deleted_at.isNull())
       .first({ id });
     return patient ?? null;
   }
 
   /**
-   * Paginated list of patients with optional filters.
+   * Paginated list of active (non-deleted) patients with optional filters.
    *  - clinic_id: filter to a specific clinic
    *  - search:    case-insensitive match on first_name, last_name, email, or phone
    */
@@ -45,10 +46,12 @@ export class PatientRepository {
     const limit = filter?.limit ?? 20;
     const skip  = (page - 1) * limit;
 
-    let query = db.orm.public.Patient.select(
-      "id", "clinic_id", "first_name", "last_name", "email", "phone",
-      "date_of_birth", "gender", "specialized_data", "created_at", "updated_at"
-    );
+    let query = db.orm.public.Patient
+      .select(
+        "id", "clinic_id", "first_name", "last_name", "email", "phone",
+        "date_of_birth", "gender", "specialized_data", "created_at", "updated_at", "deleted_at"
+      )
+      .where((p) => p.deleted_at.isNull());
 
     if (filter?.clinic_id) {
       query = query.where({ clinic_id: filter.clinic_id });
@@ -81,31 +84,38 @@ export class PatientRepository {
     return db.orm.public.Patient
       .select(
         "id", "clinic_id", "first_name", "last_name", "email", "phone",
-        "date_of_birth", "gender", "specialized_data", "created_at", "updated_at"
+        "date_of_birth", "gender", "specialized_data", "created_at", "updated_at", "deleted_at"
       )
       .create(data);
   }
 
-  /** Updates a patient by ID; returns the updated record or null if not found. */
+  /** Updates an active patient by ID; returns the updated record or null if not found. */
   static async updatePatient(
     id:   string,
     data: UpdatePatientData
   ): Promise<PatientModel | null> {
     const updated = await db.orm.public.Patient
       .where({ id })
+      .where((p) => p.deleted_at.isNull())
       .select(
         "id", "clinic_id", "first_name", "last_name", "email", "phone",
-        "date_of_birth", "gender", "specialized_data", "created_at", "updated_at"
+        "date_of_birth", "gender", "specialized_data", "created_at", "updated_at", "deleted_at"
       )
       .update(data);
     return updated ?? null;
   }
 
   /**
-   * Deletes a patient and all dependent records inside a transaction:
-   *  medical history → documents → appointments (unlinking invoice) → invoices → patient
+   * Deletes a patient and handles dependent records inside a transaction:
+   *  - Shared medical history and uploaded documents are purged.
+   *  - Associated appointments are unlinked from invoices and deleted.
+   *  - Financial records (invoices and payments) are soft-deleted with a timestamp
+   *    to comply with financial retention and audit requirements.
+   *  - The patient record is soft-deleted with a timestamp, preserving referential
+   *    integrity for audit history while removing it from active queries.
    */
   static async deletePatient(id: string): Promise<boolean> {
+    const now = new Date().toISOString();
     return db.transaction(async (tx) => {
       // 1. Remove shared medical history (1:1)
       await tx.orm.public.SharedMedicalHistory.where({ patient_id: id }).delete();
@@ -113,7 +123,7 @@ export class PatientRepository {
       // 2. Remove uploaded documents
       await tx.orm.public.PatientDocument.where({ patient_id: id }).delete();
 
-      // 3. Unlink and delete appointments → then invoices
+      // 3. Unlink and delete appointments
       const appointments = await tx.orm.public.Appointment
         .where({ patient_id: id })
         .select("id")
@@ -128,20 +138,26 @@ export class PatientRepository {
 
       await tx.orm.public.Appointment.where({ patient_id: id }).delete();
 
-      // 4. Delete invoices and their payments
+      // 4. Soft-delete invoices and their payments for accounting/audit retention
       const invoices = await tx.orm.public.Invoice
         .where({ patient_id: id })
         .select("id")
         .all();
 
       for (const inv of invoices) {
-        await tx.orm.public.Payment.where({ invoice_id: inv.id }).delete();
+        await tx.orm.public.Payment
+          .where({ invoice_id: inv.id })
+          .update({ deleted_at: now });
       }
 
-      await tx.orm.public.Invoice.where({ patient_id: id }).delete();
+      await tx.orm.public.Invoice
+        .where({ patient_id: id })
+        .update({ deleted_at: now });
 
-      // 5. Delete the patient itself
-      await tx.orm.public.Patient.where({ id }).delete();
+      // 5. Soft-delete the patient itself to retain referential integrity with financial records
+      await tx.orm.public.Patient
+        .where({ id })
+        .update({ deleted_at: now });
 
       return true;
     });
@@ -149,13 +165,14 @@ export class PatientRepository {
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
-  /** Returns true if the patient belongs to the given clinic. */
+  /** Returns true if the active patient belongs to the given clinic. */
   static async belongsToClinic(
     patientId: string,
     clinicId:  string
   ): Promise<boolean> {
     const result = await db.orm.public.Patient
       .where({ id: patientId, clinic_id: clinicId })
+      .where((p) => p.deleted_at.isNull())
       .aggregate((a) => ({ count: a.count() }));
     return result.count > 0;
   }
