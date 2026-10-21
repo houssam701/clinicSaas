@@ -4,13 +4,11 @@ import { UserRepository } from "../../../../../../repository/user-repository";
 import { PermissionRepository } from "../../../../../../repository/permission-repository";
 import { UserRole } from "../../../../../../types/users";
 import { UpdatePermissionSchema } from "../../../../../../types/permissions";
+import { UUID_REGEX } from "../../../../../../services/api-guard";
 
 interface RouteContext {
   params: Promise<{ id: string; permissionId: string }>;
 }
-
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * PATCH /api/users/[id]/permissions/[permissionId]
