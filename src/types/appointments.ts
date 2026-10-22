@@ -18,7 +18,7 @@ export const CreateAppointmentSchema = z.object({
   clinic_id:        z.string().uuid("Invalid clinic_id format"),
   patient_id:       z.string().uuid("Invalid patient_id format"),
   user_id:          z.string().uuid("Invalid user_id format").optional(),
-  scheduled_time:   z.string().min(1, "scheduled_time is required"), // ISO-8601 / TimestamptzString
+  scheduled_time:   z.string().datetime({ message: "scheduled_time must be a valid ISO-8601 datetime" }),
   duration_minutes: z.number().int().min(1).default(30),
   reason_for_visit: z.string().optional(),
 });
@@ -27,7 +27,7 @@ export const UpdateAppointmentSchema = z
   .object({
     patient_id:       z.string().uuid().optional(),
     user_id:          z.string().uuid().optional().nullable(),
-    scheduled_time:   z.string().min(1).optional(),
+    scheduled_time:   z.string().datetime({ message: "scheduled_time must be a valid ISO-8601 datetime" }).optional(),
     duration_minutes: z.number().int().min(1).optional(),
     reason_for_visit: z.string().optional(),
   })

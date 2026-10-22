@@ -1,5 +1,4 @@
 import { db } from "../prisma/db";
-import { and } from "@prisma/orm-postgres/orm-client";
 import type {
   AppointmentModel,
   CreateAppointmentData,
@@ -126,10 +125,15 @@ export class AppointmentRepository {
   /**
    * Detects a scheduling conflict for a given staff member (user_id).
    * A conflict exists when the proposed time window overlaps any other
-   * Scheduled/existing appointment for the same user.
+   * Scheduled appointment for the same user.
    *
-   * The overlap check: existing_start < proposed_end AND existing_end > proposed_start
-   *   where end = start + duration_minutes
+   * Full overlap condition:
+   *   existing_start < proposed_end  AND  existing_end > proposed_start
+   * where existing_end = existing_start + existing.duration_minutes.
+   *
+   * We push the first half of the predicate (existing_start < proposed_end)
+   * to the database, then evaluate the second half in memory so we can use
+   * each existing row's own duration_minutes to compute its end time.
    */
   static async hasConflict(opts: {
     user_id:          string;
@@ -137,24 +141,28 @@ export class AppointmentRepository {
     duration_minutes: number;
     exclude_id?:      string;   // ignore when updating an existing record
   }): Promise<boolean> {
-    const start = opts.scheduled_time;
-    const end = new Date(new Date(start).getTime() + opts.duration_minutes * 60 * 1000).toISOString();
+    const proposedStart = new Date(opts.scheduled_time).getTime();
+    const proposedEnd   = proposedStart + opts.duration_minutes * 60 * 1000;
+    const proposedEndIso = new Date(proposedEnd).toISOString();
 
+    // Fetch all appointments for this user that start before the proposed slot ends.
+    // (Rows that start at or after proposedEnd can never overlap.)
     let query = db.orm.public.Appointment
+      .select("id", "scheduled_time", "duration_minutes")
       .where({ user_id: opts.user_id })
-      .where((a) =>
-        // existing_start < proposed_end AND existing_end > proposed_start
-        and(
-          a.scheduled_time.lt(end),
-          a.scheduled_time.gte(start) // approximation — good enough for simple overlap
-        )
-      );
+      .where((a) => a.scheduled_time.lt(proposedEndIso));
 
     if (opts.exclude_id) {
       query = query.where((a) => a.id.neq(opts.exclude_id!));
     }
 
-    const agg = await query.aggregate((a) => ({ count: a.count() }));
-    return agg.count > 0;
+    const candidates = await query.all();
+
+    // Second half of overlap: existing appointment must end after proposedStart.
+    return candidates.some((appt) => {
+      const existingStart = new Date(appt.scheduled_time as string).getTime();
+      const existingEnd   = existingStart + (appt.duration_minutes as number) * 60 * 1000;
+      return existingEnd > proposedStart;
+    });
   }
 }
