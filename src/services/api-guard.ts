@@ -49,22 +49,56 @@ export async function authenticate(
 }
 
 /**
- * Enforces clinic boundary for Admin callers.
- * SuperAdmin has access to all clinics; Admin is strictly scoped to their own clinic.
+ * Enforces clinic boundary for Admin AND Staff callers.
+ * SuperAdmin has access to all clinics; Admin/Staff are strictly scoped to their own clinic.
  */
 export function canAccessClinic(
   callerRole: UserRole,
   callerClinicId: string | null | undefined,
-  patientClinicId: string,
+  resourceClinicId: string,
   customErrorMessage?: string
 ): NextResponse | null {
-  if (callerRole === UserRole.Admin) {
-    if (!callerClinicId || callerClinicId !== patientClinicId) {
+  if (callerRole === UserRole.Admin || callerRole === UserRole.Staff) {
+    if (!callerClinicId || callerClinicId !== resourceClinicId) {
       return NextResponse.json(
-        { error: customErrorMessage ?? "Forbidden: Patient belongs to a different clinic" },
+        { error: customErrorMessage ?? "Forbidden: Resource belongs to a different clinic" },
         { status: 403 }
       );
     }
+  }
+  return null;
+}
+
+/**
+ * Checks whether a Staff user has a specific permission flag enabled
+ * for a given module.
+ *
+ * Returns a 403 NextResponse if the permission is missing or set to false,
+ * or null if access is granted.
+ *
+ * Should only be called when callerRole === Staff.
+ * Admin and SuperAdmin bypass module-level permission checks entirely.
+ *
+ * @param userId     The Staff user's ID (from session)
+ * @param moduleName e.g. "Appointments"
+ * @param action     One of "can_view" | "can_create" | "can_edit" | "can_delete"
+ */
+export async function checkModulePermission(
+  userId: string,
+  moduleName: string,
+  action: "can_view" | "can_create" | "can_edit" | "can_delete"
+): Promise<NextResponse | null> {
+  // Dynamic import to avoid circular dependency (repository → db → service)
+  const { PermissionRepository } = await import("../repository/permission-repository");
+  const perm = await PermissionRepository.findByUserAndModule(userId, moduleName);
+
+  if (!perm || !perm[action]) {
+    return NextResponse.json(
+      {
+        error: `Forbidden: You do not have '${action}' permission on '${moduleName}'`,
+      },
+      { status: 403 }
+    );
   }
   return null;
 }
