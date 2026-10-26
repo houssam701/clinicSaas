@@ -276,6 +276,25 @@ export class PaymentRepository {
     return payments.reduce((sum, p) => sum + Number(p.amount), 0);
   }
 
+  /**
+   * Sums non-deleted payments for an invoice, **excluding** one specific payment ID.
+   * Used by PATCH so the current payment's old amount is not double-counted
+   * when re-validating the updated amount against the remaining balance.
+   */
+  static async sumByInvoiceExcluding(
+    invoiceId: string,
+    excludePaymentId: string
+  ): Promise<number> {
+    const payments = await db.orm.public.Payment
+      .select("id", "amount")
+      .where({ invoice_id: invoiceId })
+      .where((p) => p.deleted_at.isNull())
+      .all();
+    return payments
+      .filter((p) => p.id !== excludePaymentId)
+      .reduce((sum, p) => sum + Number(p.amount), 0);
+  }
+
   // ── Mutations ────────────────────────────────────────────────────────────────
 
   /** Creates and returns a new payment. */
@@ -290,6 +309,49 @@ export class PaymentRepository {
         payment_date:   data.payment_date ?? new Date().toISOString(),
         notes:          data.notes ?? null,
       });
+  }
+
+  /**
+   * Atomically checks for overpayment and inserts the payment in one transaction.
+   * Returns the new PaymentModel on success, or throws an Error with
+   * `{ code: "OVERPAYMENT", remaining }` on its `cause` property if the amount
+   * would exceed the invoice's remaining balance.
+   *
+   * Using a transaction here closes the TOCTOU race where two concurrent
+   * requests both read the same paid total, both pass the check, and both insert.
+   */
+  static async createPaymentAtomic(
+    data: CreatePaymentData,
+    invoiceTotal: number
+  ): Promise<PaymentModel> {
+    return db.transaction(async (tx) => {
+      // Re-read the paid total inside the transaction (serialisable snapshot)
+      const existing = await tx.orm.public.Payment
+        .select("amount")
+        .where({ invoice_id: data.invoice_id })
+        .where((p) => p.deleted_at.isNull())
+        .all();
+
+      const alreadyPaid = existing.reduce((sum, p) => sum + Number(p.amount), 0);
+      const remaining   = invoiceTotal - alreadyPaid;
+
+      if (data.amount > remaining) {
+        const err = new Error("OVERPAYMENT");
+        (err as Error & { cause: unknown }).cause = { code: "OVERPAYMENT", remaining };
+        throw err;
+      }
+
+      return tx.orm.public.Payment
+        .select(...PAYMENT_FIELDS)
+        .create({
+          clinic_id:      data.clinic_id,
+          invoice_id:     data.invoice_id,
+          amount:         String(data.amount) as Numeric<12, 2>,
+          payment_method: data.payment_method,
+          payment_date:   data.payment_date ?? new Date().toISOString(),
+          notes:          data.notes ?? null,
+        });
+    });
   }
 
   /** Updates a payment by ID; returns the updated record or null. */

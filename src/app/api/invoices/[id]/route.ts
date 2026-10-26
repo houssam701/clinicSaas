@@ -140,8 +140,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
  * DELETE /api/invoices/[id]
  *
  * Soft-deletes an invoice (sets deleted_at).
- * Only allowed when no payments are recorded against it,
- * or by SuperAdmin regardless.
+ * Only allowed when no payments are recorded against it.
  *
  * Auth:          Required
  * Authorization: SuperAdmin, Admin, or Staff
@@ -154,6 +153,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
  *   401  Unauthorized
  *   403  Forbidden
  *   404  Not found
+ *   409  Invoice has recorded payments and cannot be deleted
  */
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   const { session, error } = await authenticate([
@@ -187,6 +187,15 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     "Forbidden: Invoice belongs to a different clinic"
   );
   if (accessError) return accessError;
+
+  // Guard: refuse deletion when payments have been recorded against this invoice
+  const payments = await PaymentRepository.findByInvoice(id);
+  if (payments.length > 0) {
+    return NextResponse.json(
+      { error: "Cannot delete an invoice that has recorded payments" },
+      { status: 409 }
+    );
+  }
 
   await InvoiceRepository.deleteInvoice(id);
   return new NextResponse(null, { status: 204 });

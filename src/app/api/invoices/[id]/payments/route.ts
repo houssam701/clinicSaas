@@ -154,22 +154,25 @@ export async function POST(request: NextRequest, context: RouteContext) {
     );
   }
 
-  // Balance check: reject overpayment
-  const alreadyPaid   = await PaymentRepository.sumByInvoice(invoiceId);
-  const remaining     = Number(invoice.total_amount) - alreadyPaid;
-
-  if (parsed.data.amount > remaining) {
-    return NextResponse.json(
-      {
-        status_code: 409,
-        message: `Payment amount (${parsed.data.amount}) exceeds remaining balance (${remaining.toFixed(2)})`,
-      },
-      { status: 409 }
+  // Persist payment atomically — the check and insert run in one transaction
+  // to prevent concurrent requests from both slipping through the balance check.
+  let payment;
+  try {
+    payment = await PaymentRepository.createPaymentAtomic(
+      parsed.data,
+      Number(invoice.total_amount)
     );
+  } catch (err: unknown) {
+    const cause = (err as { cause?: { code?: string; remaining?: number } }).cause;
+    if (cause?.code === "OVERPAYMENT") {
+      const remaining = cause.remaining ?? 0;
+      return NextResponse.json(
+        { error: `Payment amount (${parsed.data.amount}) exceeds remaining balance (${remaining.toFixed(2)})` },
+        { status: 409 }
+      );
+    }
+    throw err;
   }
-
-  // Persist payment
-  const payment = await PaymentRepository.createPayment(parsed.data);
 
   // Recalculate invoice status
   await InvoiceRepository.recalculateStatus(invoiceId);

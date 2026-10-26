@@ -83,6 +83,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
  *   401  Unauthorized
  *   403  Forbidden
  *   404  Not found
+ *   409  Updated amount would exceed the invoice remaining balance
  *   422  Validation error
  */
 export async function PATCH(request: NextRequest, context: RouteContext) {
@@ -131,6 +132,25 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       { error: "Validation failed", details: parsed.error.flatten() },
       { status: 422 }
     );
+  }
+
+  // Overpayment check: if the caller is changing the amount, verify it still fits
+  if (parsed.data.amount !== undefined) {
+    const invoice = await InvoiceRepository.findById(payment.invoice_id);
+    if (invoice) {
+      // Exclude the current payment so its old amount is not counted twice
+      const othersPaid = await PaymentRepository.sumByInvoiceExcluding(
+        payment.invoice_id,
+        id
+      );
+      const remaining = Number(invoice.total_amount) - othersPaid;
+      if (parsed.data.amount > remaining) {
+        return NextResponse.json(
+          { error: `Updated amount (${parsed.data.amount}) exceeds remaining balance (${remaining.toFixed(2)})` },
+          { status: 409 }
+        );
+      }
+    }
   }
 
   const updated = await PaymentRepository.updatePayment(id, parsed.data);
