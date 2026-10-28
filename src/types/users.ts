@@ -19,8 +19,12 @@ export type PublicUser = Omit<UsersModel, "password_hash">;
 
 // ─── Zod Schemas (used inside route.ts files only) ────────────────────────────
 export const LoginSchema = z.object({
-  email:    z.string().email(),
-  password: z.string().min(8),
+  email:    z.string()
+              .min(1, "Email is required.")
+              .email("Please enter a valid email address."),
+  password: z.string()
+              .min(1, "Password is required.")
+              .min(8, "Password must be at least 8 characters."),
 });
 
 export const CreateUserSchema = z.object({
