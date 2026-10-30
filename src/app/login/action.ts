@@ -84,7 +84,7 @@ export async function loginAction(
       | { fieldErrors?: { email?: string[]; password?: string[] } }
       | undefined;
     return {
-      error: data.error ?? "Validation failed.",
+      error: "Please check the highlighted fields.",
       fieldErrors: details?.fieldErrors,
     };
   }

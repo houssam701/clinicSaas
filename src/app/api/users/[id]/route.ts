@@ -72,7 +72,8 @@ export async function GET(
  * PATCH /api/users/[id]
  *
  * Updates an existing user's information:
- *   - SuperAdmin: Can update any field on any user.
+ *   - SuperAdmin: Can update any field on any user, but cannot create a second SuperAdmin
+ *                 or remove the role from the only one.
  *   - Admin: Can update Staff in their clinic or their own info; cannot change clinic_id or escalate roles.
  *   - Staff: Can only update their own first_name, last_name, or password.
  *
@@ -82,7 +83,7 @@ export async function GET(
  *   401  Unauthorized
  *   403  Forbidden
  *   404  User not found
- *   409  Email already in use
+ *   409  Email already in use / a SuperAdmin already exists
  */
 export async function PATCH(
   request: NextRequest,
@@ -120,7 +121,27 @@ export async function PATCH(
 
   // Authorization and permission boundary checks
   if (callerRole === UserRole.SuperAdmin) {
-    // SuperAdmin can update any user and fields
+    // SuperAdmin can update any user and fields, but the platform keeps exactly one SuperAdmin
+    const targetIsSuperAdmin = targetUser.role === UserRole.SuperAdmin;
+
+    if (!targetIsSuperAdmin && parsed.data.role === UserRole.SuperAdmin) {
+      return NextResponse.json(
+        { error: "Only one SuperAdmin is allowed on the platform" },
+        { status: 409 }
+      );
+    }
+    if (targetIsSuperAdmin && parsed.data.role !== undefined && parsed.data.role !== UserRole.SuperAdmin) {
+      return NextResponse.json(
+        { error: "Bad Request: The SuperAdmin role cannot be removed from the only SuperAdmin" },
+        { status: 400 }
+      );
+    }
+    if (targetIsSuperAdmin && parsed.data.clinic_id) {
+      return NextResponse.json(
+        { error: "Bad Request: A SuperAdmin cannot belong to a clinic" },
+        { status: 400 }
+      );
+    }
   } else if (callerRole === UserRole.Admin) {
     const isSelf = targetUser.id === session.user.id;
     const isStaffInClinic =
