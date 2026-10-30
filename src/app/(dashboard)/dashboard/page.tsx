@@ -44,7 +44,7 @@ export default function DashboardPage() {
         {stats.map((stat, i) => (
           <div
             key={i}
-            className="p-5 rounded-2xl bg-slate-200/50 dark:bg-slate-900/70 border border-slate-300/50 dark:border-slate-800/80 shadow-xs hover:shadow-md transition-all duration-200"
+            className="p-5 rounded-md bg-slate-200/50 dark:bg-slate-900/70 border border-slate-300/50 dark:border-slate-800/80 shadow-xs hover:shadow-md transition-all duration-200"
           >
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               {stat.label}
@@ -54,7 +54,7 @@ export default function DashboardPage() {
                 {stat.value}
               </span>
               <span
-                className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                className={`text-xs font-bold px-2 py-0.5 rounded-md ${
                   stat.trend === "alert"
                     ? "bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400"
                     : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
@@ -68,7 +68,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Schedule Table Section */}
-      <div className="rounded-3xl bg-slate-200/50 dark:bg-slate-900/70 border border-slate-300/50 dark:border-slate-800/80 p-6 shadow-xs">
+      <div className="rounded-md bg-slate-200/50 dark:bg-slate-900/70 border border-slate-300/50 dark:border-slate-800/80 p-6 shadow-xs">
         <div className="flex items-center justify-between mb-5">
           <div>
             <h2 className="text-lg font-bold text-slate-800 dark:text-white">
@@ -111,7 +111,7 @@ export default function DashboardPage() {
                   </td>
                   <td className="py-3.5 px-3 text-right">
                     <span
-                      className={`inline-block text-xs font-bold px-2.5 py-1 rounded-full ${
+                      className={`inline-block text-xs font-bold px-2.5 py-1 rounded-md ${
                         patient.status === "In Consultation"
                           ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-blue-300"
                           : patient.status === "Checked In"

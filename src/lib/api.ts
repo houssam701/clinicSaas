@@ -32,7 +32,15 @@ export function parseSetCookie(header: string) {
   const [nv, ...directives] = header.split(";").map((s) => s.trim());
   const eq = nv.indexOf("=");
   const name = eq !== -1 ? nv.slice(0, eq) : nv;
-  const value = eq !== -1 ? nv.slice(eq + 1) : "";
+  // Set-Cookie values arrive percent-encoded and cookieStore.set encodes again,
+  // so decode here to avoid double-encoding (e.g. authjs.callback-url).
+  const rawValue = eq !== -1 ? nv.slice(eq + 1) : "";
+  let value = rawValue;
+  try {
+    value = decodeURIComponent(rawValue);
+  } catch {
+    // Not valid percent-encoding: keep the raw value.
+  }
 
   const options: {
     path?: string;

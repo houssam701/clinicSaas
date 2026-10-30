@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { redirectToRoleHome } from "@/services/page-guard";
 
-export default function Home() {
-  redirect("/dashboard");
+export default async function Home() {
+  await redirectToRoleHome();
 }

@@ -9,9 +9,29 @@
 }
 
 @layer utilities {
+  /* Lub-dub beat */
   @keyframes pulse-heart {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
+    0%, 40%, 100% { transform: scale(1); }
+    10% { transform: scale(1.12); }
+    22% { transform: scale(1.03); }
+    30% { transform: scale(1.1); }
+  }
+
+  @keyframes heart-line {
+    0% { stroke-dashoffset: 100; }
+    60%, 100% { stroke-dashoffset: 0; }
+  }
+
+  .animate-heart-line {
+    stroke-dasharray: 100;
+    animation: heart-line 1.6s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-pulse-heart,
+    .animate-heart-line {
+      animation: none;
+    }
   }
 
   @keyframes draw-ekg {
@@ -20,7 +40,7 @@
   }
 
   .animate-pulse-heart {
-    animation: pulse-heart 2s infinite ease-in-out;
+    animation: pulse-heart 1.6s infinite ease-in-out;
   }
 
   .animate-draw-ekg {

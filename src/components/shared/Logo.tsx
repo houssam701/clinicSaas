@@ -35,7 +35,29 @@ export interface LogoProps {
   ariaLabel?: string;
   /** Optional click handler */
   onClick?: () => void;
+  /** "inverse" renders the logo for use on a primary-coloured background */
+  tone?: LogoTone;
 }
+
+export type LogoTone = "default" | "inverse";
+
+const toneConfig: Record<
+  LogoTone,
+  { heartFill: string; heartLine: string; bien: string; sync: string }
+> = {
+  default: {
+    heartFill: "fill-primary",
+    heartLine: "stroke-white",
+    bien: "text-slate-800 dark:text-white",
+    sync: "text-primary",
+  },
+  inverse: {
+    heartFill: "fill-white",
+    heartLine: "stroke-primary",
+    bien: "text-white",
+    sync: "text-blue-200",
+  },
+};
 
 const sizeConfig: Record<
   LogoSize,
@@ -80,17 +102,20 @@ const sizeConfig: Record<
 
 /**
  * BienSync Medical Heart Icon
- * Overlapping dual-tone blue capsule lobes forming the distinctive heart mark.
+ * A solid heart with a heartbeat line drawn across it.
  */
 export function HeartIcon({
   size = 36,
   animated = true,
   className,
+  tone = "default",
 }: {
   size?: number;
   animated?: boolean;
   className?: string;
+  tone?: LogoTone;
 }) {
+  const colors = toneConfig[tone];
   return (
     <div
       className={cn(
@@ -101,7 +126,7 @@ export function HeartIcon({
       style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px`, minHeight: `${size}px` }}
     >
       <svg
-        viewBox="0 0 64 64"
+        viewBox="0 0 24 24"
         width={size}
         height={size}
         fill="none"
@@ -109,27 +134,20 @@ export function HeartIcon({
         className="w-full h-full block"
         aria-hidden="true"
       >
-        {/* Left Capsule Lobe (Vibrant Light Blue) */}
-        <rect
-          x="12"
-          y="16"
-          width="24"
-          height="36"
-          rx="12"
-          fill="#60a5fa"
-          transform="rotate(-35 24 34)"
+        {/* Solid heart */}
+        <path
+          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+          className={colors.heartFill}
         />
 
-        {/* Right Capsule Lobe (Primary Deep Blue with opacity blend) */}
-        <rect
-          x="28"
-          y="16"
-          width="24"
-          height="36"
-          rx="12"
-          fill="#2662f0"
-          fillOpacity="0.88"
-          transform="rotate(35 40 34)"
+        {/* Heartbeat line that keeps drawing across the heart */}
+        <path
+          d="M4 12.2h4.2l1.8-3.6 2.6 7.2 1.9-3.6H20"
+          pathLength={100}
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={cn(colors.heartLine, animated && "animate-heart-line")}
         />
       </svg>
     </div>
@@ -159,8 +177,10 @@ export function Logo({
   heartClassName,
   ariaLabel,
   onClick,
+  tone = "default",
 }: LogoProps) {
   const currentSize = sizeConfig[size] ?? sizeConfig.lg;
+  const colors = toneConfig[tone];
 
   const content = (
     <div
@@ -177,6 +197,7 @@ export function Logo({
           size={currentSize.pixelSize}
           animated={animated}
           className={heartClassName}
+          tone={tone}
         />
       )}
 
@@ -185,7 +206,8 @@ export function Logo({
         <div className={cn("flex items-baseline leading-none", textClassName)}>
           <span
             className={cn(
-              "font-extrabold tracking-tight text-slate-800 dark:text-white transition-colors",
+              "font-extrabold tracking-tight transition-colors",
+              colors.bien,
               currentSize.text,
               bienClassName
             )}
@@ -194,7 +216,8 @@ export function Logo({
           </span>
           <span
             className={cn(
-              "font-extrabold tracking-tight text-primary transition-colors",
+              "font-extrabold tracking-tight transition-colors",
+              colors.sync,
               currentSize.text,
               syncClassName
             )}

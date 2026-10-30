@@ -12,6 +12,10 @@ export type LoginState = {
   };
 };
 
+function isInternalPath(path: unknown): path is string {
+  return typeof path === "string" && path.startsWith("/") && !path.startsWith("//");
+}
+
 /**
  * Server Action: loginAction
  *
@@ -60,7 +64,11 @@ export async function loginAction(
       }
     }
 
-    redirect("/dashboard");
+    // "/" resolves to the signed-in user's role home if no target was returned
+    const { redirectTo } = await response
+      .json()
+      .catch(() => ({ redirectTo: undefined }));
+    redirect(isInternalPath(redirectTo) ? redirectTo : "/");
   }
 
   // 2. Parse error response

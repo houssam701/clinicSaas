@@ -45,7 +45,7 @@ export interface BrandConfig {
 
 export interface NavigationConfig {
   brand: BrandConfig;
-  emergency: EmergencyActionConfig;
+  emergency?: EmergencyActionConfig;
   mainNav: NavItem[];
   bottomNav: NavItem[];
 }

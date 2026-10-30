@@ -25,7 +25,7 @@ export function SidebarItem({ item, onNavigate }: SidebarItemProps) {
       onClick={onNavigate}
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        "flex items-center gap-3.5 px-3 py-2.5 rounded-xl font-medium text-[15px] transition-all duration-150 select-none group focus:outline-none focus:ring-2 focus:ring-primary/40",
+        "flex items-center gap-3.5 px-3 py-2.5 rounded-md font-medium text-[15px] transition-all duration-150 select-none group focus:outline-none focus:ring-2 focus:ring-primary/40",
         isActive
           ? "bg-slate-200/70 dark:bg-slate-800 text-slate-900 dark:text-white font-bold shadow-xs"
           : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/40 dark:hover:bg-slate-800/50"
@@ -47,7 +47,7 @@ export function SidebarItem({ item, onNavigate }: SidebarItemProps) {
       {item.badge && (
         <span
           className={cn(
-            "ml-auto text-xs px-2 py-0.5 rounded-full font-semibold",
+            "ml-auto text-xs px-2 py-0.5 rounded-md font-semibold",
             item.badge.variant === "danger"
               ? "bg-rose-100 text-rose-600 dark:bg-rose-900/40 dark:text-rose-400"
               : item.badge.variant === "primary"

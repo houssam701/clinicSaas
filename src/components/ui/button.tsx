@@ -38,10 +38,10 @@ const variantStyles: Record<ButtonVariant, string> = {
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: "px-3 py-1.5 text-xs font-semibold rounded-lg gap-1.5",
-  md: "px-4 py-2.5 text-sm font-semibold rounded-xl gap-2",
-  lg: "py-3.5 px-5 text-sm sm:text-base font-bold rounded-xl gap-2.5",
-  icon: "p-2.5 rounded-xl justify-center items-center",
+  sm: "px-3 py-1.5 text-xs font-semibold rounded-md gap-1.5",
+  md: "px-4 py-2.5 text-sm font-semibold rounded-md gap-2",
+  lg: "py-3.5 px-5 text-sm sm:text-base font-bold rounded-md gap-2.5",
+  icon: "p-2.5 rounded-md justify-center items-center",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(

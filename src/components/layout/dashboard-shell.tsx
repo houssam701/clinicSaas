@@ -3,16 +3,23 @@
 import React from "react";
 import { Sidebar } from "./sidebar/sidebar";
 import { MobileSidebar } from "./sidebar/mobile-sidebar";
+import { navigationConfig } from "@/config/navigation";
+import type { NavigationConfig } from "@/types/navigation";
 
-export function DashboardShell({ children }: { children: React.ReactNode }) {
+interface DashboardShellProps {
+  children: React.ReactNode;
+  config?: NavigationConfig;
+}
+
+export function DashboardShell({ children, config = navigationConfig }: DashboardShellProps) {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-bgColor dark:bg-slate-950 transition-colors duration-200">
       {/* Mobile Topbar & Sliding Drawer */}
-      <MobileSidebar />
+      <MobileSidebar config={config} />
 
       {/* Desktop Persistent Sidebar */}
       <div className="hidden lg:block shrink-0">
-        <Sidebar />
+        <Sidebar config={config} />
       </div>
 
       {/* Main Content Area: all backgrounds strictly use bgColor / dark:bg-slate-950 (no white) */}

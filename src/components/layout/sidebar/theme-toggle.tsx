@@ -23,7 +23,7 @@ export function ThemeToggle({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "flex items-center justify-between p-1 bg-slate-200/60 dark:bg-slate-800/80 rounded-xl border border-slate-300/40 dark:border-slate-700/60",
+        "flex items-center justify-between p-1 bg-slate-200/60 dark:bg-slate-800/80 rounded-md border border-slate-300/40 dark:border-slate-700/60",
         className
       )}
       role="group"
@@ -38,7 +38,7 @@ export function ThemeToggle({ className }: { className?: string }) {
             onClick={() => setTheme(opt.value)}
             aria-pressed={isSelected}
             className={cn(
-              "flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40",
+              "flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 text-xs font-semibold rounded-md transition-all duration-150 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40",
               isSelected
                 ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"

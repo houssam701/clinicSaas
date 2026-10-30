@@ -33,6 +33,9 @@ const initialState: LoginState = {};
 
 export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
+  // Controlled so React 19 does not clear the fields after a failed attempt
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [state, formAction] = useActionState(loginAction, initialState);
 
   return (
@@ -41,7 +44,7 @@ export function LoginForm() {
       {state.error && (
         <div
           role="alert"
-          className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600"
+          className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600"
         >
           <svg
             className="h-4 w-4 shrink-0"
@@ -91,11 +94,13 @@ export function LoginForm() {
             name="email"
             type="email"
             autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
             aria-describedby={
               state.fieldErrors?.email ? "email-error" : undefined
             }
-            className={`block w-full pl-11 pr-4 py-3 bg-slate-50 border rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all font-medium text-sm sm:text-base ${
+            className={`block w-full pl-11 pr-4 py-3 bg-slate-50 border rounded-md text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all font-medium text-sm sm:text-base ${
               state.fieldErrors?.email
                 ? "border-red-400 focus:ring-red-200"
                 : "border-slate-200"
@@ -148,11 +153,13 @@ export function LoginForm() {
             name="password"
             type={showPassword ? "text" : "password"}
             autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             required
             aria-describedby={
               state.fieldErrors?.password ? "password-error" : undefined
             }
-            className={`block w-full pl-11 pr-11 py-3 bg-slate-50 border rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all font-medium text-sm sm:text-base ${
+            className={`block w-full pl-11 pr-11 py-3 bg-slate-50 border rounded-md text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all font-medium text-sm sm:text-base ${
               state.fieldErrors?.password
                 ? "border-red-400 focus:ring-red-200"
                 : "border-slate-200"
