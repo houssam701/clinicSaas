@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import * as argon2 from "argon2";
 import { auth } from "../../../lib/auth";
 import { UserRepository } from "../../../repository/user-repository";
+import { ClinicRepository } from "../../../repository/clinic-repository";
 import { CreateUserSchema, ListUsersQuerySchema, UserRole } from "../../../types/users";
 
 /**
@@ -16,11 +17,13 @@ import { CreateUserSchema, ListUsersQuerySchema, UserRole } from "../../../types
  * Authorization: SuperAdmin or Admin
  *
  * Query Params:
+ *   page?:      number (min 1, default 1)
+ *   limit?:     number (min 1, max 200, default 20)
  *   clinic_id?: string (UUID — SuperAdmin only)
  *   role?:      "SuperAdmin" | "Admin" | "Staff" (SuperAdmin only)
  *
  * Responses:
- *   200  { users: PublicUser[] }
+ *   200  { users: PublicUser[], total: number, page: number, limit: number }
  *   400  Invalid query parameters
  *   401  Not authenticated
  *   403  Forbidden
@@ -33,59 +36,65 @@ export async function GET(request: NextRequest) {
   }
 
   const callerRole = session.user.role;
+  if (callerRole !== UserRole.SuperAdmin && callerRole !== UserRole.Admin) {
+    // Staff cannot list users
+    return NextResponse.json(
+      { error: "Forbidden: Admin or SuperAdmin role required" },
+      { status: 403 }
+    );
+  }
 
-  // 2. SuperAdmin flow: can view all users, optionally filtered
+  // 2. Parse pagination and filters
+  const searchParams = request.nextUrl.searchParams;
+  const parsedQuery = ListUsersQuerySchema.safeParse({
+    page:      searchParams.get("page") ?? undefined,
+    limit:     searchParams.get("limit") ?? undefined,
+    clinic_id: searchParams.get("clinic_id") ?? undefined,
+    role:      searchParams.get("role") ?? undefined,
+  });
+  if (!parsedQuery.success) {
+    return NextResponse.json(
+      { error: "Invalid query parameters", details: parsedQuery.error.flatten() },
+      { status: 400 }
+    );
+  }
+  const { page, limit } = parsedQuery.data;
+
+  // 3. SuperAdmin flow: all users, optionally filtered, excluding the caller
   if (callerRole === UserRole.SuperAdmin) {
-    const searchParams = request.nextUrl.searchParams;
-    const clinic_id = searchParams.get("clinic_id") ?? undefined;
-    const role = searchParams.get("role") ?? undefined;
-
-    const parsedQuery = ListUsersQuerySchema.safeParse({ clinic_id, role });
-    if (!parsedQuery.success) {
-      return NextResponse.json(
-        { error: "Invalid query parameters", details: parsedQuery.error.flatten() },
-        { status: 400 }
-      );
-    }
-
-    const users = await UserRepository.findAll({
+    const result = await UserRepository.findPage({
       clinic_id:     parsedQuery.data.clinic_id,
       role:          parsedQuery.data.role,
       excludeUserId: session.user.id,
+      page,
+      limit,
     });
-
-    return NextResponse.json({ users }, { status: 200 });
+    return NextResponse.json({ users: result.data, total: result.total, page, limit }, { status: 200 });
   }
 
-  // 3. Admin flow: strictly scoped to staff members in the Admin's clinic
-  if (callerRole === UserRole.Admin) {
-    const callerClinicId = session.user.clinic_id;
-    if (!callerClinicId) {
-      return NextResponse.json(
-        { error: "Forbidden: Admin is not associated with a clinic" },
-        { status: 403 }
-      );
-    }
-
-    const users = await UserRepository.findAll({
-      clinic_id: callerClinicId,
-      role: UserRole.Staff,
-    });
-
-    return NextResponse.json({ users }, { status: 200 });
+  // 4. Admin flow: strictly scoped to staff members in the Admin's clinic (filters ignored)
+  const callerClinicId = session.user.clinic_id;
+  if (!callerClinicId) {
+    return NextResponse.json(
+      { error: "Forbidden: Admin is not associated with a clinic" },
+      { status: 403 }
+    );
   }
 
-  // 4. Staff cannot list users
-  return NextResponse.json(
-    { error: "Forbidden: Admin or SuperAdmin role required" },
-    { status: 403 }
-  );
+  const result = await UserRepository.findPage({
+    clinic_id: callerClinicId,
+    role:      UserRole.Staff,
+    page,
+    limit,
+  });
+  return NextResponse.json({ users: result.data, total: result.total, page, limit }, { status: 200 });
 }
 
 /**
  * POST /api/users
  *
- * Creates a new user of any role (SuperAdmin, Admin, or Staff).
+ * Creates a new Admin or Staff user. Only one SuperAdmin may exist, so a
+ * SuperAdmin can only be created while none exists.
  *
  * Auth:          Required
  * Authorization: SuperAdmin only
@@ -96,14 +105,14 @@ export async function GET(request: NextRequest) {
  *   first_name string
  *   last_name  string
  *   role       "SuperAdmin" | "Admin" | "Staff"
- *   clinic_id  string? (UUID, optional — required for Admin/Staff)
+ *   clinic_id  string? (UUID — required for Admin/Staff, must be omitted for SuperAdmin)
  *
  * Responses:
  *   201  { user: PublicUser }
  *   400  Zod validation error or malformed JSON
  *   401  Not authenticated
  *   403  Not SuperAdmin
- *   409  Email already in use
+ *   409  Email already in use / a SuperAdmin already exists
  */
 export async function POST(request: NextRequest) {
   // 1. Auth guard — must have a valid JWT cookie
@@ -136,13 +145,29 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 4. Check email uniqueness before touching the DB further
+  // 4. The platform allows exactly one SuperAdmin
+  if (parsed.data.role === UserRole.SuperAdmin && (await UserRepository.superAdminExists())) {
+    return NextResponse.json(
+      { error: "Validation failed", details: { fieldErrors: { role: ["Only one SuperAdmin is allowed on the platform."] } } },
+      { status: 409 }
+    );
+  }
+
+  // 5. The clinic must exist, otherwise the insert fails on the foreign key
+  if (parsed.data.clinic_id && !(await ClinicRepository.exists(parsed.data.clinic_id))) {
+    return NextResponse.json(
+      { error: "Validation failed", details: { fieldErrors: { clinic_id: ["Clinic not found."] } } },
+      { status: 400 }
+    );
+  }
+
+  // 6. Check email uniqueness before touching the DB further
   const exists = await UserRepository.emailExists(parsed.data.email);
   if (exists) {
     return NextResponse.json({ error: "Email already in use" }, { status: 409 });
   }
 
-  // 5. Hash password with Argon2id (memory-hard, OWASP top recommendation)
+  // 7. Hash password with Argon2id (memory-hard, OWASP top recommendation)
   const password_hash = await argon2.hash(parsed.data.password, {
     type:        argon2.argon2id,
     memoryCost:  65536, // 64 MB
@@ -150,7 +175,7 @@ export async function POST(request: NextRequest) {
     parallelism: 4,
   });
 
-  // 6. Persist via repository — raw password never touches the DB layer
+  // 8. Persist via repository — raw password never touches the DB layer
   const newUser = await UserRepository.createUser({
     ...parsed.data, 
     password_hash,

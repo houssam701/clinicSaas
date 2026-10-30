@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AuthError } from "next-auth";
 import { signIn } from "../../../../lib/auth";
-import { LoginSchema } from "../../../../types/users";
+import { LoginSchema, UserRole } from "../../../../types/users";
+import { UserRepository } from "../../../../repository/user-repository";
+import { getHomePathForRole } from "../../../../services/role-routing";
+import { PATHS } from "../../../../config/path";
 
 /**
  * POST /api/auth/login
@@ -15,7 +18,7 @@ import { LoginSchema } from "../../../../types/users";
  *   password string  (min 8 chars)
  *
  * Responses:
- *   200  { message: "Logged in successfully" }
+ *   200  { message, redirectTo }  (redirectTo = the user's role home path)
  *   400  Zod validation error or malformed JSON
  *   401  Invalid email or password
  */
@@ -53,8 +56,12 @@ export async function POST(request: NextRequest) {
     throw error;
   }
 
+  // 3. Tell the caller where this user's role lands
+  const user = await UserRepository.findByEmail(parsed.data.email);
+  const redirectTo = user ? getHomePathForRole(user.role as UserRole) : PATHS.home;
+
   return NextResponse.json(
-    { message: "Logged in successfully" },
+    { message: "Logged in successfully", redirectTo },
     { status: 200 }
   );
 }

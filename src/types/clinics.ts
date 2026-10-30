@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../lib/zod";
 import type { FieldOutputTypes } from "../prisma/generated/contract";
 
 // ─── Enum ─────────────────────────────────────────────────────────────────────
@@ -15,28 +15,28 @@ export type ClinicModel = FieldOutputTypes["public"]["Clinic"];
 // ─── Zod Schemas ──────────────────────────────────────────────────────────────
 
 export const CreateClinicSchema = z.object({
-  name: z.string().trim().min(1, "Clinic name cannot be empty"),
+  name: z.string().trim().min(1, "Clinic name is required."),
   clinic_type: z.nativeEnum(ClinicType, {
-    message: "Clinic type must be either 'Dentistry' or 'Therapy'",
+    message: "Clinic type must be Dentistry or Therapy.",
   }),
 });
 
 export const UpdateClinicSchema = z
   .object({
-    name: z.string().trim().min(1, "Clinic name cannot be empty").optional(),
+    name: z.string().trim().min(1, "Clinic name is required.").optional(),
     clinic_type: z
       .nativeEnum(ClinicType, {
-        message: "Clinic type must be either 'Dentistry' or 'Therapy'",
+        message: "Clinic type must be Dentistry or Therapy.",
       })
       .optional(),
   })
   .refine(
     (data) => data.name !== undefined || data.clinic_type !== undefined,
-    { message: "At least one field ('name' or 'clinic_type') must be provided for update" }
+    { message: "Provide a clinic name or clinic type to update." }
   );
 
 export const DeleteClinicSchema = z.object({
-  id: z.string().uuid("Invalid clinic ID format"),
+  id: z.string().uuid("Clinic is not a valid ID."),
 });
 
 export const ListClinicsQuerySchema = z.object({
