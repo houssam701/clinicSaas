@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { serverApiFetch } from "@/lib/server-api";
-import { CreateUserForm } from "@/components/platform/create-user-form";
+import { API_PATHS, PATHS } from "@/config/path";
+import { UserForm } from "@/components/platform/user-form";
+import { createUserAction } from "@/actions/create-user";
 import type { ClinicModel } from "@/types/clinics";
 
 /**
@@ -10,14 +12,14 @@ import type { ClinicModel } from "@/types/clinics";
  * The form itself posts to POST /api/users through createUserAction.
  */
 export default async function NewPlatformUserPage() {
-  const clinicsRes = await serverApiFetch("/api/clinics");
+  const clinicsRes = await serverApiFetch(API_PATHS.clinics.list());
   const clinics: ClinicModel[] = clinicsRes.ok ? (await clinicsRes.json()).clinics : [];
 
   return (
     <div className="max-w-2xl space-y-6">
       <div>
         <Link
-          href="/platform/users"
+          href={PATHS.platform.users.list()}
           className="text-sm font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white"
         >
           &larr; Back to users
@@ -31,7 +33,11 @@ export default async function NewPlatformUserPage() {
       </div>
 
       <div className="rounded-md border border-slate-300/50 dark:border-slate-800/80 bg-white dark:bg-slate-900/70 p-6 sm:p-8">
-        <CreateUserForm clinics={clinics.map(({ id, name }) => ({ id, name }))} />
+        <UserForm
+          mode="create"
+          action={createUserAction}
+          clinics={clinics.map(({ id, name }) => ({ id, name }))}
+        />
       </div>
     </div>
   );

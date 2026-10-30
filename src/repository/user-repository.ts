@@ -1,6 +1,13 @@
 import { db } from "../prisma/db";
 import type { UsersModel, PublicUser, CreateUserInput, UpdateUserData } from "../types/users";
 import { UserRole } from "../types/users";
+import { pageOffset, type PaginatedResult, type PaginationInput } from "../types/pagination";
+
+type UserListFilter = {
+  clinic_id?: string;
+  role?: UserRole;
+  excludeUserId?: string;
+};
 
 export class UserRepository {
 
@@ -56,11 +63,31 @@ export class UserRepository {
    * Can exclude a specific user ID (e.g. the calling SuperAdmin).
    * Results are sorted by creation date descending.
    */
-  static async findAll(filter?: {
-    clinic_id?: string;
-    role?: UserRole;
-    excludeUserId?: string;
-  }): Promise<PublicUser[]> {
+  static async findAll(filter?: UserListFilter): Promise<PublicUser[]> {
+    return UserRepository.listQuery(filter).orderBy((u) => u.created_at.desc()).all();
+  }
+
+  /**
+   * Same filters as findAll, one page at a time.
+   * The page rows and the total count run in parallel.
+   */
+  static async findPage(
+    filter: UserListFilter & PaginationInput
+  ): Promise<PaginatedResult<PublicUser>> {
+    const query = UserRepository.listQuery(filter);
+    const [data, agg] = await Promise.all([
+      query
+        .orderBy((u) => u.created_at.desc())
+        .limit(filter.limit)
+        .offset(pageOffset(filter))
+        .all(),
+      query.aggregate((a) => ({ count: a.count() })),
+    ]);
+    return { data, total: agg.count };
+  }
+
+  /** Builds the filtered user query shared by findAll and findPage. */
+  private static listQuery(filter?: UserListFilter) {
     let query = db.orm.public.User.select(
       "id",
       "clinic_id",
@@ -87,8 +114,7 @@ export class UserRepository {
       query = query.where((u) => u.id.neq(excludeUserId));
     }
 
-    const users = await query.orderBy((u) => u.created_at.desc()).all();
-    return users;
+    return query;
   }
 
   // ── User Mutation ────────────────────────────────────────────────────────────

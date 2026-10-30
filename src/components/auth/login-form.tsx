@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import { loginAction, type LoginState } from "@/app/login/action";
+import { loginAction, type LoginState } from "@/actions/login";
 import { Button } from "@/components/ui/button";
 
 // ---------------------------------------------------------------------------

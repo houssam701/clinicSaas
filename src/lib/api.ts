@@ -6,7 +6,7 @@
  *
  * Usage:
  *   import { apiUrl } from "@/lib/api";
- *   fetch(apiUrl("/api/auth/login"), { ... })
+ *   fetch(apiUrl(API_PATHS.auth.login), { ... })   // paths come from src/config/path.ts
  */
 export function getBaseUrl(): string {
   return (
@@ -17,7 +17,7 @@ export function getBaseUrl(): string {
 
 /**
  * Builds a full URL from a relative path.
- * @example apiUrl("/api/auth/login") => "http://localhost:3000/api/auth/login"
+ * @example apiUrl(API_PATHS.auth.login) => "http://localhost:3000/api/auth/login"
  */
 export function apiUrl(path: string): string {
   const cleanPath = path.startsWith("/") ? path : `/${path}`;

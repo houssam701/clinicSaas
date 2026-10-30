@@ -3,6 +3,7 @@ import { LoginForm } from "@/components/auth/login-form";
 import Image from "next/image";
 import { Logo } from "@/components/shared/Logo";
 import { redirectIfAuthenticated } from "@/services/page-guard";
+import { PATHS } from "@/config/path";
 
 export const metadata: Metadata = {
   title: "Sign in | BienSync Clinic OS",
@@ -54,7 +55,7 @@ export default async function BienSyncLogin() {
         <div className="w-full max-w-md">
           <h1 className="sr-only">Sign in to BienSync</h1>
           <div className="mb-8 flex flex-col items-center text-center">
-            <Logo size="xl" href="/" />
+            <Logo size="xl" href={PATHS.home} />
             <p className="mt-8 text-2xl font-semibold tracking-tight text-slate-800">
               Welcome back
             </p>

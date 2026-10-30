@@ -2,7 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { apiUrl, parseSetCookie } from "@/lib/api";
+import { parseSetCookie } from "@/lib/api";
+import { sendApiJson } from "@/lib/server-api";
+import { API_PATHS, PATHS } from "@/config/path";
 
 export type LoginState = {
   error?: string;
@@ -35,16 +37,8 @@ export async function loginAction(
     return { error: "Email and password are required." };
   }
 
-  let response: Response;
-  try {
-    response = await fetch(apiUrl("/api/auth/login"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-  } catch {
-    return { error: "Network error — please try again." };
-  }
+  const response = await sendApiJson(API_PATHS.auth.login, "POST", { email, password });
+  if (!response) return { error: "Network error — please try again." };
 
   // 1. If login succeeded, forward the auth cookies from the API response to the browser
   if (response.ok) {
@@ -64,11 +58,11 @@ export async function loginAction(
       }
     }
 
-    // "/" resolves to the signed-in user's role home if no target was returned
+    // PATHS.home resolves to the signed-in user's role home if no target was returned
     const { redirectTo } = await response
       .json()
       .catch(() => ({ redirectTo: undefined }));
-    redirect(isInternalPath(redirectTo) ? redirectTo : "/");
+    redirect(isInternalPath(redirectTo) ? redirectTo : PATHS.home);
   }
 
   // 2. Parse error response

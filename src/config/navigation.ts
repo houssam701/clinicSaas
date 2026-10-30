@@ -1,61 +1,62 @@
 import { NavigationConfig } from "@/types/navigation";
+import { PATHS } from "@/config/path";
 
 export const navigationConfig: NavigationConfig = {
   brand: {
     name: "BienSync",
     logoStart: "Bien",
     logoEnd: "Sync",
-    href: "/dashboard",
+    href: PATHS.dashboard,
   },
   emergency: {
     label: "Emergency",
     icon: "emergency",
     hasAlertDot: true,
-    href: "/emergency",
+    href: PATHS.emergency,
     description: "Urgent care & emergency call line",
   },
   mainNav: [
     {
       id: "dashboard",
       label: "Dashboard",
-      href: "/dashboard",
+      href: PATHS.dashboard,
       icon: "dashboard",
       exact: true,
     },
     {
       id: "appointments",
       label: "Appointments",
-      href: "/appointments",
+      href: PATHS.appointments,
       icon: "appointments",
     },
     {
       id: "patients",
       label: "Patients",
-      href: "/patients",
+      href: PATHS.patients,
       icon: "patients",
     },
     {
       id: "doctors",
       label: "Doctors",
-      href: "/doctors",
+      href: PATHS.doctors,
       icon: "doctors",
     },
     {
       id: "messages",
       label: "Messages",
-      href: "/messages",
+      href: PATHS.messages,
       icon: "messages",
     },
     {
       id: "reviews",
       label: "Reviews",
-      href: "/reviews",
+      href: PATHS.reviews,
       icon: "reviews",
     },
     {
       id: "finances",
       label: "Finances",
-      href: "/finances",
+      href: PATHS.finances,
       icon: "finances",
     },
   ],
@@ -63,7 +64,7 @@ export const navigationConfig: NavigationConfig = {
     {
       id: "settings",
       label: "Settings",
-      href: "/settings",
+      href: PATHS.settings,
       icon: "settings",
     },
   ],

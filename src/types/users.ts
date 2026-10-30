@@ -1,5 +1,6 @@
 import { z } from "../lib/zod";
 import type { FieldOutputTypes } from "../prisma/generated/contract";
+import { PaginationQuerySchema } from "./pagination";
 
 // ─── Enum ─────────────────────────────────────────────────────────────────────
 // String enum so values match what Prisma 8 stores/returns ('SuperAdmin' etc.)
@@ -76,7 +77,8 @@ export const UpdateUserSchema = z.object({
 );
 
 // ─── Query Schema for listing users ───────────────────────────────────────────
-export const ListUsersQuerySchema = z.object({
+// Pagination (page, limit) comes from the shared schema
+export const ListUsersQuerySchema = PaginationQuerySchema.extend({
   clinic_id: z.string().uuid().optional(),
   role:      z.nativeEnum(UserRole).optional(),
 });

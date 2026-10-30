@@ -1,30 +1,31 @@
 import { NavigationConfig } from "@/types/navigation";
+import { PATHS } from "@/config/path";
 
 export const platformNavigationConfig: NavigationConfig = {
   brand: {
     name: "BienSync",
     logoStart: "Bien",
     logoEnd: "Sync",
-    href: "/platform/dashboard",
+    href: PATHS.platform.dashboard,
   },
   mainNav: [
     {
       id: "platform-dashboard",
       label: "Dashboard",
-      href: "/platform/dashboard",
+      href: PATHS.platform.dashboard,
       icon: "dashboard",
       exact: true,
     },
     {
       id: "platform-clinics",
       label: "Clinics",
-      href: "/platform/clinics",
+      href: PATHS.platform.clinics,
       icon: "patients",
     },
     {
       id: "platform-users",
       label: "Users",
-      href: "/platform/users",
+      href: PATHS.platform.users.list(),
       icon: "doctors",
     },
   ],
@@ -32,7 +33,7 @@ export const platformNavigationConfig: NavigationConfig = {
     {
       id: "platform-settings",
       label: "Settings",
-      href: "/platform/settings",
+      href: PATHS.platform.settings,
       icon: "settings",
     },
   ],

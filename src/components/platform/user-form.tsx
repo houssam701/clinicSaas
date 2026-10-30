@@ -3,17 +3,52 @@
 import React, { useState, useActionState } from "react";
 import Link from "next/link";
 import { useFormStatus } from "react-dom";
-import {
-  createUserAction,
-  type CreateUserFormState,
-} from "@/app/(platform)/platform/users/actions";
+import type { UserFormState } from "@/lib/user-form";
 import { Button } from "@/components/ui/button";
 import { UserRole } from "@/types/users";
+import { PATHS } from "@/config/path";
 
 export interface ClinicOption {
   id: string;
   name: string;
 }
+
+export interface UserFormValues {
+  first_name: string;
+  last_name: string;
+  email: string;
+  role: UserRole;
+  clinic_id: string;
+}
+
+type UserFormMode = "create" | "edit";
+
+// Everything that differs between creating and editing lives here
+const MODE_COPY: Record<
+  UserFormMode,
+  { submit: string; pending: string; passwordLabel: string; passwordHint: string }
+> = {
+  create: {
+    submit: "Create user",
+    pending: "Creating...",
+    passwordLabel: "Temporary password",
+    passwordHint: "At least 8 characters. Share it with the user so they can sign in.",
+  },
+  edit: {
+    submit: "Save changes",
+    pending: "Saving...",
+    passwordLabel: "New password",
+    passwordHint: "Leave blank to keep the current password.",
+  },
+};
+
+const EMPTY_VALUES: UserFormValues = {
+  first_name: "",
+  last_name: "",
+  email: "",
+  role: UserRole.Admin,
+  clinic_id: "",
+};
 
 // SuperAdmin is not offered: the platform has exactly one, and it already exists.
 const ROLE_OPTIONS: { value: UserRole; label: string; hint: string }[] = [
@@ -35,7 +70,7 @@ function FieldError({ id, messages }: { id: string; messages?: string[] }) {
   );
 }
 
-function SubmitButton() {
+function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: string }) {
   const { pending } = useFormStatus();
   return (
     <Button
@@ -43,28 +78,34 @@ function SubmitButton() {
       variant="primary"
       size="md"
       isLoading={pending}
-      loadingText="Creating..."
+      loadingText={pendingLabel}
       aria-disabled={pending}
     >
-      Create user
+      {label}
     </Button>
   );
 }
 
-const initialState: CreateUserFormState = {};
+const initialState: UserFormState = {};
 
-export function CreateUserForm({ clinics }: { clinics: ClinicOption[] }) {
-  const [state, formAction] = useActionState(createUserAction, initialState);
+export interface UserFormProps {
+  mode: UserFormMode;
+  /** Server action to submit to — the form does not know which API it calls */
+  action: (state: UserFormState, formData: FormData) => Promise<UserFormState>;
+  clinics: ClinicOption[];
+  initialValues?: UserFormValues;
+}
+
+/**
+ * Shared create/edit form for platform users.
+ * The caller injects the server action, so the same UI serves both flows.
+ */
+export function UserForm({ mode, action, clinics, initialValues = EMPTY_VALUES }: UserFormProps) {
+  const [state, formAction] = useActionState(action, initialState);
+  const copy = MODE_COPY[mode];
 
   // Controlled so React 19 does not clear the fields after a failed attempt
-  const [values, setValues] = useState({
-    first_name: "",
-    last_name: "",
-    email: "",
-    password: "",
-    role: UserRole.Admin as UserRole,
-    clinic_id: "",
-  });
+  const [values, setValues] = useState({ ...initialValues, password: "" });
   const [showPassword, setShowPassword] = useState(false);
 
   const set =
@@ -143,7 +184,7 @@ export function CreateUserForm({ clinics }: { clinics: ClinicOption[] }) {
       {/* Password */}
       <div>
         <label htmlFor="password" className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
-          Temporary password
+          {copy.passwordLabel}
         </label>
         <div className="relative">
           <input
@@ -169,7 +210,7 @@ export function CreateUserForm({ clinics }: { clinics: ClinicOption[] }) {
           <FieldError id="password-error" messages={errors.password} />
         ) : (
           <p id="password-hint" className="mt-1.5 text-xs text-slate-500">
-            At least 8 characters. Share it with the user so they can sign in.
+            {copy.passwordHint}
           </p>
         )}
       </div>
@@ -237,12 +278,12 @@ export function CreateUserForm({ clinics }: { clinics: ClinicOption[] }) {
 
       <div className="flex items-center justify-end gap-3 pt-2">
         <Link
-          href="/platform/users"
+          href={PATHS.platform.users.list()}
           className="px-4 py-2.5 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
         >
           Cancel
         </Link>
-        <SubmitButton />
+        <SubmitButton label={copy.submit} pendingLabel={copy.pending} />
       </div>
     </form>
   );

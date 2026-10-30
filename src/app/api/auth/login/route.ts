@@ -4,6 +4,7 @@ import { signIn } from "../../../../lib/auth";
 import { LoginSchema, UserRole } from "../../../../types/users";
 import { UserRepository } from "../../../../repository/user-repository";
 import { getHomePathForRole } from "../../../../services/role-routing";
+import { PATHS } from "../../../../config/path";
 
 /**
  * POST /api/auth/login
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
 
   // 3. Tell the caller where this user's role lands
   const user = await UserRepository.findByEmail(parsed.data.email);
-  const redirectTo = user ? getHomePathForRole(user.role as UserRole) : "/";
+  const redirectTo = user ? getHomePathForRole(user.role as UserRole) : PATHS.home;
 
   return NextResponse.json(
     { message: "Logged in successfully", redirectTo },

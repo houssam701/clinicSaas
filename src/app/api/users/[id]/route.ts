@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import * as argon2 from "argon2";
 import { auth } from "../../../../lib/auth";
 import { UserRepository } from "../../../../repository/user-repository";
+import { ClinicRepository } from "../../../../repository/clinic-repository";
 import { UpdateUserData, UpdateUserSchema, UserRole } from "../../../../types/users";
 
 interface RouteContext {
@@ -191,6 +192,24 @@ export async function PATCH(
     }
   } else {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // Admin and Staff must keep a clinic (contract: clinic_id is null only for SuperAdmin)
+  if (targetUser.role !== UserRole.SuperAdmin && parsed.data.clinic_id === null) {
+    return NextResponse.json(
+      { error: "Validation failed", details: { fieldErrors: { clinic_id: ["Admin and Staff users must be assigned to a clinic."] } } },
+      { status: 400 }
+    );
+  }
+
+  // A new clinic must exist, otherwise the update fails on the foreign key
+  if (parsed.data.clinic_id && parsed.data.clinic_id !== targetUser.clinic_id) {
+    if (!(await ClinicRepository.exists(parsed.data.clinic_id))) {
+      return NextResponse.json(
+        { error: "Validation failed", details: { fieldErrors: { clinic_id: ["Clinic not found."] } } },
+        { status: 400 }
+      );
+    }
   }
 
   // Check email uniqueness if changing email

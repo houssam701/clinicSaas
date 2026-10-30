@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { NavItem } from "@/types/navigation";
 import { NavIcon } from "@/components/icons/nav-icons";
 import { cn } from "@/lib/utils";
+import { PATHS } from "@/config/path";
 
 interface SidebarItemProps {
   item: NavItem;
@@ -17,7 +18,7 @@ export function SidebarItem({ item, onNavigate }: SidebarItemProps) {
 
   const isActive = item.exact
     ? pathname === item.href
-    : pathname === item.href || (item.href !== "/" && pathname?.startsWith(`${item.href}/`));
+    : pathname === item.href || (item.href !== PATHS.home && pathname?.startsWith(`${item.href}/`));
 
   return (
     <Link

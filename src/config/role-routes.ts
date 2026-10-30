@@ -1,6 +1,7 @@
 import { UserRole } from "@/types/users";
+import { PATHS } from "@/config/path";
 
-export const LOGIN_PATH = "/login";
+export const LOGIN_PATH = PATHS.login;
 
 /**
  * Landing page for each role after login.
@@ -8,7 +9,7 @@ export const LOGIN_PATH = "/login";
  * compilation until its home route is declared here.
  */
 export const ROLE_HOME_PATH: Record<UserRole, string> = {
-  [UserRole.SuperAdmin]: "/platform/dashboard",
-  [UserRole.Admin]: "/dashboard",
-  [UserRole.Staff]: "/dashboard",
+  [UserRole.SuperAdmin]: PATHS.platform.dashboard,
+  [UserRole.Admin]: PATHS.dashboard,
+  [UserRole.Staff]: PATHS.dashboard,
 };

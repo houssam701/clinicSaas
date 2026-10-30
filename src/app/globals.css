@@ -8,6 +8,44 @@
   --color-primary: #2662f0;
 }
 
+/* Tailwind v4 resets buttons to cursor: default; show a pointer on everything clickable */
+@layer base {
+  button,
+  [role="button"],
+  a[href],
+  summary,
+  select,
+  label[for],
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="submit"],
+  input[type="button"],
+  input[type="reset"],
+  input[type="file"],
+  label:has(> input[type="radio"]),
+  label:has(> input[type="checkbox"]) {
+    cursor: pointer;
+  }
+
+  /* Keep the scrollbar's space reserved, so the page does not jump sideways
+     when a modal hides the scrollbar below */
+  html {
+    scrollbar-gutter: stable;
+  }
+
+  /* Stop the page behind an open modal dialog from scrolling */
+  html:has(dialog[open]:modal) {
+    overflow: hidden;
+  }
+
+  button:disabled,
+  [aria-disabled="true"],
+  select:disabled,
+  input:disabled {
+    cursor: not-allowed;
+  }
+}
+
 @layer utilities {
   /* Lub-dub beat */
   @keyframes pulse-heart {

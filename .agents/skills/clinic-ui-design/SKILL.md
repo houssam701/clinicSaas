@@ -72,3 +72,24 @@ All navigation and sidebar elements MUST adhere to SOLID principles:
   - Active links must indicate current page using `usePathname()` with bold text, subtle highlight, and `aria-current="page"`.
   - Buttons and interactive items must provide distinct hover and active states (`transition-all duration-150`).
   - Accessible touch targets (minimum 44x44px for buttons on mobile).
+- **Pointer Cursor:**
+  - Tailwind v4 resets buttons to `cursor: default`. A base rule in `src/app/globals.css` gives every clickable element (buttons, links, selects, labels, radios, checkboxes) `cursor: pointer`, and disabled ones `cursor: not-allowed`.
+  - Do not add `cursor-pointer` to each button; keep that base rule. A custom clickable element must be a `<button>`, `<a>`, or have `role="button"` so it is covered.
+- **Icons — always `react-icons` (STRICT):**
+  - Every icon comes from the `react-icons` package. Never paste inline `<svg>` icons and never add another icon library.
+  - Import from the set's subpath so only the icons you use are bundled: `import { HiOutlineTrash } from "react-icons/hi2";` (never `import * as Icons` or the package root).
+  - Default set is **Heroicons v2 (`react-icons/hi2`)**: `HiOutline*` for actions inside text and buttons, `Hi*` (solid) for small filled glyphs such as chevrons. Use another set only when Heroicons has no match.
+  - Size and color with Tailwind classes (`className="h-4 w-4"`, the color comes from `currentColor`), and mark decorative icons `aria-hidden="true"`; the button or link carries the text or `aria-label`.
+  - In use: pagination arrows `HiChevronLeft` / `HiChevronRight`, Edit `HiOutlinePencilSquare`, Delete `HiOutlineTrash`.
+- **Row Actions Look Like Buttons:**
+  - Table row actions (Edit, Delete, ...) are bordered buttons with an icon + label, never bare text links:
+    - Edit: `border border-slate-200 bg-white text-slate-700 hover:border-primary/40 hover:bg-primary/5 hover:text-primary`
+    - Delete (destructive): `border border-rose-200 text-rose-600 hover:bg-rose-600 hover:text-white`
+  - Each has `focus-visible:ring-4` and an `aria-label` that names the row (e.g. "Delete Amira Hassan").
+  - Destructive actions always ask for confirmation first with `<ConfirmDialog>` (`src/components/ui/confirm-dialog.tsx`).
+- **Modals Must Work on Phones:**
+  - Always a **centered popup** (not a bottom sheet), on every screen size.
+  - Rendered through a portal on `<body>` and mounted only while open (`<ConfirmDialog>` does this). A `<dialog>` inside a table cell or scroll container causes overflow.
+  - Sized to the viewport: `w-[calc(100vw-2rem)] max-w-md max-h-[calc(100dvh-2rem)]`, `overflow-x-hidden overflow-y-auto`; long titles use `break-words`.
+  - On phones the buttons stack full width with the primary action on top (`flex-col-reverse` then `sm:flex-row`), at least 44px tall.
+  - Esc and backdrop click close it (not while the action is running). The page behind does not scroll (`html:has(dialog[open]:modal)`), and `scrollbar-gutter: stable` on `html` stops the layout from jumping.

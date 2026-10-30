@@ -17,11 +17,13 @@ import { CreateUserSchema, ListUsersQuerySchema, UserRole } from "../../../types
  * Authorization: SuperAdmin or Admin
  *
  * Query Params:
+ *   page?:      number (min 1, default 1)
+ *   limit?:     number (min 1, max 200, default 20)
  *   clinic_id?: string (UUID — SuperAdmin only)
  *   role?:      "SuperAdmin" | "Admin" | "Staff" (SuperAdmin only)
  *
  * Responses:
- *   200  { users: PublicUser[] }
+ *   200  { users: PublicUser[], total: number, page: number, limit: number }
  *   400  Invalid query parameters
  *   401  Not authenticated
  *   403  Forbidden
@@ -34,53 +36,58 @@ export async function GET(request: NextRequest) {
   }
 
   const callerRole = session.user.role;
+  if (callerRole !== UserRole.SuperAdmin && callerRole !== UserRole.Admin) {
+    // Staff cannot list users
+    return NextResponse.json(
+      { error: "Forbidden: Admin or SuperAdmin role required" },
+      { status: 403 }
+    );
+  }
 
-  // 2. SuperAdmin flow: can view all users, optionally filtered
+  // 2. Parse pagination and filters
+  const searchParams = request.nextUrl.searchParams;
+  const parsedQuery = ListUsersQuerySchema.safeParse({
+    page:      searchParams.get("page") ?? undefined,
+    limit:     searchParams.get("limit") ?? undefined,
+    clinic_id: searchParams.get("clinic_id") ?? undefined,
+    role:      searchParams.get("role") ?? undefined,
+  });
+  if (!parsedQuery.success) {
+    return NextResponse.json(
+      { error: "Invalid query parameters", details: parsedQuery.error.flatten() },
+      { status: 400 }
+    );
+  }
+  const { page, limit } = parsedQuery.data;
+
+  // 3. SuperAdmin flow: all users, optionally filtered, excluding the caller
   if (callerRole === UserRole.SuperAdmin) {
-    const searchParams = request.nextUrl.searchParams;
-    const clinic_id = searchParams.get("clinic_id") ?? undefined;
-    const role = searchParams.get("role") ?? undefined;
-
-    const parsedQuery = ListUsersQuerySchema.safeParse({ clinic_id, role });
-    if (!parsedQuery.success) {
-      return NextResponse.json(
-        { error: "Invalid query parameters", details: parsedQuery.error.flatten() },
-        { status: 400 }
-      );
-    }
-
-    const users = await UserRepository.findAll({
+    const result = await UserRepository.findPage({
       clinic_id:     parsedQuery.data.clinic_id,
       role:          parsedQuery.data.role,
       excludeUserId: session.user.id,
+      page,
+      limit,
     });
-
-    return NextResponse.json({ users }, { status: 200 });
+    return NextResponse.json({ users: result.data, total: result.total, page, limit }, { status: 200 });
   }
 
-  // 3. Admin flow: strictly scoped to staff members in the Admin's clinic
-  if (callerRole === UserRole.Admin) {
-    const callerClinicId = session.user.clinic_id;
-    if (!callerClinicId) {
-      return NextResponse.json(
-        { error: "Forbidden: Admin is not associated with a clinic" },
-        { status: 403 }
-      );
-    }
-
-    const users = await UserRepository.findAll({
-      clinic_id: callerClinicId,
-      role: UserRole.Staff,
-    });
-
-    return NextResponse.json({ users }, { status: 200 });
+  // 4. Admin flow: strictly scoped to staff members in the Admin's clinic (filters ignored)
+  const callerClinicId = session.user.clinic_id;
+  if (!callerClinicId) {
+    return NextResponse.json(
+      { error: "Forbidden: Admin is not associated with a clinic" },
+      { status: 403 }
+    );
   }
 
-  // 4. Staff cannot list users
-  return NextResponse.json(
-    { error: "Forbidden: Admin or SuperAdmin role required" },
-    { status: 403 }
-  );
+  const result = await UserRepository.findPage({
+    clinic_id: callerClinicId,
+    role:      UserRole.Staff,
+    page,
+    limit,
+  });
+  return NextResponse.json({ users: result.data, total: result.total, page, limit }, { status: 200 });
 }
 
 /**

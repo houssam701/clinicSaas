@@ -1,8 +1,15 @@
 import Link from "next/link";
 import Form from "next/form";
 import { serverApiFetch } from "@/lib/server-api";
+import { API_PATHS, PATHS } from "@/config/path";
+import { DeleteUserButton } from "@/components/platform/delete-user-button";
+import { HiOutlinePencilSquare } from "react-icons/hi2";
 import { UserRole, type PublicUser } from "@/types/users";
 import type { ClinicModel } from "@/types/clinics";
+import { redirect } from "next/navigation";
+import { Pagination } from "@/components/ui/pagination";
+import { totalPages } from "@/lib/pagination";
+import { DEFAULT_PAGE_SIZE } from "@/types/pagination";
 
 const ROLE_FILTERS: { label: string; value?: UserRole }[] = [
   // No SuperAdmin tab: the only SuperAdmin is the signed-in user, whom the API excludes
@@ -17,13 +24,12 @@ const ROLE_BADGE: Record<UserRole, string> = {
   [UserRole.Staff]: "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
 };
 
-function buildQuery(params: { role?: string; clinic_id?: string }) {
-  const query = new URLSearchParams();
-  if (params.role) query.set("role", params.role);
-  if (params.clinic_id) query.set("clinic_id", params.clinic_id);
-  const qs = query.toString();
-  return qs ? `?${qs}` : "";
-}
+const NOTICES = {
+  created: "User created. They can now sign in with the email and password you set.",
+  updated: "User updated.",
+};
+
+const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 /**
  * Server Component: Platform Users
@@ -34,19 +40,35 @@ function buildQuery(params: { role?: string; clinic_id?: string }) {
 export default async function PlatformUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ role?: string; clinic_id?: string; created?: string }>;
+  searchParams: Promise<{
+    role?: string;
+    clinic_id?: string;
+    page?: string;
+    created?: string;
+    updated?: string;
+  }>;
 }) {
-  const { role, clinic_id, created } = await searchParams;
+  const { role, clinic_id, page: pageParam, created, updated } = await searchParams;
+  const notice = created ? NOTICES.created : updated ? NOTICES.updated : undefined;
+  const page = Math.max(1, Math.floor(Number(pageParam)) || 1);
 
   const [usersRes, clinicsRes] = await Promise.all([
-    serverApiFetch(`/api/users${buildQuery({ role, clinic_id })}`),
-    serverApiFetch("/api/clinics"),
+    serverApiFetch(API_PATHS.users.list({ role, clinic_id, page, limit: PAGE_SIZE })),
+    serverApiFetch(API_PATHS.clinics.list()),
   ]);
 
-  const users: PublicUser[] = usersRes.ok ? (await usersRes.json()).users : [];
+  const { users = [], total = 0 }: { users?: PublicUser[]; total?: number } = usersRes.ok
+    ? await usersRes.json()
+    : {};
   const clinics: ClinicModel[] = clinicsRes.ok ? (await clinicsRes.json()).clinics : [];
   const clinicName = new Map(clinics.map((c) => [c.id, c.name]));
   const loadError = !usersRes.ok;
+
+  // Past the last page (e.g. its last row was just deleted): go to the last real page
+  const lastPage = totalPages(total, PAGE_SIZE);
+  if (!loadError && total > 0 && page > lastPage) {
+    redirect(PATHS.platform.users.list({ role, clinic_id, page: lastPage }));
+  }
 
   return (
     <div className="space-y-6">
@@ -61,16 +83,16 @@ export default async function PlatformUsersPage({
           </p>
         </div>
         <Link
-          href="/platform/users/new"
+          href={PATHS.platform.users.new}
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-md text-white bg-gradient-to-r from-primary to-blue-700 shadow-[0_8px_16px_-4px_rgba(38,98,240,0.25)] hover:-translate-y-0.5 transition-all"
         >
           + New user
         </Link>
       </div>
 
-      {created && (
+      {notice && (
         <div role="status" className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-          User created. They can now sign in with the email and password you set.
+          {notice}
         </div>
       )}
 
@@ -82,7 +104,7 @@ export default async function PlatformUsersPage({
             return (
               <Link
                 key={filter.label}
-                href={`/platform/users${buildQuery({ role: filter.value, clinic_id })}`}
+                href={PATHS.platform.users.list({ role: filter.value, clinic_id })}
                 aria-current={active ? "page" : undefined}
                 className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${
                   active
@@ -97,7 +119,7 @@ export default async function PlatformUsersPage({
         </nav>
 
         {/* next/form navigates on the client instead of reloading the page */}
-        <Form action="/platform/users" className="flex items-center gap-2">
+        <Form action={PATHS.platform.users.list()} className="flex items-center gap-2">
           {role && <input type="hidden" name="role" value={role} />}
           <label htmlFor="clinic-filter" className="sr-only">
             Filter by clinic
@@ -141,6 +163,9 @@ export default async function PlatformUsersPage({
                 <th scope="col" className="px-5 py-3 font-semibold">Role</th>
                 <th scope="col" className="px-5 py-3 font-semibold">Clinic</th>
                 <th scope="col" className="px-5 py-3 font-semibold whitespace-nowrap">Created</th>
+                <th scope="col" className="px-5 py-3 font-semibold text-right">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -169,6 +194,20 @@ export default async function PlatformUsersPage({
                       year: "numeric",
                     })}
                   </td>
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center justify-end gap-2">
+                      <Link
+                        href={PATHS.platform.users.edit(user.id)}
+                        prefetch={false}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-xs hover:border-primary/40 hover:bg-primary/5 hover:text-primary focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 transition-colors"
+                        aria-label={`Edit ${user.first_name} ${user.last_name}`}
+                      >
+                        <HiOutlinePencilSquare aria-hidden="true" className="h-3.5 w-3.5" />
+                        Edit
+                      </Link>
+                      <DeleteUserButton userId={user.id} userName={`${user.first_name} ${user.last_name}`} />
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -176,10 +215,17 @@ export default async function PlatformUsersPage({
         )}
       </div>
 
-      {!loadError && users.length > 0 && (
-        <p className="text-xs text-slate-500">
-          {users.length} {users.length === 1 ? "user" : "users"} · your own account is not listed
-        </p>
+      {!loadError && (
+        <Pagination
+          page={page}
+          pageSize={PAGE_SIZE}
+          total={total}
+          itemLabel={total === 1 ? "user" : "users"}
+          hrefForPage={(p) => PATHS.platform.users.list({ role, clinic_id, page: p })}
+        />
+      )}
+      {!loadError && total > 0 && (
+        <p className="text-xs text-slate-500">Your own account is not listed.</p>
       )}
     </div>
   );
