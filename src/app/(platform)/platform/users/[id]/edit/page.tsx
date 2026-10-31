@@ -6,6 +6,7 @@ import { UserForm } from "@/components/platform/user-form";
 import { updateUserAction } from "@/actions/update-user";
 import { UserRole, type PublicUser } from "@/types/users";
 import type { ClinicModel } from "@/types/clinics";
+import { MAX_PAGE_SIZE } from "@/types/pagination";
 
 /**
  * Server Component: Edit Platform User
@@ -22,7 +23,7 @@ export default async function EditPlatformUserPage({
 
   const [userRes, clinicsRes] = await Promise.all([
     serverApiFetch(API_PATHS.users.detail(id)),
-    serverApiFetch(API_PATHS.clinics.list()),
+    serverApiFetch(API_PATHS.clinics.list({ limit: MAX_PAGE_SIZE })),
   ]);
 
   if (!userRes.ok) notFound();

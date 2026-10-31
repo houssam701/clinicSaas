@@ -5,6 +5,12 @@ import type {
   CreateClinicData,
   UpdateClinicData,
 } from "../types/clinics";
+import { pageOffset, type PaginatedResult, type PaginationInput } from "../types/pagination";
+
+type ClinicListFilter = {
+  clinic_type?: ClinicType;
+  search?: string;
+};
 
 export class ClinicRepository {
   // ── Queries ──────────────────────────────────────────────────────────────────
@@ -33,10 +39,33 @@ export class ClinicRepository {
    * Lists all clinics with optional filtering by clinic_type and case-insensitive search on name.
    * Results are sorted by creation date descending.
    */
-  static async findAll(filter?: {
-    clinic_type?: ClinicType;
-    search?: string;
-  }): Promise<ClinicModel[]> {
+  static async findAll(filter?: ClinicListFilter): Promise<ClinicModel[]> {
+    return await ClinicRepository.listQuery(filter)
+      .orderBy((c) => c.created_at.desc())
+      .all();
+  }
+
+  /**
+   * Same filters as findAll, one page at a time.
+   * The page rows and the total count run in parallel.
+   */
+  static async findPage(
+    filter: ClinicListFilter & PaginationInput
+  ): Promise<PaginatedResult<ClinicModel>> {
+    const query = ClinicRepository.listQuery(filter);
+    const [data, agg] = await Promise.all([
+      query
+        .orderBy((c) => c.created_at.desc())
+        .limit(filter.limit)
+        .offset(pageOffset(filter))
+        .all(),
+      query.aggregate((a) => ({ count: a.count() })),
+    ]);
+    return { data, total: agg.count };
+  }
+
+  /** Builds the filtered clinic query shared by findAll and findPage. */
+  private static listQuery(filter?: ClinicListFilter) {
     let query = db.orm.public.Clinic.select(
       "id",
       "name",
@@ -45,17 +74,17 @@ export class ClinicRepository {
       "updated_at"
     );
 
-    if (filter?.clinic_type) {
-      query = query.where({ clinic_type: filter.clinic_type });
+    const clinicType = filter?.clinic_type;
+    if (clinicType) {
+      query = query.where({ clinic_type: clinicType });
     }
 
-    if (filter?.search) {
-      const search = filter.search;
+    const search = filter?.search;
+    if (search) {
       query = query.where((c) => c.name.ilike(`%${search}%`));
     }
 
-    const clinics = await query.orderBy((c) => c.created_at.desc()).all();
-    return clinics;
+    return query;
   }
 
   // ── Mutations ────────────────────────────────────────────────────────────────

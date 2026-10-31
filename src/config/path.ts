@@ -45,7 +45,11 @@ export const PATHS = {
   // Platform administration (SuperAdmin)
   platform: {
     dashboard: "/platform/dashboard",
-    clinics: "/platform/clinics",
+    clinics: {
+      list: (query?: QueryParams) => withQuery("/platform/clinics", query),
+      new: "/platform/clinics/new",
+      edit: (id: string) => `/platform/clinics/${segment(id)}/edit`,
+    },
     account: "/platform/account",
     users: {
       list: (query?: QueryParams) => withQuery("/platform/users", query),

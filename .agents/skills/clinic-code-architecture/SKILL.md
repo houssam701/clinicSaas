@@ -158,6 +158,11 @@ existing examples named below instead of inventing a new pattern.
 - In-place mutations use `useTransition` + the server action.
 - Filters/search use `next/form` `<Form>` (client navigation), never a plain
   `<form method="GET">` (that reloads the whole page).
+- A filter bar with one search input or select uses `<FilterForm>` from
+  `src/components/ui/filter-form.tsx` (wraps `<Form>`): its submit button is
+  disabled and Enter does nothing while that field is empty; clearing an
+  applied filter is a separate Reset link. Give it `key={currentValue}` so it
+  resets after a client-side navigation. Examples: users and clinics lists.
 
 ---
 

@@ -19,7 +19,7 @@ export const platformNavigationConfig: NavigationConfig = {
     {
       id: "platform-clinics",
       label: "Clinics",
-      href: PATHS.platform.clinics,
+      href: PATHS.platform.clinics.list(),
       icon: "patients",
     },
     {

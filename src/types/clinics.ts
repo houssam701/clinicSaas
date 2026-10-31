@@ -1,4 +1,5 @@
 import { z } from "../lib/zod";
+import { PaginationQuerySchema } from "./pagination";
 import type { FieldOutputTypes } from "../prisma/generated/contract";
 
 // ─── Enum ─────────────────────────────────────────────────────────────────────
@@ -39,7 +40,7 @@ export const DeleteClinicSchema = z.object({
   id: z.string().uuid("Clinic is not a valid ID."),
 });
 
-export const ListClinicsQuerySchema = z.object({
+export const ListClinicsQuerySchema = PaginationQuerySchema.extend({
   clinic_type: z.nativeEnum(ClinicType).optional(),
   search: z.string().trim().min(1).optional(),
 });
