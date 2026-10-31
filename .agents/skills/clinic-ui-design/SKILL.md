@@ -80,7 +80,23 @@ All navigation and sidebar elements MUST adhere to SOLID principles:
   - Import from the set's subpath so only the icons you use are bundled: `import { HiOutlineTrash } from "react-icons/hi2";` (never `import * as Icons` or the package root).
   - Default set is **Heroicons v2 (`react-icons/hi2`)**: `HiOutline*` for actions inside text and buttons, `Hi*` (solid) for small filled glyphs such as chevrons. Use another set only when Heroicons has no match.
   - Size and color with Tailwind classes (`className="h-4 w-4"`, the color comes from `currentColor`), and mark decorative icons `aria-hidden="true"`; the button or link carries the text or `aria-label`.
-  - In use: pagination arrows `HiChevronLeft` / `HiChevronRight`, Edit `HiOutlinePencilSquare`, Delete `HiOutlineTrash`.
+  - Never use text characters as icons (`&larr;`, `←`, `→`, `▾`, `×`); use the matching react-icon instead.
+  - Icon registry (reuse these so the same action always has the same icon; add new ones here):
+
+    | Use | Icon |
+    |---|---|
+    | Pagination previous / next | `HiChevronLeft` / `HiChevronRight` |
+    | Back link | `HiArrowLeft` (via `<BackLink>`) |
+    | Dropdown arrow | `HiChevronUpDown` (via `<Select>`) |
+    | Reset / clear a filter | `HiXMark` |
+    | Edit | `HiOutlinePencilSquare` |
+    | Delete | `HiOutlineTrash` |
+    | Warning / confirm destructive | `HiOutlineExclamationTriangle` |
+- **Dropdowns — always `<Select>` (STRICT):**
+  - Never style a raw `<select>`. Use `<Select>` from `src/components/ui/select.tsx`: it keeps the native element (works in Server Components, forms and phone pickers) but hides the browser arrow (`appearance-none`) and draws a `HiChevronUpDown` that turns `text-primary` on hover/focus.
+  - `size="md"` (default) matches form inputs; `size="sm"` (h-9) matches toolbar buttons and filters. Pass `invalid` for validation errors (red border/ring, `aria-invalid`), and widths through `wrapperClassName`.
+- **Back links — always `<BackLink>`:**
+  - The "Back to …" link at the top of form and detail pages is `<BackLink href={PATHS...}>Back to users</BackLink>` from `src/components/ui/back-link.tsx`: `HiArrowLeft` that nudges left on hover, a soft hover background, and a `focus-visible` ring. Don't hand-roll it with an arrow character.
 - **Row Actions Look Like Buttons:**
   - Table row actions (Edit, Delete, ...) are bordered buttons with an icon + label, never bare text links:
     - Edit: `border border-slate-200 bg-white text-slate-700 hover:border-primary/40 hover:bg-primary/5 hover:text-primary`

@@ -3,11 +3,12 @@ import Form from "next/form";
 import { serverApiFetch } from "@/lib/server-api";
 import { API_PATHS, PATHS } from "@/config/path";
 import { DeleteUserButton } from "@/components/platform/delete-user-button";
-import { HiOutlinePencilSquare } from "react-icons/hi2";
+import { HiOutlinePencilSquare, HiXMark } from "react-icons/hi2";
 import { UserRole, type PublicUser } from "@/types/users";
 import type { ClinicModel } from "@/types/clinics";
 import { redirect } from "next/navigation";
 import { Pagination } from "@/components/ui/pagination";
+import { Select } from "@/components/ui/select";
 import { totalPages } from "@/lib/pagination";
 import { DEFAULT_PAGE_SIZE } from "@/types/pagination";
 
@@ -124,11 +125,14 @@ export default async function PlatformUsersPage({
           <label htmlFor="clinic-filter" className="sr-only">
             Filter by clinic
           </label>
-          <select
+          {/* key remounts it so defaultValue follows the URL after a client-side Reset */}
+          <Select
+            key={clinic_id ?? "all"}
             id="clinic-filter"
             name="clinic_id"
+            size="sm"
             defaultValue={clinic_id ?? ""}
-            className="px-3 py-2 text-sm font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-4 focus:ring-primary/20"
+            wrapperClassName="w-full sm:w-56"
           >
             <option value="">All clinics</option>
             {clinics.map((clinic) => (
@@ -136,13 +140,27 @@ export default async function PlatformUsersPage({
                 {clinic.name}
               </option>
             ))}
-          </select>
+          </Select>
           <button
             type="submit"
-            className="px-3 py-2 text-sm font-semibold rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+            className="h-9 px-3 text-sm font-semibold rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
           >
             Apply
           </button>
+          {/* Shown once a clinic filter is applied; clears it but keeps the role tab */}
+          {clinic_id && (
+            <>
+              <span aria-hidden="true" className="mx-1 h-6 w-px shrink-0 bg-slate-300 dark:bg-slate-700" />
+              <Link
+                href={PATHS.platform.users.list({ role })}
+                aria-label="Reset clinic filter"
+                className="group inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-sm font-semibold text-slate-600 dark:text-slate-300 transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 dark:hover:border-rose-900 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+              >
+                <HiXMark aria-hidden="true" className="h-4 w-4 transition-transform duration-150 group-hover:rotate-90" />
+                Reset
+              </Link>
+            </>
+          )}
         </Form>
       </div>
 
