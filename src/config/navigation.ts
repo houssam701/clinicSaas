@@ -62,10 +62,10 @@ export const navigationConfig: NavigationConfig = {
   ],
   bottomNav: [
     {
-      id: "settings",
-      label: "Settings",
-      href: PATHS.settings,
-      icon: "settings",
+      id: "account",
+      label: "Account",
+      href: PATHS.account,
+      icon: "account",
     },
   ],
 };

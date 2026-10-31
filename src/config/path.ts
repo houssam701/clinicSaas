@@ -39,14 +39,14 @@ export const PATHS = {
   messages: "/messages",
   reviews: "/reviews",
   finances: "/finances",
-  settings: "/settings",
+  account: "/account",
   emergency: "/emergency",
 
   // Platform administration (SuperAdmin)
   platform: {
     dashboard: "/platform/dashboard",
     clinics: "/platform/clinics",
-    settings: "/platform/settings",
+    account: "/platform/account",
     users: {
       list: (query?: QueryParams) => withQuery("/platform/users", query),
       new: "/platform/users/new",

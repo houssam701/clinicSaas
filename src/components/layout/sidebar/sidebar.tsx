@@ -58,7 +58,7 @@ export function Sidebar({ className, onNavigate, showBrand = true, config = navi
         </div>
       </div>
 
-      {/* Bottom Section: Settings + Theme Mode Switcher */}
+      {/* Bottom Section: Account + Theme Mode Switcher */}
       <div className="pt-6 border-t border-slate-200/80 dark:border-slate-800/80 space-y-3">
         <SidebarNav
           items={config.bottomNav}

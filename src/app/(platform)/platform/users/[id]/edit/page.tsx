@@ -28,7 +28,7 @@ export default async function EditPlatformUserPage({
   if (!userRes.ok) notFound();
   const { user }: { user: PublicUser } = await userRes.json();
 
-  // The single SuperAdmin is managed from settings, not from this list
+  // The single SuperAdmin is managed from their own account page, not from this list
   if (user.role === UserRole.SuperAdmin) notFound();
 
   const clinics: ClinicModel[] = clinicsRes.ok ? (await clinicsRes.json()).clinics : [];

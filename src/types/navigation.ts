@@ -6,7 +6,7 @@ export type NavIconName =
   | "messages"
   | "reviews"
   | "finances"
-  | "settings"
+  | "account"
   | "emergency"
   | "sun"
   | "moon"
