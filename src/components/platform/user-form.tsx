@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useFormStatus } from "react-dom";
 import type { UserFormState } from "@/lib/user-form";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { UserRole } from "@/types/users";
 import { PATHS } from "@/config/path";
 
@@ -257,13 +258,13 @@ export function UserForm({ mode, action, clinics, initialValues = EMPTY_VALUES }
               No clinics exist yet. Create a clinic first, then assign users to it.
             </p>
           ) : (
-            <select
+            <Select
               id="clinic_id"
               name="clinic_id"
               value={values.clinic_id}
               onChange={set("clinic_id")}
+              invalid={!!errors.clinic_id}
               aria-describedby={errors.clinic_id ? "clinic_id-error" : undefined}
-              className={inputClass(!!errors.clinic_id)}
             >
               <option value="">Select a clinic…</option>
               {clinics.map((clinic) => (
@@ -271,7 +272,7 @@ export function UserForm({ mode, action, clinics, initialValues = EMPTY_VALUES }
                   {clinic.name}
                 </option>
               ))}
-            </select>
+            </Select>
           )}
           <FieldError id="clinic_id-error" messages={errors.clinic_id} />
         </div>

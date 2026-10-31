@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { BackLink } from "@/components/ui/back-link";
 import { notFound } from "next/navigation";
 import { serverApiFetch } from "@/lib/server-api";
 import { API_PATHS, PATHS } from "@/config/path";
@@ -36,12 +36,7 @@ export default async function EditPlatformUserPage({
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <Link
-          href={PATHS.platform.users.list()}
-          className="text-sm font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white"
-        >
-          &larr; Back to users
-        </Link>
+        <BackLink href={PATHS.platform.users.list()}>Back to users</BackLink>
         <h1 className="mt-3 text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
           Edit {user.first_name} {user.last_name}
         </h1>
