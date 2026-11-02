@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import "./globals.css";
+import { TopLoader } from "@/components/shared/top-loader";
 
 export const metadata: Metadata = {
   title: "my-app",
@@ -13,7 +15,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {/* useSearchParams needs a Suspense boundary so pages stay server-rendered */}
+        <Suspense fallback={null}>
+          <TopLoader />
+        </Suspense>
+        {children}
+      </body>
     </html>
   );
 }
