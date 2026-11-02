@@ -124,13 +124,13 @@ export class ClinicRepository {
   static async deleteClinic(id: string): Promise<boolean> {
     return await db.transaction(async (tx) => {
       // 1. Delete all payments associated with this clinic
-      await tx.orm.public.Payment.where({ clinic_id: id }).delete();
+      await tx.orm.public.Payment.where({ clinic_id: id }).deleteAndCount();
 
       // 2. Delete all invoices associated with this clinic
-      await tx.orm.public.Invoice.where({ clinic_id: id }).delete();
+      await tx.orm.public.Invoice.where({ clinic_id: id }).deleteAndCount();
 
       // 3. Delete all appointments belonging to this clinic
-      await tx.orm.public.Appointment.where({ clinic_id: id }).delete();
+      await tx.orm.public.Appointment.where({ clinic_id: id }).deleteAndCount();
 
       // 4. Clean up patient documents and medical history before removing patients
       const patients = await tx.orm.public.Patient
@@ -139,11 +139,11 @@ export class ClinicRepository {
         .all();
 
       for (const patient of patients) {
-        await tx.orm.public.SharedMedicalHistory.where({ patient_id: patient.id }).delete();
-        await tx.orm.public.PatientDocument.where({ patient_id: patient.id }).delete();
+        await tx.orm.public.SharedMedicalHistory.where({ patient_id: patient.id }).deleteAndCount();
+        await tx.orm.public.PatientDocument.where({ patient_id: patient.id }).deleteAndCount();
       }
 
-      await tx.orm.public.Patient.where({ clinic_id: id }).delete();
+      await tx.orm.public.Patient.where({ clinic_id: id }).deleteAndCount();
 
       // 5. Delete permissions for users tied to this clinic before removing the users
       const users = await tx.orm.public.User
@@ -152,10 +152,10 @@ export class ClinicRepository {
         .all();
 
       for (const user of users) {
-        await tx.orm.public.UserPermission.where({ user_id: user.id }).delete();
+        await tx.orm.public.UserPermission.where({ user_id: user.id }).deleteAndCount();
       }
 
-      await tx.orm.public.User.where({ clinic_id: id }).delete();
+      await tx.orm.public.User.where({ clinic_id: id }).deleteAndCount();
 
       // 6. Delete the clinic itself
       await tx.orm.public.Clinic.where({ id }).delete();

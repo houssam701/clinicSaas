@@ -45,8 +45,10 @@ export async function toUserFormState(response: Response | null): Promise<UserFo
         ? { fieldErrors: data.details.fieldErrors }
         : { fieldErrors: { email: [data.error ?? "Email already in use."] } };
     case 401:
+      return { error: "Your session has expired. Please sign in again." };
     case 403:
-      return { error: "Your session does not allow this action. Please sign in again." };
+      // e.g. "Forbidden: You do not have permission to create admins"
+      return { error: data.error?.replace(/^Forbidden:s*/, "") ?? "You are not allowed to do this." };
     case 404:
       return { error: "This user no longer exists." };
     default:

@@ -91,6 +91,9 @@ All navigation and sidebar elements MUST adhere to SOLID principles:
     | Reset / clear a filter | `HiXMark` |
     | Edit | `HiOutlinePencilSquare` |
     | Delete | `HiOutlineTrash` |
+    | User access / permissions | `HiOutlineKey` |
+    | Grant all / Revoke all | `HiOutlineCheckCircle` / `HiOutlineNoSymbol` |
+    | Search input | `HiOutlineMagnifyingGlass` |
     | Warning / confirm destructive | `HiOutlineExclamationTriangle` |
 - **Dropdowns — always `<Select>` (STRICT):**
   - Never style a raw `<select>`. Use `<Select>` from `src/components/ui/select.tsx`: it keeps the native element (works in Server Components, forms and phone pickers) but hides the browser arrow (`appearance-none`) and draws a `HiChevronUpDown` that turns `text-primary` on hover/focus.

@@ -118,10 +118,10 @@ export class PatientRepository {
     const now = new Date().toISOString();
     return db.transaction(async (tx) => {
       // 1. Remove shared medical history (1:1)
-      await tx.orm.public.SharedMedicalHistory.where({ patient_id: id }).delete();
+      await tx.orm.public.SharedMedicalHistory.where({ patient_id: id }).deleteAndCount();
 
       // 2. Remove uploaded documents
-      await tx.orm.public.PatientDocument.where({ patient_id: id }).delete();
+      await tx.orm.public.PatientDocument.where({ patient_id: id }).deleteAndCount();
 
       // 3. Unlink and delete appointments
       const appointments = await tx.orm.public.Appointment
@@ -133,10 +133,10 @@ export class PatientRepository {
         // Null-out appointment_id on linked invoices (nullable FK)
         await tx.orm.public.Invoice
           .where({ appointment_id: appt.id })
-          .update({ appointment_id: null });
+          .updateAndCount({ appointment_id: null });
       }
 
-      await tx.orm.public.Appointment.where({ patient_id: id }).delete();
+      await tx.orm.public.Appointment.where({ patient_id: id }).deleteAndCount();
 
       // 4. Soft-delete invoices and their payments for accounting/audit retention
       const invoices = await tx.orm.public.Invoice
@@ -147,12 +147,12 @@ export class PatientRepository {
       for (const inv of invoices) {
         await tx.orm.public.Payment
           .where({ invoice_id: inv.id })
-          .update({ deleted_at: now });
+          .updateAndCount({ deleted_at: now });
       }
 
       await tx.orm.public.Invoice
         .where({ patient_id: id })
-        .update({ deleted_at: now });
+        .updateAndCount({ deleted_at: now });
 
       // 5. Soft-delete the patient itself to retain referential integrity with financial records
       await tx.orm.public.Patient

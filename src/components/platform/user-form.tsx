@@ -93,17 +93,31 @@ export interface UserFormProps {
   mode: UserFormMode;
   /** Server action to submit to — the form does not know which API it calls */
   action: (state: UserFormState, formData: FormData) => Promise<UserFormState>;
-  clinics: ClinicOption[];
+  /** Clinic picker options; leave out when the clinic is fixed (an Admin's own team) */
+  clinics?: ClinicOption[];
+  /** Roles the caller may pick; one role shows it read-only (default: Admin and Staff) */
+  roles?: UserRole[];
+  /** Where Cancel goes, from PATHS (default: the platform users list) */
+  cancelHref?: string;
   initialValues?: UserFormValues;
 }
 
 /**
- * Shared create/edit form for platform users.
+ * Shared create/edit form for users, on the platform and in an Admin's team.
  * The caller injects the server action, so the same UI serves both flows.
  */
-export function UserForm({ mode, action, clinics, initialValues = EMPTY_VALUES }: UserFormProps) {
+export function UserForm({
+  mode,
+  action,
+  clinics,
+  roles = ROLE_OPTIONS.map((o) => o.value),
+  cancelHref = PATHS.platform.users.list(),
+  initialValues = EMPTY_VALUES,
+}: UserFormProps) {
   const [state, formAction] = useActionState(action, initialState);
   const copy = MODE_COPY[mode];
+  const roleOptions = ROLE_OPTIONS.filter((o) => roles.includes(o.value));
+  if (!roles.includes(initialValues.role)) initialValues = { ...initialValues, role: roles[0] };
 
   // Controlled so React 19 does not clear the fields after a failed attempt
   const [values, setValues] = useState({ ...initialValues, password: "" });
@@ -216,11 +230,22 @@ export function UserForm({ mode, action, clinics, initialValues = EMPTY_VALUES }
         )}
       </div>
 
-      {/* Role */}
+      {/* Role — one allowed role is shown, not picked */}
+      {roleOptions.length === 1 ? (
+        <div>
+          <input type="hidden" name="role" value={roleOptions[0].value} />
+          <p className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Role</p>
+          <p className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-4">
+            <span className="block text-sm font-bold text-slate-800 dark:text-white">{roleOptions[0].label}</span>
+            <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">{roleOptions[0].hint}</span>
+          </p>
+          <FieldError id="role-error" messages={errors.role} />
+        </div>
+      ) : (
       <fieldset>
         <legend className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Role</legend>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {ROLE_OPTIONS.map((option) => {
+          {roleOptions.map((option) => {
             const checked = values.role === option.value;
             return (
               <label
@@ -247,8 +272,10 @@ export function UserForm({ mode, action, clinics, initialValues = EMPTY_VALUES }
         </div>
         <FieldError id="role-error" messages={errors.role} />
       </fieldset>
+      )}
 
-      {/* Clinic — Admin and Staff always belong to one */}
+      {/* Clinic — Admin and Staff always belong to one; fixed when the form has no clinic list */}
+      {clinics && (
       <div>
           <label htmlFor="clinic_id" className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
             Clinic
@@ -276,10 +303,11 @@ export function UserForm({ mode, action, clinics, initialValues = EMPTY_VALUES }
           )}
           <FieldError id="clinic_id-error" messages={errors.clinic_id} />
         </div>
+      )}
 
       <div className="flex items-center justify-end gap-3 pt-2">
         <Link
-          href={PATHS.platform.users.list()}
+          href={cancelHref}
           className="px-4 py-2.5 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
         >
           Cancel

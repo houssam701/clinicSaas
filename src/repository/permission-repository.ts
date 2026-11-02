@@ -100,7 +100,7 @@ export class PermissionRepository {
   ): Promise<UserPermissionModel[]> {
     return await db.transaction(async (tx) => {
       // 1. Delete all current permissions for this user
-      await tx.orm.public.UserPermission.where({ user_id: userId }).delete();
+      await tx.orm.public.UserPermission.where({ user_id: userId }).deleteAndCount();
 
       // 2. Insert new permissions (if any provided)
       for (const item of permissions) {

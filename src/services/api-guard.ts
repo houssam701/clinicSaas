@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "../lib/auth";
 import { UserRole } from "../types/users";
 import type { Session } from "next-auth";
+import type { PermissionAction, PermissionModule } from "../config/permissions";
 
 export const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -70,23 +71,23 @@ export function canAccessClinic(
 }
 
 /**
- * Checks whether a Staff user has a specific permission flag enabled
+ * Checks whether an Admin or Staff user has a specific permission flag enabled
  * for a given module.
  *
  * Returns a 403 NextResponse if the permission is missing or set to false,
  * or null if access is granted.
  *
- * Should only be called when callerRole === Staff.
- * Admin and SuperAdmin bypass module-level permission checks entirely.
+ * Call it for every caller except the SuperAdmin, who bypasses module checks.
+ * Admins are checked too; their access is set by the SuperAdmin (or the Admin who created them).
  *
- * @param userId     The Staff user's ID (from session)
+ * @param userId     The caller's user ID (from session)
  * @param moduleName e.g. "Appointments"
  * @param action     One of "can_view" | "can_create" | "can_edit" | "can_delete"
  */
 export async function checkModulePermission(
   userId: string,
-  moduleName: string,
-  action: "can_view" | "can_create" | "can_edit" | "can_delete"
+  moduleName: PermissionModule,
+  action: PermissionAction
 ): Promise<NextResponse | null> {
   // Dynamic import to avoid circular dependency (repository → db → service)
   const { PermissionRepository } = await import("../repository/permission-repository");

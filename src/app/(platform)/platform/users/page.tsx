@@ -2,7 +2,7 @@ import Link from "next/link";
 import { serverApiFetch } from "@/lib/server-api";
 import { API_PATHS, PATHS } from "@/config/path";
 import { DeleteUserButton } from "@/components/platform/delete-user-button";
-import { HiOutlinePencilSquare, HiXMark } from "react-icons/hi2";
+import { HiOutlineKey, HiOutlinePencilSquare, HiXMark } from "react-icons/hi2";
 import { UserRole, type PublicUser } from "@/types/users";
 import type { ClinicModel } from "@/types/clinics";
 import { redirect } from "next/navigation";
@@ -214,6 +214,18 @@ export default async function PlatformUsersPage({
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-end gap-2">
+                      {/* Admins and Staff both have module permissions; only the SuperAdmin has none */}
+                      {user.role !== UserRole.SuperAdmin && (
+                        <Link
+                          href={PATHS.platform.users.access(user.id)}
+                          prefetch={false}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-xs hover:border-primary/40 hover:bg-primary/5 hover:text-primary focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 transition-colors"
+                          aria-label={`Manage access for ${user.first_name} ${user.last_name}`}
+                        >
+                          <HiOutlineKey aria-hidden="true" className="h-3.5 w-3.5" />
+                          Access
+                        </Link>
+                      )}
                       <Link
                         href={PATHS.platform.users.edit(user.id)}
                         prefetch={false}

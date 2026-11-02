@@ -31,7 +31,7 @@ export class UserRepository {
    */
   static async findById(id: string): Promise<PublicUser | null> {
     const user = await db.orm.public.User
-      .select("id", "clinic_id", "role", "first_name", "last_name", "email", "created_at", "updated_at")
+      .select("id", "clinic_id", "role", "first_name", "last_name", "email", "created_by_id", "created_at", "updated_at")
       .first({ id });
     // .select() narrows the return to only the listed fields — matches PublicUser exactly
     return user ?? null;
@@ -45,13 +45,13 @@ export class UserRepository {
    * Returns PublicUser (no password_hash).
    */
   static async createUser(
-    data: CreateUserInput & { password_hash: string }
+    data: CreateUserInput & { password_hash: string; created_by_id: string }
   ): Promise<PublicUser> {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...rest } = data; // strip raw password before insert
     // .select() before .create() narrows the returned row — password_hash is not listed
     const user = await db.orm.public.User
-      .select("id", "clinic_id", "role", "first_name", "last_name", "email", "created_at", "updated_at")
+      .select("id", "clinic_id", "role", "first_name", "last_name", "email", "created_by_id", "created_at", "updated_at")
       .create(rest);
     return user;
   }
@@ -95,6 +95,7 @@ export class UserRepository {
       "first_name",
       "last_name",
       "email",
+      "created_by_id",
       "created_at",
       "updated_at"
     );
@@ -128,7 +129,7 @@ export class UserRepository {
   ): Promise<PublicUser | null> {
     const updated = await db.orm.public.User
       .where({ id })
-      .select("id", "clinic_id", "role", "first_name", "last_name", "email", "created_at", "updated_at")
+      .select("id", "clinic_id", "role", "first_name", "last_name", "email", "created_by_id", "created_at", "updated_at")
       .update(data);
     return updated ?? null;
   }
@@ -140,16 +141,30 @@ export class UserRepository {
   static async deleteUser(id: string): Promise<boolean> {
     return await db.transaction(async (tx) => {
       // 1. Delete associated permissions if any exist
-      await tx.orm.public.UserPermission.where({ user_id: id }).delete();
+      await tx.orm.public.UserPermission.where({ user_id: id }).deleteAndCount();
 
       // 2. Unassign staff from appointments (set user_id to null)
-      await tx.orm.public.Appointment.where({ user_id: id }).update({ user_id: null });
+      await tx.orm.public.Appointment.where({ user_id: id }).updateAndCount({ user_id: null });
 
-      // 3. Delete user
+      // 3. Hand the users they created to their own creator, so access cascades stay connected
+      const deleted = await tx.orm.public.User.select("created_by_id").first({ id });
+      await tx.orm.public.User
+        .where({ created_by_id: id })
+        .updateAndCount({ created_by_id: deleted?.created_by_id ?? null });
+
+      // 4. Delete user
       await tx.orm.public.User.where({ id }).delete();
 
       return true;
     });
+  }
+
+  /** Users this user created (id and role only), for the access cascade. */
+  static async findCreatedBy(creatorId: string): Promise<Pick<PublicUser, "id" | "role">[]> {
+    return await db.orm.public.User
+      .select("id", "role")
+      .where({ created_by_id: creatorId })
+      .all();
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────────

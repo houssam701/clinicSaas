@@ -56,11 +56,12 @@ export const CreateUserSchema = CreateUserBaseSchema.superRefine((data, ctx) => 
   }
 });
 
-// Admin can only create Staff for their own clinic.
-// Role is locked to "Staff" and clinic_id is omitted because the client cannot specify it;
+// An Admin creates Staff or Admins for their own clinic only.
+// SuperAdmin is never allowed, and clinic_id is omitted because the client cannot specify it;
 // it is always injected securely from the calling Admin's verified session.
-export const CreateStaffSchema = CreateUserBaseSchema.omit({ clinic_id: true }).extend({
-  role: z.literal(UserRole.Staff),
+// Whether the Admin may create that role is a permission check in the route.
+export const CreateTeamMemberSchema = CreateUserBaseSchema.omit({ clinic_id: true }).extend({
+  role: z.enum([UserRole.Admin, UserRole.Staff], { message: "Role must be Admin or Staff." }),
 });
 
 // ─── Update User Schema ────────────────────────────────────────────────────────
@@ -86,7 +87,7 @@ export const ListUsersQuerySchema = PaginationQuerySchema.extend({
 // ─── Inferred Request Types ───────────────────────────────────────────────────
 export type LoginInput          = z.infer<typeof LoginSchema>;
 export type CreateUserInput     = z.infer<typeof CreateUserSchema>;
-export type CreateStaffInput    = z.infer<typeof CreateStaffSchema>;
+export type CreateTeamMemberInput = z.infer<typeof CreateTeamMemberSchema>;
 export type UpdateUserInput     = z.infer<typeof UpdateUserSchema>;
 export type ListUsersQueryInput = z.infer<typeof ListUsersQuerySchema>;
 

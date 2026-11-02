@@ -4,6 +4,7 @@ import { auth } from "../../../../lib/auth";
 import { UserRepository } from "../../../../repository/user-repository";
 import { ClinicRepository } from "../../../../repository/clinic-repository";
 import { UpdateUserData, UpdateUserSchema, UserRole } from "../../../../types/users";
+import { checkTeamAccess } from "../../../../services/access";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -75,7 +76,8 @@ export async function GET(
  * Updates an existing user's information:
  *   - SuperAdmin: Can update any field on any user, but cannot create a second SuperAdmin
  *                 or remove the role from the only one.
- *   - Admin: Can update Staff in their clinic or their own info; cannot change clinic_id or escalate roles.
+ *   - Admin: Can update their own info, and Staff/Admins in their clinic when they have can_edit on
+ *            "Staff"/"Admins"; cannot change clinic_id or anyone's role.
  *   - Staff: Can only update their own first_name, last_name, or password.
  *
  * Responses:
@@ -144,15 +146,12 @@ export async function PATCH(
       );
     }
   } else if (callerRole === UserRole.Admin) {
-    const isSelf = targetUser.id === session.user.id;
-    const isStaffInClinic =
-      targetUser.clinic_id === callerClinicId && targetUser.role === UserRole.Staff;
-
-    if (!isSelf && !isStaffInClinic) {
-      return NextResponse.json(
-        { error: "Forbidden: Admins can only manage staff within their own clinic" },
-        { status: 403 }
-      );
+    // Their own profile, or a team member they have can_edit on ("Staff" / "Admins")
+    if (targetUser.id !== session.user.id) {
+      const denied = await checkTeamAccess(session.user, targetUser, "can_edit");
+      if (denied) {
+        return NextResponse.json({ error: `Forbidden: ${denied}` }, { status: 403 });
+      }
     }
 
     // Admins cannot change clinic_id
@@ -163,10 +162,10 @@ export async function PATCH(
       );
     }
 
-    // Admins cannot elevate roles
-    if (parsed.data.role && parsed.data.role !== UserRole.Staff) {
+    // Admins cannot change roles (promoting Staff or demoting Admins goes through the SuperAdmin)
+    if (parsed.data.role && parsed.data.role !== targetUser.role) {
       return NextResponse.json(
-        { error: "Forbidden: Admins cannot assign Admin or SuperAdmin roles" },
+        { error: "Forbidden: Admins cannot change a user's role" },
         { status: 403 }
       );
     }
@@ -250,7 +249,7 @@ export async function PATCH(
  *
  * Deletes a user by ID:
  *   - SuperAdmin: Can delete any user (except themselves, and cannot delete the last SuperAdmin).
- *   - Admin: Can only delete Staff members in their own clinic.
+ *   - Admin: Can delete Staff/Admins in their own clinic when they have can_delete on "Staff"/"Admins".
  *   - Staff: Forbidden (403).
  *
  * Responses:
@@ -285,7 +284,6 @@ export async function DELETE(
   }
 
   const callerRole = session.user.role;
-  const callerClinicId = session.user.clinic_id;
 
   if (callerRole === UserRole.SuperAdmin) {
     // If target is SuperAdmin, ensure at least one other SuperAdmin remains
@@ -299,18 +297,10 @@ export async function DELETE(
       }
     }
   } else if (callerRole === UserRole.Admin) {
-    // Admins can ONLY delete Staff belonging to their own clinic
-    if (!callerClinicId || targetUser.clinic_id !== callerClinicId) {
-      return NextResponse.json(
-        { error: "Forbidden: Cannot delete users belonging to another clinic" },
-        { status: 403 }
-      );
-    }
-    if (targetUser.role !== UserRole.Staff) {
-      return NextResponse.json(
-        { error: "Forbidden: Admins can only delete staff members" },
-        { status: 403 }
-      );
+    // Same clinic, and can_delete on "Staff" or "Admins" for the target's role
+    const denied = await checkTeamAccess(session.user, targetUser, "can_delete");
+    if (denied) {
+      return NextResponse.json({ error: `Forbidden: ${denied}` }, { status: 403 });
     }
   } else {
     // Staff cannot delete users

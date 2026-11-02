@@ -41,6 +41,13 @@ export const PATHS = {
   finances: "/finances",
   account: "/account",
   emergency: "/emergency",
+  // An Admin's own Staff and Admins (gated by the "Staff" / "Admins" permissions)
+  team: {
+    list: (query?: QueryParams) => withQuery("/team", query),
+    new: "/team/new",
+    edit: (id: string) => `/team/${segment(id)}/edit`,
+    access: (id: string) => `/team/${segment(id)}/access`,
+  },
 
   // Platform administration (SuperAdmin)
   platform: {
@@ -55,6 +62,7 @@ export const PATHS = {
       list: (query?: QueryParams) => withQuery("/platform/users", query),
       new: "/platform/users/new",
       edit: (id: string) => `/platform/users/${segment(id)}/edit`,
+      access: (id: string) => `/platform/users/${segment(id)}/access`,
     },
   },
 } as const;

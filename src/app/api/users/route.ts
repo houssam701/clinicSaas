@@ -4,13 +4,15 @@ import { auth } from "../../../lib/auth";
 import { UserRepository } from "../../../repository/user-repository";
 import { ClinicRepository } from "../../../repository/clinic-repository";
 import { CreateUserSchema, ListUsersQuerySchema, UserRole } from "../../../types/users";
+import { can, fullGrid, saveGrid } from "../../../services/access";
 
 /**
  * GET /api/users
  *
  * Lists users according to role permissions and tenant boundary:
  *   - SuperAdmin: Returns all users across all clinics, excluding the calling SuperAdmin. Can optionally filter by ?clinic_id=... and ?role=...
- *   - Admin: Strictly scoped to their own clinic's staff (returns only Staff users for their session's clinic_id).
+ *   - Admin: Strictly scoped to their own clinic, excluding themselves. Returns Staff if they have
+ *            can_view on "Staff", Admins if they have can_view on "Admins"; ?role= narrows to one.
  *   - Staff: Forbidden (403).
  *
  * Auth:          Required
@@ -72,7 +74,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ users: result.data, total: result.total, page, limit }, { status: 200 });
   }
 
-  // 4. Admin flow: strictly scoped to staff members in the Admin's clinic (filters ignored)
+  // 4. Admin flow: their own clinic only, and only the roles they may see
+  //    (can_view on "Staff" and/or "Admins"); ?clinic_id is ignored, ?role narrows
   const callerClinicId = session.user.clinic_id;
   if (!callerClinicId) {
     return NextResponse.json(
@@ -81,9 +84,24 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const [seesStaff, seesAdmins] = await Promise.all([
+    can(session.user, "Staff", "can_view"),
+    can(session.user, "Admins", "can_view"),
+  ]);
+  const visibleRoles = [...(seesStaff ? [UserRole.Staff] : []), ...(seesAdmins ? [UserRole.Admin] : [])];
+  const requestedRole = parsedQuery.data.role;
+  if (visibleRoles.length === 0 || (requestedRole && !visibleRoles.includes(requestedRole))) {
+    return NextResponse.json(
+      { error: "Forbidden: You do not have permission to view these team members" },
+      { status: 403 }
+    );
+  }
+
   const result = await UserRepository.findPage({
-    clinic_id: callerClinicId,
-    role:      UserRole.Staff,
+    clinic_id:     callerClinicId,
+    // Both visible → no role filter (a clinic never contains the SuperAdmin)
+    role:          requestedRole ?? (visibleRoles.length === 1 ? visibleRoles[0] : undefined),
+    excludeUserId: session.user.id,
     page,
     limit,
   });
@@ -177,9 +195,16 @@ export async function POST(request: NextRequest) {
 
   // 8. Persist via repository — raw password never touches the DB layer
   const newUser = await UserRepository.createUser({
-    ...parsed.data, 
+    ...parsed.data,
     password_hash,
+    created_by_id: session.user.id,
   });
+
+  // 9. A new Admin starts with full access (the SuperAdmin removes what they don't need);
+  //    a new Staff member starts with none until someone grants it
+  if (newUser.role === UserRole.Admin) {
+    await saveGrid(newUser, fullGrid());
+  }
 
   return NextResponse.json({ user: newUser }, { status: 201 });
 }
