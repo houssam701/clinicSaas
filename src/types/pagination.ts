@@ -2,7 +2,7 @@ import { z } from "../lib/zod";
 
 // ─── Shared pagination contract (API query params + repository results) ──────
 
-export const DEFAULT_PAGE_SIZE = 2;
+export const DEFAULT_PAGE_SIZE = 12;
 export const MAX_PAGE_SIZE = 200;
 
 /** `?page=&limit=` for any list endpoint. Extend it with the endpoint's own filters. */
