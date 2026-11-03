@@ -103,3 +103,23 @@ export async function checkModulePermission(
   }
   return null;
 }
+
+/**
+ * Authenticates any role, then requires `action` on `moduleName` for everyone
+ * except the SuperAdmin. Use it instead of authenticate() in module routes,
+ * then still enforce the clinic boundary with canAccessClinic.
+ *
+ * @example
+ *   const { session, error } = await authenticateForModule("Patients", "can_view");
+ *   if (error) return error;
+ */
+export async function authenticateForModule(
+  moduleName: PermissionModule,
+  action: PermissionAction
+): Promise<AuthResult> {
+  const result = await authenticate([UserRole.SuperAdmin, UserRole.Admin, UserRole.Staff]);
+  if (result.error || result.session.user.role === UserRole.SuperAdmin) return result;
+
+  const permError = await checkModulePermission(result.session.user.id, moduleName, action);
+  return permError ? { session: null, error: permError } : result;
+}

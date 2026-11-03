@@ -4,7 +4,7 @@ import type { JsonValue } from "@prisma/orm-postgres/utils/json";
 import { UpdatePatientSchema } from "../../../../types/patients";
 import {
   UUID_REGEX,
-  authenticate,
+  authenticateForModule,
   canAccessClinic,
 } from "../../../../services/api-guard";
 
@@ -18,7 +18,7 @@ interface RouteContext {
  * Returns a single patient by UUID.
  *
  * Auth:          Required
- * Authorization: SuperAdmin or Admin (Admin scoped to their clinic)
+ * Authorization: SuperAdmin, or Admin/Staff with can_view on "Patients" (scoped to their clinic)
  *
  * Responses:
  *   200  { patient: PatientModel }
@@ -28,7 +28,7 @@ interface RouteContext {
  *   404  Not found
  */
 export async function GET(_request: NextRequest, context: RouteContext) {
-  const { session, error } = await authenticate();
+  const { session, error } = await authenticateForModule("Patients", "can_view");
   if (error) return error;
 
   const { id } = await context.params;
@@ -53,7 +53,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
  * Partially updates a patient.
  *
  * Auth:          Required
- * Authorization: SuperAdmin or Admin (Admin scoped to their clinic)
+ * Authorization: SuperAdmin, or Admin/Staff with can_edit on "Patients" (scoped to their clinic)
  *
  * Body: UpdatePatientSchema fields (at least one required)
  *
@@ -66,7 +66,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
  *   422  Validation error
  */
 export async function PATCH(request: NextRequest, context: RouteContext) {
-  const { session, error } = await authenticate();
+  const { session, error } = await authenticateForModule("Patients", "can_edit");
   if (error) return error;
 
   const { id } = await context.params;
@@ -110,7 +110,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
  * Deletes a patient and all associated records in a transaction.
  *
  * Auth:          Required
- * Authorization: SuperAdmin or Admin (Admin scoped to their clinic)
+ * Authorization: SuperAdmin, or Admin/Staff with can_delete on "Patients" (scoped to their clinic)
  *
  * Responses:
  *   204  (no body)
@@ -120,7 +120,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
  *   404  Not found
  */
 export async function DELETE(_request: NextRequest, context: RouteContext) {
-  const { session, error } = await authenticate();
+  const { session, error } = await authenticateForModule("Patients", "can_delete");
   if (error) return error;
 
   const { id } = await context.params;

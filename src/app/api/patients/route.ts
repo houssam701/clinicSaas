@@ -6,7 +6,7 @@ import {
   CreatePatientSchema,
   ListPatientsQuerySchema,
 } from "@/types/patients";
-import { authenticate, canAccessClinic } from "@/services";
+import { authenticateForModule, canAccessClinic } from "@/services";
 
 /**
  * GET /api/patients
@@ -14,9 +14,9 @@ import { authenticate, canAccessClinic } from "@/services";
  * Lists patients with pagination and optional search/filter.
  *
  * Auth:          Required
- * Authorization: SuperAdmin or Admin
+ * Authorization: SuperAdmin, or Admin/Staff with can_view on "Patients"
  *   - SuperAdmin: Can pass ?clinic_id= to scope results; otherwise returns all.
- *   - Admin:      Auto-scoped to their own clinic; ?clinic_id is ignored.
+ *   - Admin/Staff: Auto-scoped to their own clinic; ?clinic_id is ignored.
  *
  * Query Params:
  *   page?:      number  (min 1, default 1)
@@ -28,11 +28,11 @@ import { authenticate, canAccessClinic } from "@/services";
  *   200  { data: PatientModel[], total: number, page: number, limit: number }
  *   400  Invalid query parameters
  *   401  Unauthorized
- *   403  Forbidden (Staff role)
+ *   403  Forbidden (missing can_view on "Patients")
  */
 export async function GET(request: NextRequest) {
-  // 1. Auth & role guard (Admin or SuperAdmin)
-  const { session, error } = await authenticate();
+  // 1. Auth + can_view on "Patients" (the SuperAdmin skips the permission check)
+  const { session, error } = await authenticateForModule("Patients", "can_view");
   if (error) return error;
 
   const caller = session.user;
@@ -57,12 +57,12 @@ export async function GET(request: NextRequest) {
   const { page, limit, search } = parsed.data;
 
   // 4. Determine effective clinic_id
-  //    Admin is always locked to their own clinic regardless of query param.
+  //    Admin and Staff are always locked to their own clinic regardless of query param.
   let clinic_id: string | undefined;
-  if (caller.role === UserRole.Admin) {
+  if (caller.role !== UserRole.SuperAdmin) {
     if (!caller.clinic_id) {
       return NextResponse.json(
-        { error: "Forbidden: Admin is not associated with a clinic" },
+        { error: "Forbidden: You are not associated with a clinic" },
         { status: 403 }
       );
     }
@@ -87,8 +87,8 @@ export async function GET(request: NextRequest) {
  * Creates a new patient.
  *
  * Auth:          Required
- * Authorization: SuperAdmin or Admin
- *   - Admin: clinic_id in body must match their own clinic.
+ * Authorization: SuperAdmin, or Admin/Staff with can_create on "Patients"
+ *   - Admin/Staff: clinic_id in body must match their own clinic.
  *
  * Body: CreatePatientSchema fields
  *
@@ -96,12 +96,12 @@ export async function GET(request: NextRequest) {
  *   201  { patient: PatientModel }
  *   400  Invalid JSON
  *   401  Unauthorized
- *   403  Forbidden (clinic mismatch for Admin or unauthorized role)
+ *   403  Forbidden (clinic mismatch, or missing can_create on "Patients")
  *   422  Validation error
  */
 export async function POST(request: NextRequest) {
-  // 1. Auth & role guard (Admin or SuperAdmin)
-  const { session, error } = await authenticate();
+  // 1. Auth + can_create on "Patients" (the SuperAdmin skips the permission check)
+  const { session, error } = await authenticateForModule("Patients", "can_create");
   if (error) return error;
 
   const caller = session.user;
@@ -122,10 +122,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 3. Enforce clinic boundary for Admin
-  if (caller.role === UserRole.Admin && !caller.clinic_id) {
+  // 3. Enforce clinic boundary for Admin and Staff
+  if (caller.role !== UserRole.SuperAdmin && !caller.clinic_id) {
     return NextResponse.json(
-      { error: "Forbidden: Admin is not associated with a clinic" },
+      { error: "Forbidden: You are not associated with a clinic" },
       { status: 403 }
     );
   }

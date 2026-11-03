@@ -7,7 +7,7 @@ import {
 } from "../../../../../types/patients";
 import {
   UUID_REGEX,
-  authenticate,
+  authenticateForModule,
   canAccessClinic,
 } from "../../../../../services/api-guard";
 
@@ -21,7 +21,7 @@ interface RouteContext {
  * Returns a paginated list of documents for a patient.
  *
  * Auth:          Required
- * Authorization: SuperAdmin or Admin (Admin scoped to their clinic)
+ * Authorization: SuperAdmin, or Admin/Staff with can_view on "Patients" (scoped to their clinic)
  *
  * Query Params:
  *   page?:          number (min 1, default 1)
@@ -36,7 +36,7 @@ interface RouteContext {
  *   404  Patient not found
  */
 export async function GET(request: NextRequest, context: RouteContext) {
-  const { session, error } = await authenticate();
+  const { session, error } = await authenticateForModule("Patients", "can_view");
   if (error) return error;
 
   const { id } = await context.params;
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
  * (multipart/form-data upload handling would be added at the infrastructure layer.)
  *
  * Auth:          Required
- * Authorization: SuperAdmin or Admin (Admin scoped to their clinic)
+ * Authorization: SuperAdmin, or Admin/Staff with can_create on "Patients" (scoped to their clinic)
  *
  * Body: CreatePatientDocumentSchema fields
  *
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
  *   422  Validation error
  */
 export async function POST(request: NextRequest, context: RouteContext) {
-  const { session, error } = await authenticate();
+  const { session, error } = await authenticateForModule("Patients", "can_create");
   if (error) return error;
 
   const { id } = await context.params;

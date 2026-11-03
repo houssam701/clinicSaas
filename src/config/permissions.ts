@@ -45,7 +45,7 @@ export const PERMISSION_MODULE_INFO: Record<
   { description: string; /** true once its API routes call checkModulePermission */ enforced: boolean }
 > = {
   Appointments: { description: "Calendar, bookings and appointment status", enforced: true },
-  Patients: { description: "Patient records, history and documents", enforced: false },
+  Patients: { description: "Patient records, history and documents", enforced: true },
   Doctors: { description: "Doctor profiles and schedules", enforced: false },
   Messages: { description: "Conversations with patients", enforced: false },
   Reviews: { description: "Patient reviews and ratings", enforced: false },

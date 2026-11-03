@@ -4,7 +4,7 @@ import { PatientDocumentRepository } from "../../../../../../repository/patient-
 import { UpdatePatientDocumentSchema } from "../../../../../../types/patients";
 import {
   UUID_REGEX,
-  authenticate,
+  authenticateForModule,
   canAccessClinic,
 } from "../../../../../../services/api-guard";
 
@@ -18,7 +18,7 @@ interface RouteContext {
  * Returns a specific patient document.
  *
  * Auth:          Required
- * Authorization: SuperAdmin or Admin (Admin scoped to their clinic)
+ * Authorization: SuperAdmin, or Admin/Staff with can_view on "Patients" (scoped to their clinic)
  *
  * Responses:
  *   200  { document: PatientDocumentModel }
@@ -28,7 +28,7 @@ interface RouteContext {
  *   404  Patient or document not found
  */
 export async function GET(_request: NextRequest, context: RouteContext) {
-  const { session, error } = await authenticate();
+  const { session, error } = await authenticateForModule("Patients", "can_view");
   if (error) return error;
 
   const { id, documentId } = await context.params;
@@ -62,7 +62,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
  * Updates metadata for a specific patient document (name, file_url, document_type).
  *
  * Auth:          Required
- * Authorization: SuperAdmin or Admin (Admin scoped to their clinic)
+ * Authorization: SuperAdmin, or Admin/Staff with can_edit on "Patients" (scoped to their clinic)
  *
  * Body: UpdatePatientDocumentSchema fields (at least one required)
  *
@@ -75,7 +75,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
  *   422  Validation error
  */
 export async function PATCH(request: NextRequest, context: RouteContext) {
-  const { session, error } = await authenticate();
+  const { session, error } = await authenticateForModule("Patients", "can_edit");
   if (error) return error;
 
   const { id, documentId } = await context.params;
@@ -125,7 +125,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
  * Deletes a patient document.
  *
  * Auth:          Required
- * Authorization: SuperAdmin or Admin (Admin scoped to their clinic)
+ * Authorization: SuperAdmin, or Admin/Staff with can_delete on "Patients" (scoped to their clinic)
  *
  * Responses:
  *   204  (no body)
@@ -135,7 +135,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
  *   404  Patient or document not found
  */
 export async function DELETE(_request: NextRequest, context: RouteContext) {
-  const { session, error } = await authenticate();
+  const { session, error } = await authenticateForModule("Patients", "can_delete");
   if (error) return error;
 
   const { id, documentId } = await context.params;
