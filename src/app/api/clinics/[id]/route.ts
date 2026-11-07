@@ -67,6 +67,7 @@ export async function GET(
  * Body:
  *   name?        string
  *   clinic_type? string
+ *   timezone?    string (IANA, e.g. "Asia/Beirut")
  *
  * Responses:
  *   200  { message: "Clinic updated successfully", clinic: ClinicModel }
@@ -144,6 +145,7 @@ export async function PATCH(
   const updatedClinic = await ClinicRepository.updateClinic(id, {
     name: parsed.data.name,
     clinic_type: parsed.data.clinic_type,
+    timezone: parsed.data.timezone,
   });
 
   return NextResponse.json(

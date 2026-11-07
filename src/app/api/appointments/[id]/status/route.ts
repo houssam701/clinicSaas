@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AppointmentRepository } from "@/repository/appointment-repository";
-import { UserRole } from "@/types/users";
 import { AppointmentStatus, AppointmentStatusUpdateSchema } from "@/types/appointments";
-import {
-  UUID_REGEX,
-  authenticate,
-  canAccessClinic,
-  checkModulePermission,
-} from "@/services";
+import { authorizeAppointment } from "@/services/appointment-rules";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -27,9 +21,7 @@ const TERMINAL_STATUSES = new Set<AppointmentStatus>([
  * (e.g., mark as Completed, Canceled, or NoShow).
  *
  * Auth:          Required
- * Authorization: SuperAdmin, Admin, or Staff
- *   - Admin/Staff: auto-scoped to their clinic
- *   - Staff:       requires can_edit on "Appointments"
+ * Authorization: SuperAdmin, or Admin/Staff with can_edit on "Appointments" (own clinic)
  *
  * Body:
  *   status: "Scheduled" | "Completed" | "Canceled" | "NoShow"
@@ -47,40 +39,9 @@ const TERMINAL_STATUSES = new Set<AppointmentStatus>([
  *   422  Validation error or invalid status transition
  */
 export async function PATCH(request: NextRequest, context: RouteContext) {
-  // All three roles can attempt a status update
-  const { session, error } = await authenticate([
-    UserRole.SuperAdmin,
-    UserRole.Admin,
-    UserRole.Staff,
-  ]);
-  if (error) return error;
-
-  const caller = session.user;
-
-  // Admin/Staff: require can_edit permission on "Appointments"
-  if (caller.role !== UserRole.SuperAdmin) {
-    const permError = await checkModulePermission(caller.id, "Appointments", "can_edit");
-    if (permError) return permError;
-  }
-
   const { id } = await context.params;
-  if (!UUID_REGEX.test(id)) {
-    return NextResponse.json({ error: "Invalid appointment ID format" }, { status: 400 });
-  }
-
-  const appointment = await AppointmentRepository.findById(id);
-  if (!appointment) {
-    return NextResponse.json({ error: "Appointment not found" }, { status: 404 });
-  }
-
-  // Enforce clinic boundary for Admin and Staff
-  const accessError = canAccessClinic(
-    caller.role,
-    caller.clinic_id,
-    appointment.clinic_id,
-    "Forbidden: Appointment belongs to a different clinic"
-  );
-  if (accessError) return accessError;
+  const { appointment, error } = await authorizeAppointment(id, "can_edit");
+  if (error) return error;
 
   // Parse & validate body
   let body: unknown;

@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AppointmentRepository } from "@/repository/appointment-repository";
-import { UserRole } from "@/types/users";
-import { UpdateAppointmentSchema } from "@/types/appointments";
+import { AppointmentStatus, UpdateAppointmentSchema } from "@/types/appointments";
 import {
-  UUID_REGEX,
-  authenticate,
-  canAccessClinic,
-  checkModulePermission,
-} from "@/services";
+  authorizeAppointment,
+  checkAppointmentConflict,
+  checkAppointmentPeople,
+} from "@/services/appointment-rules";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -16,66 +14,34 @@ interface RouteContext {
 /**
  * GET /api/appointments/[id]
  *
- * Returns a single appointment by UUID.
+ * Returns one appointment with its patient and staff names.
  *
  * Auth:          Required
- * Authorization: SuperAdmin, Admin, or Staff
- *   - Admin/Staff: auto-scoped to their clinic
- *   - Staff:       requires can_view on "Appointments" (Admin too)
+ * Authorization: SuperAdmin, or Admin/Staff with can_view on "Appointments" (own clinic)
  *
  * Responses:
- *   200  { appointment: AppointmentModel }
+ *   200  { appointment: AppointmentWithPeople }
  *   400  Invalid UUID
  *   401  Unauthorized
  *   403  Forbidden
  *   404  Not found
  */
 export async function GET(_request: NextRequest, context: RouteContext) {
-  const { session, error } = await authenticate([
-    UserRole.SuperAdmin,
-    UserRole.Admin,
-    UserRole.Staff,
-  ]);
-  if (error) return error;
-
-  const caller = session.user;
-
-  // Admin/Staff permission check (only the SuperAdmin bypasses it)
-  if (caller.role !== UserRole.SuperAdmin) {
-    const permError = await checkModulePermission(caller.id, "Appointments", "can_view");
-    if (permError) return permError;
-  }
-
   const { id } = await context.params;
-  if (!UUID_REGEX.test(id)) {
-    return NextResponse.json({ error: "Invalid appointment ID format" }, { status: 400 });
-  }
-
-  const appointment = await AppointmentRepository.findById(id);
-  if (!appointment) {
-    return NextResponse.json({ error: "Appointment not found" }, { status: 404 });
-  }
-
-  const accessError = canAccessClinic(
-    caller.role,
-    caller.clinic_id,
-    appointment.clinic_id,
-    "Forbidden: Appointment belongs to a different clinic"
-  );
-  if (accessError) return accessError;
-
+  const { appointment, error } = await authorizeAppointment(id, "can_view");
+  if (error) return error;
   return NextResponse.json({ appointment }, { status: 200 });
 }
 
 /**
  * PATCH /api/appointments/[id]
  *
- * Reschedules / partially updates an appointment.
+ * Reschedules or edits an appointment. A new patient or staff member must
+ * belong to the appointment's clinic; a scheduled appointment may not overlap
+ * another one of the same staff member.
  *
  * Auth:          Required
- * Authorization: SuperAdmin, Admin, or Staff
- *   - Admin/Staff: auto-scoped to their clinic
- *   - Staff:       requires can_edit on "Appointments"
+ * Authorization: SuperAdmin, or Admin/Staff with can_edit on "Appointments" (own clinic)
  *
  * Body: UpdateAppointmentSchema fields (at least one required)
  *
@@ -89,38 +55,9 @@ export async function GET(_request: NextRequest, context: RouteContext) {
  *   422  Validation error
  */
 export async function PATCH(request: NextRequest, context: RouteContext) {
-  const { session, error } = await authenticate([
-    UserRole.SuperAdmin,
-    UserRole.Admin,
-    UserRole.Staff,
-  ]);
-  if (error) return error;
-
-  const caller = session.user;
-
-  // Admin/Staff permission check (only the SuperAdmin bypasses it)
-  if (caller.role !== UserRole.SuperAdmin) {
-    const permError = await checkModulePermission(caller.id, "Appointments", "can_edit");
-    if (permError) return permError;
-  }
-
   const { id } = await context.params;
-  if (!UUID_REGEX.test(id)) {
-    return NextResponse.json({ error: "Invalid appointment ID format" }, { status: 400 });
-  }
-
-  const appointment = await AppointmentRepository.findById(id);
-  if (!appointment) {
-    return NextResponse.json({ error: "Appointment not found" }, { status: 404 });
-  }
-
-  const accessError = canAccessClinic(
-    caller.role,
-    caller.clinic_id,
-    appointment.clinic_id,
-    "Forbidden: Appointment belongs to a different clinic"
-  );
-  if (accessError) return accessError;
+  const { appointment, error } = await authorizeAppointment(id, "can_edit");
+  if (error) return error;
 
   let body: unknown;
   try {
@@ -137,24 +74,22 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
   }
 
-  // Conflict check: only when rescheduling time or changing staff
-  const newUserId   = parsed.data.user_id !== undefined ? parsed.data.user_id : appointment.user_id;
-  const newTime     = parsed.data.scheduled_time   ?? appointment.scheduled_time;
-  const newDuration = parsed.data.duration_minutes ?? appointment.duration_minutes;
+  const peopleError = await checkAppointmentPeople({
+    clinicId: appointment.clinic_id,
+    patientId: parsed.data.patient_id,
+    userId: parsed.data.user_id,
+  });
+  if (peopleError) return peopleError;
 
-  if (newUserId) {
-    const conflict = await AppointmentRepository.hasConflict({
-      user_id:          newUserId,
-      scheduled_time:   newTime,
-      duration_minutes: newDuration,
-      exclude_id:       id,
+  // Only a scheduled appointment holds its slot
+  if (appointment.status === AppointmentStatus.Scheduled) {
+    const conflictError = await checkAppointmentConflict({
+      userId: parsed.data.user_id !== undefined ? parsed.data.user_id : appointment.user_id,
+      scheduledTime: parsed.data.scheduled_time ?? appointment.scheduled_time,
+      durationMinutes: parsed.data.duration_minutes ?? appointment.duration_minutes,
+      excludeId: id,
     });
-    if (conflict) {
-      return NextResponse.json(
-        { error: "Scheduling conflict: the assigned staff member already has an appointment in this time slot" },
-        { status: 409 }
-      );
-    }
+    if (conflictError) return conflictError;
   }
 
   const updated = await AppointmentRepository.updateAppointment(id, parsed.data);
@@ -164,12 +99,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 /**
  * DELETE /api/appointments/[id]
  *
- * Deletes an appointment.
+ * Deletes an appointment (linked invoices are kept and unlinked).
  *
  * Auth:          Required
- * Authorization: SuperAdmin, Admin, or Staff
- *   - Admin/Staff: auto-scoped to their clinic
- *   - Staff:       requires can_delete on "Appointments"
+ * Authorization: SuperAdmin, or Admin/Staff with can_delete on "Appointments" (own clinic)
  *
  * Responses:
  *   204  (no body)
@@ -179,38 +112,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
  *   404  Not found
  */
 export async function DELETE(_request: NextRequest, context: RouteContext) {
-  const { session, error } = await authenticate([
-    UserRole.SuperAdmin,
-    UserRole.Admin,
-    UserRole.Staff,
-  ]);
-  if (error) return error;
-
-  const caller = session.user;
-
-  // Admin/Staff permission check (only the SuperAdmin bypasses it)
-  if (caller.role !== UserRole.SuperAdmin) {
-    const permError = await checkModulePermission(caller.id, "Appointments", "can_delete");
-    if (permError) return permError;
-  }
-
   const { id } = await context.params;
-  if (!UUID_REGEX.test(id)) {
-    return NextResponse.json({ error: "Invalid appointment ID format" }, { status: 400 });
-  }
-
-  const appointment = await AppointmentRepository.findById(id);
-  if (!appointment) {
-    return NextResponse.json({ error: "Appointment not found" }, { status: 404 });
-  }
-
-  const accessError = canAccessClinic(
-    caller.role,
-    caller.clinic_id,
-    appointment.clinic_id,
-    "Forbidden: Appointment belongs to a different clinic"
-  );
-  if (accessError) return accessError;
+  const { error } = await authorizeAppointment(id, "can_delete");
+  if (error) return error;
 
   await AppointmentRepository.deleteAppointment(id);
   return new NextResponse(null, { status: 204 });

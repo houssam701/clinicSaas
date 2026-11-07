@@ -33,7 +33,13 @@ export const PATHS = {
 
   // Clinic workspace (Admin / Staff)
   dashboard: "/dashboard",
-  appointments: "/appointments",
+  appointments: {
+    // ?view=calendar|list, ?mode=day|week, ?date=YYYY-MM-DD, ?staff=, ?status=, ?page=
+    list: (query?: QueryParams) => withQuery("/appointments", query),
+    // ?date=, ?time=HH:MM, ?staff=, ?patient= prefill the form
+    new: (query?: QueryParams) => withQuery("/appointments/new", query),
+    edit: (id: string, query?: QueryParams) => withQuery(`/appointments/${segment(id)}/edit`, query),
+  },
   patients: {
     list: (query?: QueryParams) => withQuery("/patients", query),
     new: "/patients/new",
@@ -110,5 +116,6 @@ export const API_PATHS = {
     list: (query?: QueryParams) => withQuery("/api/appointments", query),
     detail: (id: string) => `/api/appointments/${segment(id)}`,
     status: (id: string) => `/api/appointments/${segment(id)}/status`,
+    staff: "/api/appointments/staff",
   },
 } as const;

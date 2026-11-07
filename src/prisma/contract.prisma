@@ -39,6 +39,7 @@ model Clinic {
   id          String                     @id @default(uuid())
   name        String
   clinic_type ClinicType
+  timezone    String                     @default("UTC") // IANA zone (e.g. "Asia/Beirut"): what "today" and "09:00" mean for this clinic
   created_at  temporal.createdAtString()
   updated_at  temporal.updatedAtString()
 

@@ -33,7 +33,7 @@ function putFile(url: string, file: File, headers: Record<string, string>, onPro
   });
 }
 
-/** "Lab results March.pdf" → "Lab results March" */
+/** "Report 2026.pdf" → "Report 2026" */
 const baseName = (fileName: string) => fileName.replace(/\.[^.]+$/, "");
 
 export interface UploadDocumentFormProps {
@@ -206,7 +206,7 @@ export function UploadDocumentForm({ patientId, onDone, onCancel }: UploadDocume
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={busy}
-            placeholder="Blood test, March"
+            placeholder="Document name"
             aria-invalid={!!nameError || undefined}
             aria-describedby={nameError ? "upload-name-error" : undefined}
             className={inputClass(!!nameError)}

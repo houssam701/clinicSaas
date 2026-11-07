@@ -242,7 +242,7 @@ export default async function PatientPage({
           <p className="p-6 text-center text-sm text-red-600">Could not load documents. Please refresh the page.</p>
         ) : documents.length === 0 ? (
           <p className="p-8 text-center text-sm text-slate-500">
-            No documents yet.{can.can_create && " Upload lab results, X-rays or referrals, or paste a link to one."}
+            No documents yet.{can.can_create && " Upload a file or paste a link to one."}
           </p>
         ) : (
           <ul className="divide-y divide-slate-100 dark:divide-slate-800">

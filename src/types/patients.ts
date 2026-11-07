@@ -62,7 +62,9 @@ export const UpdatePatientSchema = z
 
 export const ListPatientsQuerySchema = PaginationQuerySchema.extend({
   clinic_id: z.string().uuid().optional(),
-  search:    z.string().trim().optional(),
+  search:    z.string().trim().max(100).optional(),
+  /** "recent" = newest first (default), "name" = A–Z */
+  sort:      z.enum(["recent", "name"]).default("recent"),
 });
 
 // ─── Medical History Schemas ──────────────────────────────────────────────────

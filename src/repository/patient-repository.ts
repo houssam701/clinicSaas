@@ -11,6 +11,7 @@ import type {
   UpdateDocumentData,
 } from "../types/patients";
 import { pageOffset, type PaginatedResult } from "../types/pagination";
+import { searchPatterns } from "../lib/search-words";
 
 // ─── Patient Repository ───────────────────────────────────────────────────────
 
@@ -35,11 +36,15 @@ export class PatientRepository {
   /**
    * Paginated list of active (non-deleted) patients with optional filters.
    *  - clinic_id: filter to a specific clinic
-   *  - search:    case-insensitive match on first_name, last_name, email, or phone
+   *  - search:    every word must appear (case-insensitive, anywhere) in the
+   *               first name, last name, email or phone, so "sara hadd",
+   *               "hadd sara" and "123 456" all find Sara Haddad (070 123 456)
+   *  - sort:      "recent" (newest first, default) or "name" (A–Z)
    */
   static async findPage(filter: {
     clinic_id?: string;
     search?:    string;
+    sort?:      "recent" | "name";
     page:       number;
     limit:      number;
   }): Promise<PaginatedResult<PatientModel>> {
@@ -56,20 +61,25 @@ export class PatientRepository {
       query = query.where({ clinic_id: filter.clinic_id });
     }
 
-    if (filter.search) {
-      const s = filter.search;
+    // One clause per word (clauses AND together); each word may match any field
+    for (const pattern of searchPatterns(filter.search)) {
       query = query.where((p) =>
         or(
-          p.first_name.ilike(`%${s}%`),
-          p.last_name.ilike(`%${s}%`),
-          p.email.ilike(`%${s}%`),
-          p.phone.ilike(`%${s}%`)
+          p.first_name.ilike(pattern),
+          p.last_name.ilike(pattern),
+          p.email.ilike(pattern),
+          p.phone.ilike(pattern)
         )
       );
     }
 
+    const ordered =
+      filter.sort === "name"
+        ? query.orderBy([(p) => p.first_name.asc(), (p) => p.last_name.asc(), (p) => p.id.asc()])
+        : query.orderBy([(p) => p.created_at.desc(), (p) => p.id.desc()]);
+
     const [data, agg] = await Promise.all([
-      query.orderBy((p) => p.created_at.desc()).limit(limit).offset(pageOffset({ page, limit })).all(),
+      ordered.limit(limit).offset(pageOffset({ page, limit })).all(),
       query.aggregate((a) => ({ count: a.count() })),
     ]);
 

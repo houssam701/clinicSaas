@@ -162,6 +162,10 @@ existing examples named below instead of inventing a new pattern.
   `useTransition`; pass the API error back through `error`.
   Example: `src/components/platform/delete-user-button.tsx`.
 - In-place mutations use `useTransition` + the server action.
+- **Search-as-you-type never calls the API per keystroke.** Wrap the call in
+  `useDebouncedCallback(fn, SEARCH_DEBOUNCE_MS)` from `src/lib/use-debounced-callback.ts` (400 ms after
+  typing stops), skip a search for the same text, and drop answers to older searches.
+  Example: `src/components/appointments/patient-picker.tsx`.
 - Filters/search use `next/form` `<Form>` (client navigation), never a plain
   `<form method="GET">` (that reloads the whole page).
 - A filter bar with one search input or select uses `<FilterForm>` from
@@ -228,6 +232,20 @@ existing examples named below instead of inventing a new pattern.
 - Upload limits and allowed types live in `src/config/documents.ts`. Keys are random
   (`clinics/{clinic}/patients/{patient}/{uuid}.{ext}`); original names stay in the database.
 - After a database delete, remove files with `deleteStoredFilesQuietly` (never throws).
+
+### Dates, times and appointments
+
+- Instants are stored in UTC; what "today" and "09:00" mean comes from `Clinic.timezone` (IANA),
+  read via `loadMyAccess().clinic.timezone`. Never use the server's zone (`new Date().getHours()`,
+  `toLocaleDateString()` without `timeZone`): production runs in UTC.
+- Use `src/lib/time-zone.ts` (`zonedTimeToUtc`, `zonedParts`, `todayIn`, `formatTime`, ...);
+  calendar placement math is in `src/lib/calendar-layout.ts`.
+- Appointment APIs accept instants with an offset (`z.iso.datetime({ offset: true })`). The patient
+  and staff member must belong to the appointment's clinic (`checkAppointmentPeople`); only
+  `Scheduled` appointments hold a slot (`checkAppointmentConflict`).
+- A `?back=` return path must go through `safeAppointmentsBack` (only `/appointments...`).
+- Only **Admins** hold appointments (calendar columns, the form's "With", `checkAppointmentPeople`);
+  Staff never do. The calendar opens on the signed-in admin's own column; Staff default to all admins.
 
 ### Prisma 8 bulk writes
 

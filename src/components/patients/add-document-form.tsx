@@ -52,7 +52,7 @@ export function LinkDocumentForm({ patientId, onDone, onCancel }: LinkDocumentFo
             name="name"
             value={values.name}
             onChange={set("name")}
-            placeholder="Blood test, March"
+            placeholder="Document name"
             aria-invalid={!!errors.name || undefined}
             aria-describedby={errors.name ? "link-name-error" : undefined}
             className={inputClass(!!errors.name)}
@@ -92,7 +92,7 @@ export function LinkDocumentForm({ patientId, onDone, onCancel }: LinkDocumentFo
           <FieldError id="link-url-error" messages={errors.file_url} />
         ) : (
           <p id="link-url-hint" className="mt-1.5 text-xs text-slate-500">
-            For files already online, such as a lab portal or a shared drive.
+            For files that are already online, such as a shared drive.
           </p>
         )}
       </div>

@@ -12,9 +12,9 @@ export type MedicalHistoryValues = Record<MedicalHistoryFormField, string>;
 
 const FIELDS: { name: MedicalHistoryFormField; label: string; placeholder?: string }[] = [
   { name: "blood_type", label: "Blood type" },
-  { name: "allergies", label: "Allergies", placeholder: "e.g. Penicillin, latex" },
-  { name: "chronic_conditions", label: "Chronic conditions", placeholder: "e.g. Diabetes type 2, asthma" },
-  { name: "current_medications", label: "Current medications", placeholder: "e.g. Metformin 500 mg twice a day" },
+  { name: "allergies", label: "Allergies", placeholder: "Any known allergies" },
+  { name: "chronic_conditions", label: "Chronic conditions", placeholder: "Any long-term conditions" },
+  { name: "current_medications", label: "Current medications", placeholder: "Name, dose and how often" },
 ];
 
 const EMPTY: MedicalHistoryValues = {

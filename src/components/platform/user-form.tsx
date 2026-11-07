@@ -155,7 +155,7 @@ export function UserForm({
             onChange={set("first_name")}
             aria-describedby={errors.first_name ? "first_name-error" : undefined}
             className={inputClass(!!errors.first_name)}
-            placeholder="Amira"
+            placeholder="First name"
           />
           <FieldError id="first_name-error" messages={errors.first_name} />
         </div>
@@ -171,7 +171,7 @@ export function UserForm({
             onChange={set("last_name")}
             aria-describedby={errors.last_name ? "last_name-error" : undefined}
             className={inputClass(!!errors.last_name)}
-            placeholder="Hassan"
+            placeholder="Last name"
           />
           <FieldError id="last_name-error" messages={errors.last_name} />
         </div>
@@ -191,7 +191,7 @@ export function UserForm({
           onChange={set("email")}
           aria-describedby={errors.email ? "email-error" : undefined}
           className={inputClass(!!errors.email)}
-          placeholder="amira@clinic.com"
+          placeholder="name@example.com"
         />
         <FieldError id="email-error" messages={errors.email} />
       </div>

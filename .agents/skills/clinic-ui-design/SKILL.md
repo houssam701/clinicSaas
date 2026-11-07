@@ -97,6 +97,10 @@ All navigation and sidebar elements MUST adhere to SOLID principles:
     | Warning / confirm destructive | `HiOutlineExclamationTriangle` |
     | Add inside a card (e.g. Add document) | `HiOutlinePlus` |
     | External link (opens in a new tab) | `HiOutlineArrowTopRightOnSquare` |
+- **Placeholders and examples stay neutral (STRICT):**
+  - The same screens serve every tenant type (Dentistry, Therapy, and future ones) and every country. Never put a specialty, a condition, a drug, a person's name, a phone format or a brand in a placeholder or hint ("tooth pain", "Smile Dental Center", "Sara", "+961 ...", "Metformin").
+  - Describe what goes in the field instead: "First name", "name@example.com", "Phone number", "Why is the patient coming?", "Any known allergies", "Document name".
+  - Wording that only fits one clinic type belongs in that type's own config, not in shared components.
 - **Dropdowns — always `<Select>` (STRICT):**
   - Never style a raw `<select>`. Use `<Select>` from `src/components/ui/select.tsx`: it keeps the native element (works in Server Components, forms and phone pickers) but hides the browser arrow (`appearance-none`) and draws a `HiChevronUpDown` that turns `text-primary` on hover/focus.
   - `size="md"` (default) matches form inputs; `size="sm"` (h-9) matches toolbar buttons and filters. Pass `invalid` for validation errors (red border/ring, `aria-invalid`), and widths through `wrapperClassName`.

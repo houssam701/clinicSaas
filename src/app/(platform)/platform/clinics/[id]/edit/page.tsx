@@ -39,7 +39,7 @@ export default async function EditClinicPage({
         <ClinicForm
           mode="edit"
           action={updateClinicAction.bind(null, clinic.id)}
-          initialValues={{ name: clinic.name, clinic_type: clinic.clinic_type as ClinicType }}
+          initialValues={{ name: clinic.name, clinic_type: clinic.clinic_type as ClinicType, timezone: clinic.timezone }}
         />
       </div>
     </div>

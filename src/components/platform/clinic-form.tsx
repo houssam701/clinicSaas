@@ -1,16 +1,20 @@
 "use client";
 
-import React, { useState, useActionState } from "react";
+import React, { useMemo, useState, useActionState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useFormStatus } from "react-dom";
 import type { ClinicFormState } from "@/lib/clinic-form";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
+import { listTimeZones } from "@/lib/time-zone";
 import { ClinicType } from "@/types/clinics";
 import { PATHS } from "@/config/path";
 
 export interface ClinicFormValues {
   name: string;
   clinic_type: ClinicType;
+  /** IANA zone; empty on create until the browser's zone is filled in */
+  timezone: string;
 }
 
 type ClinicFormMode = "create" | "edit";
@@ -24,6 +28,7 @@ const MODE_COPY: Record<ClinicFormMode, { submit: string; pending: string }> = {
 const EMPTY_VALUES: ClinicFormValues = {
   name: "",
   clinic_type: ClinicType.Dentistry,
+  timezone: "",
 };
 
 const TYPE_OPTIONS: { value: ClinicType; label: string; hint: string }[] = [
@@ -63,6 +68,9 @@ function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: st
 
 const initialState: ClinicFormState = {};
 
+const noSubscribe = () => () => {};
+const browserTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
 export interface ClinicFormProps {
   mode: ClinicFormMode;
   /** Server action to submit to — the form does not know which API it calls */
@@ -83,8 +91,13 @@ export function ClinicForm({ mode, action, initialValues = EMPTY_VALUES }: Clini
 
   const set =
     (field: keyof ClinicFormValues) =>
-    (e: React.ChangeEvent<HTMLInputElement>) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setValues((prev) => ({ ...prev, [field]: e.target.value }));
+
+  const timeZones = useMemo(() => listTimeZones(), []);
+  // A new clinic starts in the browser's zone ("" while rendering on the server)
+  const browserZone = useSyncExternalStore(noSubscribe, browserTimeZone, () => "");
+  const timezone = values.timezone || browserZone;
 
   const errors = state.fieldErrors ?? {};
 
@@ -112,7 +125,7 @@ export function ClinicForm({ mode, action, initialValues = EMPTY_VALUES }: Clini
           onChange={set("name")}
           aria-describedby={errors.name ? "name-error" : undefined}
           className={inputClass(!!errors.name)}
-          placeholder="Smile Dental Center"
+          placeholder="Clinic name"
         />
         <FieldError id="name-error" messages={errors.name} />
       </div>
@@ -148,6 +161,35 @@ export function ClinicForm({ mode, action, initialValues = EMPTY_VALUES }: Clini
         </div>
         <FieldError id="clinic_type-error" messages={errors.clinic_type} />
       </fieldset>
+
+      {/* Time zone: what "today" and "09:00" mean in this clinic's calendar */}
+      <div>
+        <label htmlFor="timezone" className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+          Time zone
+        </label>
+        <Select
+          id="timezone"
+          name="timezone"
+          value={timezone}
+          onChange={set("timezone")}
+          invalid={!!errors.timezone}
+          aria-describedby={errors.timezone ? "timezone-error" : "timezone-hint"}
+        >
+          {!timezone && <option value="">Detecting…</option>}
+          {timeZones.map((zone) => (
+            <option key={zone} value={zone}>
+              {zone.replace(/_/g, " ")}
+            </option>
+          ))}
+        </Select>
+        {errors.timezone ? (
+          <FieldError id="timezone-error" messages={errors.timezone} />
+        ) : (
+          <p id="timezone-hint" className="mt-1.5 text-xs text-slate-500">
+            Appointments are shown in this zone, wherever the team signs in from.
+          </p>
+        )}
+      </div>
 
       <div className="flex items-center justify-end gap-3 pt-2">
         <Link

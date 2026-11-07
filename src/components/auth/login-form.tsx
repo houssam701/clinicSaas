@@ -105,7 +105,7 @@ export function LoginForm() {
                 ? "border-red-400 focus:ring-red-200"
                 : "border-slate-200"
             }`}
-            placeholder="doctor@clinic.com"
+            placeholder="name@example.com"
           />
         </div>
         {state.fieldErrors?.email && (

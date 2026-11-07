@@ -1,6 +1,10 @@
 import { z } from "../lib/zod";
 import { PaginationQuerySchema } from "./pagination";
 import type { FieldOutputTypes } from "../prisma/generated/contract";
+import { isValidTimeZone } from "../lib/time-zone";
+
+/** An IANA time zone such as "Asia/Beirut". */
+const TimeZoneSchema = z.string().trim().refine(isValidTimeZone, "Choose a valid time zone.");
 
 // ─── Enum ─────────────────────────────────────────────────────────────────────
 // Matches contract.prisma ClinicType enum and Prisma 8 generated types
@@ -20,6 +24,7 @@ export const CreateClinicSchema = z.object({
   clinic_type: z.nativeEnum(ClinicType, {
     message: "Clinic type must be Dentistry or Therapy.",
   }),
+  timezone: TimeZoneSchema.default("UTC"),
 });
 
 export const UpdateClinicSchema = z
@@ -30,10 +35,11 @@ export const UpdateClinicSchema = z
         message: "Clinic type must be Dentistry or Therapy.",
       })
       .optional(),
+    timezone: TimeZoneSchema.optional(),
   })
   .refine(
-    (data) => data.name !== undefined || data.clinic_type !== undefined,
-    { message: "Provide a clinic name or clinic type to update." }
+    (data) => data.name !== undefined || data.clinic_type !== undefined || data.timezone !== undefined,
+    { message: "Provide a clinic name, type or time zone to update." }
   );
 
 export const DeleteClinicSchema = z.object({
@@ -54,9 +60,11 @@ export type ListClinicsQueryInput = z.infer<typeof ListClinicsQuerySchema>;
 export type CreateClinicData = {
   name: string;
   clinic_type: ClinicType;
+  timezone: string;
 };
 
 export type UpdateClinicData = {
   name?: string;
   clinic_type?: ClinicType;
+  timezone?: string;
 };

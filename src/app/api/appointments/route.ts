@@ -1,70 +1,58 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AppointmentRepository } from "@/repository/appointment-repository";
+import { ClinicRepository } from "@/repository/clinic-repository";
 import { UserRole } from "@/types/users";
-import {
-  CreateAppointmentSchema,
-  ListAppointmentsQuerySchema,
-} from "@/types/appointments";
-import { authenticate, canAccessClinic, checkModulePermission } from "@/services";
+import { CreateAppointmentSchema, ListAppointmentsQuerySchema } from "@/types/appointments";
+import { authenticateForModule, canAccessClinic } from "@/services";
+import { checkAppointmentConflict, checkAppointmentPeople } from "@/services/appointment-rules";
 
 /**
  * GET /api/appointments
  *
- * Lists appointments with pagination and optional filters.
+ * Lists appointments with their patient and staff names, ordered by start time.
  *
  * Auth:          Required
- * Authorization: SuperAdmin, Admin, or Staff
+ * Authorization: SuperAdmin, or Admin/Staff with can_view on "Appointments"
  *   - SuperAdmin: can filter by ?clinic_id; otherwise sees all clinics
- *   - Admin:      always auto-scoped to their own clinic
- *   - Staff:      auto-scoped to their clinic; requires can_view on "Appointments" (Admin too)
+ *   - Admin/Staff: always scoped to their own clinic
  *
  * Query Params:
  *   page?:       number  (min 1, default 1)
- *   limit?:      number  (min 1, max 200, default 20)
+ *   limit?:      number  (min 1, max 200, default DEFAULT_PAGE_SIZE)
  *   clinic_id?:  UUID    (SuperAdmin only)
  *   patient_id?: UUID
- *   user_id?:    UUID
+ *   user_id?:    UUID | "unassigned"
  *   status?:     Scheduled | Completed | Canceled | NoShow
- *   from?:       ISO-8601 datetime
- *   to?:         ISO-8601 datetime
+ *   search?:     string (every word must match the patient's name, phone or email,
+ *                the admin's name, or the reason for visit)
+ *   from?:       ISO-8601 instant with offset (inclusive)
+ *   to?:         ISO-8601 instant with offset (exclusive)
+ *   sort?:       asc (default) | desc
  *
  * Responses:
- *   200  { data: AppointmentModel[], total, page, limit }
+ *   200  { appointments: AppointmentWithPeople[], total, page, limit }
  *   400  Invalid query parameters
  *   401  Unauthorized
- *   403  Forbidden (wrong role or missing Staff permission)
+ *   403  Forbidden (missing can_view on "Appointments", or no clinic)
  */
 export async function GET(request: NextRequest) {
-  // 1. Auth – all three roles can attempt a list
-  const { session, error } = await authenticate([
-    UserRole.SuperAdmin,
-    UserRole.Admin,
-    UserRole.Staff,
-  ]);
+  const { session, error } = await authenticateForModule("Appointments", "can_view");
   if (error) return error;
-
   const caller = session.user;
 
-  // 2. Admin/Staff: check module permission (only the SuperAdmin bypasses it)
-  if (caller.role !== UserRole.SuperAdmin) {
-    const permError = await checkModulePermission(caller.id, "Appointments", "can_view");
-    if (permError) return permError;
-  }
-
-  // 3. Parse & validate query params
   const sp = request.nextUrl.searchParams;
-  const raw = {
+  const parsed = ListAppointmentsQuerySchema.safeParse({
     page:       sp.get("page")       ?? undefined,
     limit:      sp.get("limit")      ?? undefined,
     clinic_id:  sp.get("clinic_id")  ?? undefined,
     patient_id: sp.get("patient_id") ?? undefined,
     user_id:    sp.get("user_id")    ?? undefined,
     status:     sp.get("status")     ?? undefined,
+    search:     sp.get("search")     ?? undefined,
     from:       sp.get("from")       ?? undefined,
     to:         sp.get("to")         ?? undefined,
-  };
-
-  const parsed = ListAppointmentsQuerySchema.safeParse(raw);
+    sort:       sp.get("sort")       ?? undefined,
+  });
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Invalid query parameters", details: parsed.error.flatten() },
@@ -72,80 +60,50 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const { page, limit, patient_id, user_id, status, from, to } = parsed.data;
-
-  // 4. Determine effective clinic_id
-  //    Admin & Staff are always locked to their own clinic.
+  // Admin and Staff are always locked to their own clinic
   let clinic_id: string | undefined;
-  if (caller.role === UserRole.Admin || caller.role === UserRole.Staff) {
+  if (caller.role !== UserRole.SuperAdmin) {
     if (!caller.clinic_id) {
-      return NextResponse.json(
-        { error: "Forbidden: User is not associated with a clinic" },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Forbidden: User is not associated with a clinic" }, { status: 403 });
     }
     clinic_id = caller.clinic_id;
   } else {
-    // SuperAdmin — use the query param if provided
     clinic_id = parsed.data.clinic_id;
   }
 
-  // 5. Fetch paginated appointments
-  const result = await AppointmentRepository.findAll({
-    clinic_id,
-    patient_id,
-    user_id,
-    status,
-    from,
-    to,
-    page,
-    limit,
-  });
+  const { page, limit } = parsed.data;
+  const result = await AppointmentRepository.findPage({ ...parsed.data, clinic_id });
 
-  return NextResponse.json(
-    { data: result.data, total: result.total, page, limit },
-    { status: 200 }
-  );
+  return NextResponse.json({ appointments: result.data, total: result.total, page, limit }, { status: 200 });
 }
 
 /**
  * POST /api/appointments
  *
- * Creates a new appointment.
+ * Books an appointment.
  *
  * Auth:          Required
- * Authorization:
- *   - SuperAdmin: always allowed
- *   - Admin:      always allowed; clinic_id in body must match their own clinic
- *   - Staff:      requires can_create on "Appointments"; clinic_id auto-set to their own clinic
+ * Authorization: SuperAdmin, or Admin/Staff with can_create on "Appointments"
+ *   - Admin/Staff: booked in their own clinic (clinic_id may be left out; when
+ *     sent it must match)
+ *   - SuperAdmin: clinic_id is required and must exist
+ *   The patient and the assigned staff member must belong to that clinic.
  *
- * Body: CreateAppointmentSchema fields
+ * Body: CreateAppointmentSchema fields (scheduled_time is an instant with offset)
  *
  * Responses:
  *   201  { appointment: AppointmentModel }
+ *   400  Invalid JSON
  *   401  Unauthorized
- *   403  Forbidden (wrong role or missing Staff permission)
- *   409  Scheduling conflict
- *   422  Validation error
+ *   403  Forbidden
+ *   409  Scheduling conflict (the staff member is already booked)
+ *   422  Validation error (incl. a patient or staff member of another clinic)
  */
 export async function POST(request: NextRequest) {
-  // 1. Auth – all three roles can attempt to create
-  const { session, error } = await authenticate([
-    UserRole.SuperAdmin,
-    UserRole.Admin,
-    UserRole.Staff,
-  ]);
+  const { session, error } = await authenticateForModule("Appointments", "can_create");
   if (error) return error;
-
   const caller = session.user;
 
-  // 2. Admin/Staff: check module permission before touching the body
-  if (caller.role !== UserRole.SuperAdmin) {
-    const permError = await checkModulePermission(caller.id, "Appointments", "can_create");
-    if (permError) return permError;
-  }
-
-  // 3. Parse body
   let body: unknown;
   try {
     body = await request.json();
@@ -153,18 +111,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON request body" }, { status: 400 });
   }
 
-  // 4. For Staff, inject their own clinic_id so they can't spoof it
-  if (caller.role === UserRole.Staff) {
-    if (!caller.clinic_id) {
-      return NextResponse.json(
-        { error: "Forbidden: Staff is not associated with a clinic" },
-        { status: 403 }
-      );
-    }
-    (body as Record<string, unknown>).clinic_id = caller.clinic_id;
-  }
-
-  // 5. Validate
   const parsed = CreateAppointmentSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
@@ -173,40 +119,46 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 6. Enforce clinic boundary for Admin
-  if (caller.role === UserRole.Admin) {
+  // Resolve the clinic
+  let clinicId: string;
+  if (caller.role !== UserRole.SuperAdmin) {
     if (!caller.clinic_id) {
+      return NextResponse.json({ error: "Forbidden: User is not associated with a clinic" }, { status: 403 });
+    }
+    if (parsed.data.clinic_id) {
+      const clinicAccessError = canAccessClinic(
+        caller.role,
+        caller.clinic_id,
+        parsed.data.clinic_id,
+        "Forbidden: You can only create appointments for your own clinic"
+      );
+      if (clinicAccessError) return clinicAccessError;
+    }
+    clinicId = caller.clinic_id;
+  } else {
+    if (!parsed.data.clinic_id || !(await ClinicRepository.exists(parsed.data.clinic_id))) {
       return NextResponse.json(
-        { error: "Forbidden: Admin is not associated with a clinic" },
-        { status: 403 }
+        { error: "Validation failed", details: { fieldErrors: { clinic_id: ["Choose an existing clinic."] } } },
+        { status: 422 }
       );
     }
-    const clinicAccessError = canAccessClinic(
-      caller.role,
-      caller.clinic_id,
-      parsed.data.clinic_id,
-      "Forbidden: You can only create appointments for your own clinic"
-    );
-    if (clinicAccessError) return clinicAccessError;
+    clinicId = parsed.data.clinic_id;
   }
 
-  // 7. Check scheduling conflict if a staff member is assigned
-  if (parsed.data.user_id) {
-    const conflict = await AppointmentRepository.hasConflict({
-      user_id:          parsed.data.user_id,
-      scheduled_time:   parsed.data.scheduled_time,
-      duration_minutes: parsed.data.duration_minutes,
-    });
-    if (conflict) {
-      return NextResponse.json(
-        { error: "Scheduling conflict: the assigned staff member already has an appointment in this time slot" },
-        { status: 409 }
-      );
-    }
-  }
+  const peopleError = await checkAppointmentPeople({
+    clinicId,
+    patientId: parsed.data.patient_id,
+    userId: parsed.data.user_id,
+  });
+  if (peopleError) return peopleError;
 
-  // 8. Persist
-  const appointment = await AppointmentRepository.createAppointment(parsed.data);
+  const conflictError = await checkAppointmentConflict({
+    userId: parsed.data.user_id,
+    scheduledTime: parsed.data.scheduled_time,
+    durationMinutes: parsed.data.duration_minutes,
+  });
+  if (conflictError) return conflictError;
 
+  const appointment = await AppointmentRepository.createAppointment({ ...parsed.data, clinic_id: clinicId });
   return NextResponse.json({ appointment }, { status: 201 });
 }

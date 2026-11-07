@@ -353,6 +353,13 @@
                   "kind": "scalar"
                 }
               },
+              "timezone": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "updated_at": {
                 "nullable": false,
                 "type": {
@@ -451,6 +458,9 @@
                 },
                 "name": {
                   "column": "name"
+                },
+                "timezone": {
+                  "column": "timezone"
                 },
                 "updated_at": {
                   "column": "updated_at"
@@ -1716,6 +1726,15 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "timezone": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "UTC"
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
                 "updated_at": {
                   "codecId": "pg/timestamptz-string@1",
                   "nativeType": "timestamptz",
@@ -2544,7 +2563,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "cce34e76686c8f9c25876267986beab26c3ebb0a7841f68d75aeb0385e08312f"
+    "storageHash": "591b87ad925168dd52d2e65df17f689734bbbaf9ae21b4cb0915e5dafd24dc39"
   },
   "execution": {
     "executionHash": "b1966046a8c8f9506ea34c852271609f898197dc54e6eb3477191f0a804493c8",

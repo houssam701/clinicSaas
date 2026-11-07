@@ -1,11 +1,17 @@
 import { db } from "../prisma/db";
+import { or } from "@prisma/orm-postgres/orm-client";
+import { searchPatterns } from "../lib/search-words";
 import type {
   AppointmentModel,
+  AppointmentStaffMember,
+  AppointmentWithPeople,
   CreateAppointmentData,
   UpdateAppointmentData,
   UpdateAppointmentStatusData,
 } from "../types/appointments";
 import { AppointmentStatus } from "../types/appointments";
+import { pageOffset, type PaginatedResult } from "../types/pagination";
+import { UserRole } from "../types/users";
 
 // ─── Appointment Repository ───────────────────────────────────────────────────
 
@@ -22,63 +28,96 @@ const APPOINTMENT_FIELDS = [
   "updated_at",
 ] as const;
 
+const PERSON_FIELDS = ["id", "first_name", "last_name"] as const;
+
+export type AppointmentListFilter = {
+  clinic_id?:  string;
+  patient_id?: string;
+  /** A staff member's id, or "unassigned" */
+  user_id?:    string;
+  status?:     AppointmentStatus;
+  /** Every word must match the patient (name, phone, email), the admin's name or the reason */
+  search?:     string;
+  from?:       string;
+  to?:         string;
+  sort:        "asc" | "desc";
+  page:        number;
+  limit:       number;
+};
+
 export class AppointmentRepository {
   // ── Queries ──────────────────────────────────────────────────────────────────
 
-  /**
-   * Retrieves a single appointment by ID.
-   * Returns null if not found.
-   */
-  static async findById(id: string): Promise<AppointmentModel | null> {
+  /** One appointment with its patient and staff names, or null. */
+  static async findById(id: string): Promise<AppointmentWithPeople | null> {
     const appt = await db.orm.public.Appointment
       .select(...APPOINTMENT_FIELDS)
+      .include("patient", (p) => p.select(...PERSON_FIELDS))
+      .include("staff", (s) => s.select(...PERSON_FIELDS))
       .first({ id });
-    return appt ?? null;
+    return (appt as AppointmentWithPeople | null) ?? null;
   }
 
   /**
-   * Paginated list of appointments with optional filters.
-   *  - clinic_id:  scope to a specific clinic
-   *  - patient_id: scope to a specific patient
-   *  - user_id:    scope to a specific staff member
-   *  - status:     filter by appointment status
-   *  - from / to:  filter by scheduled_time range (ISO-8601 strings)
+   * One page of appointments with patient and staff names, ordered by start
+   * time. `from` is inclusive, `to` exclusive, so consecutive ranges never
+   * show an appointment twice.
    */
-  static async findAll(filter?: {
-    clinic_id?:  string;
-    patient_id?: string;
-    user_id?:    string;
-    status?:     AppointmentStatus;
-    from?:       string;
-    to?:         string;
-    page?:       number;
-    limit?:      number;
-  }): Promise<{ data: AppointmentModel[]; total: number }> {
-    const page  = filter?.page  ?? 1;
-    const limit = filter?.limit ?? 20;
-    const skip  = (page - 1) * limit;
-
+  static async findPage(filter: AppointmentListFilter): Promise<PaginatedResult<AppointmentWithPeople>> {
     let query = db.orm.public.Appointment.select(...APPOINTMENT_FIELDS);
 
-    if (filter?.clinic_id)  query = query.where({ clinic_id:  filter.clinic_id  });
-    if (filter?.patient_id) query = query.where({ patient_id: filter.patient_id });
-    if (filter?.user_id)    query = query.where({ user_id:    filter.user_id    });
-    if (filter?.status)     query = query.where({ status:     filter.status     });
-
-    // Date-range filtering on scheduled_time
-    if (filter?.from) {
-      query = query.where((a) => a.scheduled_time.gte(filter.from!));
-    }
-    if (filter?.to) {
-      query = query.where((a) => a.scheduled_time.lte(filter.to!));
+    if (filter.clinic_id)  query = query.where({ clinic_id:  filter.clinic_id  });
+    if (filter.patient_id) query = query.where({ patient_id: filter.patient_id });
+    if (filter.status)     query = query.where({ status:     filter.status     });
+    if (filter.user_id === "unassigned") query = query.where((a) => a.user_id.isNull());
+    else if (filter.user_id)             query = query.where({ user_id: filter.user_id });
+    if (filter.from) query = query.where((a) => a.scheduled_time.gte(filter.from!));
+    if (filter.to)   query = query.where((a) => a.scheduled_time.lt(filter.to!));
+    for (const pattern of searchPatterns(filter.search)) {
+      query = query.where((a) =>
+        or(
+          a.reason_for_visit.ilike(pattern),
+          a.patient.some((p) =>
+            or(p.first_name.ilike(pattern), p.last_name.ilike(pattern), p.phone.ilike(pattern), p.email.ilike(pattern))
+          ),
+          a.staff.some((s) => or(s.first_name.ilike(pattern), s.last_name.ilike(pattern)))
+        )
+      );
     }
 
     const [data, agg] = await Promise.all([
-      query.orderBy((a) => a.scheduled_time.desc()).limit(limit).offset(skip).all(),
+      query
+        .include("patient", (p) => p.select(...PERSON_FIELDS))
+        .include("staff", (s) => s.select(...PERSON_FIELDS))
+        .orderBy((a) => (filter.sort === "desc" ? a.scheduled_time.desc() : a.scheduled_time.asc()))
+        .limit(filter.limit)
+        .offset(pageOffset(filter))
+        .all(),
       query.aggregate((a) => ({ count: a.count() })),
     ]);
 
-    return { data, total: agg.count };
+    return { data: data as AppointmentWithPeople[], total: agg.count };
+  }
+
+  /**
+   * The Admins of a clinic, A–Z: the people appointments are held with (the
+   * calendar's columns and the form's "With" choices). Staff (reception,
+   * assistants) never hold appointments.
+   */
+  static async findClinicProviders(clinicId: string): Promise<AppointmentStaffMember[]> {
+    return await db.orm.public.User
+      .select(...PERSON_FIELDS, "role")
+      .where({ clinic_id: clinicId, role: UserRole.Admin })
+      .orderBy((u) => u.first_name.asc())
+      .all();
+  }
+
+  /** Whether `userId` is an Admin of `clinicId` (only Admins hold appointments). */
+  static async isClinicProvider(userId: string, clinicId: string): Promise<boolean> {
+    const result = await db.orm.public.User
+      .where({ id: userId, clinic_id: clinicId, role: UserRole.Admin })
+      .aggregate((a) => ({ count: a.count() }));
+    return result.count > 0;
   }
 
   // ── Mutations ────────────────────────────────────────────────────────────────
@@ -114,10 +153,16 @@ export class AppointmentRepository {
     return updated ?? null;
   }
 
-  /** Deletes an appointment by ID. */
+  /**
+   * Deletes an appointment. Invoices that referenced it are kept (financial
+   * records) and simply lose the link, so the foreign key never blocks the delete.
+   */
   static async deleteAppointment(id: string): Promise<boolean> {
-    await db.orm.public.Appointment.where({ id }).delete();
-    return true;
+    return db.transaction(async (tx) => {
+      await tx.orm.public.Invoice.where({ appointment_id: id }).updateAndCount({ appointment_id: null });
+      await tx.orm.public.Appointment.where({ id }).delete();
+      return true;
+    });
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -125,15 +170,15 @@ export class AppointmentRepository {
   /**
    * Detects a scheduling conflict for a given staff member (user_id).
    * A conflict exists when the proposed time window overlaps any other
-   * Scheduled appointment for the same user.
+   * Scheduled appointment of the same user (canceled and no-show ones free
+   * their slot).
    *
    * Full overlap condition:
    *   existing_start < proposed_end  AND  existing_end > proposed_start
    * where existing_end = existing_start + existing.duration_minutes.
    *
-   * We push the first half of the predicate (existing_start < proposed_end)
-   * to the database, then evaluate the second half in memory so we can use
-   * each existing row's own duration_minutes to compute its end time.
+   * The first half is pushed to the database (bounded below by the longest
+   * allowed duration); the second half uses each row's own duration.
    */
   static async hasConflict(opts: {
     user_id:          string;
@@ -144,13 +189,14 @@ export class AppointmentRepository {
     const proposedStart = new Date(opts.scheduled_time).getTime();
     const proposedEnd   = proposedStart + opts.duration_minutes * 60 * 1000;
     const proposedEndIso = new Date(proposedEnd).toISOString();
+    // No appointment lasts more than 10 hours (DurationSchema), so older rows cannot overlap
+    const earliestStartIso = new Date(proposedStart - 10 * 60 * 60 * 1000).toISOString();
 
-    // Fetch all appointments for this user that start before the proposed slot ends.
-    // (Rows that start at or after proposedEnd can never overlap.)
     let query = db.orm.public.Appointment
       .select("id", "scheduled_time", "duration_minutes")
-      .where({ user_id: opts.user_id })
-      .where((a) => a.scheduled_time.lt(proposedEndIso));
+      .where({ user_id: opts.user_id, status: AppointmentStatus.Scheduled })
+      .where((a) => a.scheduled_time.lt(proposedEndIso))
+      .where((a) => a.scheduled_time.gt(earliestStartIso));
 
     if (opts.exclude_id) {
       query = query.where((a) => a.id.neq(opts.exclude_id!));
@@ -158,7 +204,6 @@ export class AppointmentRepository {
 
     const candidates = await query.all();
 
-    // Second half of overlap: existing appointment must end after proposedStart.
     return candidates.some((appt) => {
       const existingStart = new Date(appt.scheduled_time as string).getTime();
       const existingEnd   = existingStart + (appt.duration_minutes as number) * 60 * 1000;

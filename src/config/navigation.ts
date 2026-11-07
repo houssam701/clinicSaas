@@ -27,7 +27,7 @@ export const navigationConfig: NavigationConfig = {
     {
       id: "appointments",
       label: "Appointments",
-      href: PATHS.appointments,
+      href: PATHS.appointments.list(),
       icon: "appointments",
       module: "Appointments",
     },

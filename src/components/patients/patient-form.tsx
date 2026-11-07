@@ -36,13 +36,13 @@ type TextField = {
 };
 
 const NAME_FIELDS: TextField[] = [
-  { name: "first_name", label: "First name", autoComplete: "off", placeholder: "Sara" },
-  { name: "last_name", label: "Last name", autoComplete: "off", placeholder: "Haddad" },
+  { name: "first_name", label: "First name", autoComplete: "off", placeholder: "First name" },
+  { name: "last_name", label: "Last name", autoComplete: "off", placeholder: "Last name" },
 ];
 
 const CONTACT_FIELDS: TextField[] = [
-  { name: "email", label: "Email", type: "email", autoComplete: "off", placeholder: "sara@example.com", optional: true },
-  { name: "phone", label: "Phone", type: "tel", autoComplete: "off", placeholder: "+961 70 123 456", optional: true },
+  { name: "email", label: "Email", type: "email", autoComplete: "off", placeholder: "name@example.com", optional: true },
+  { name: "phone", label: "Phone", type: "tel", autoComplete: "off", placeholder: "Phone number", optional: true },
 ];
 
 const initialState: PatientFormState = {};

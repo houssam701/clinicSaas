@@ -48,7 +48,7 @@ export async function toUserFormState(response: Response | null): Promise<UserFo
       return { error: "Your session has expired. Please sign in again." };
     case 403:
       // e.g. "Forbidden: You do not have permission to create admins"
-      return { error: data.error?.replace(/^Forbidden:s*/, "") ?? "You are not allowed to do this." };
+      return { error: data.error?.replace(/^Forbidden:\s*/, "") ?? "You are not allowed to do this." };
     case 404:
       return { error: "This user no longer exists." };
     default:
