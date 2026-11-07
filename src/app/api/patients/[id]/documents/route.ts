@@ -25,11 +25,11 @@ interface RouteContext {
  *
  * Query Params:
  *   page?:          number (min 1, default 1)
- *   limit?:         number (min 1, max 200, default 20)
+ *   limit?:         number (min 1, max 200, default DEFAULT_PAGE_SIZE)
  *   document_type?: string
  *
  * Responses:
- *   200  { data: PatientDocumentModel[], total: number, page: number, limit: number }
+ *   200  { documents: PatientDocumentModel[], total: number, page: number, limit: number }
  *   400  Invalid UUID / query params
  *   401  Unauthorized
  *   403  Forbidden
@@ -67,10 +67,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
   }
 
   const { page, limit, document_type } = parsed.data;
-  const result = await PatientDocumentRepository.findAll(id, { page, limit, document_type });
+  const result = await PatientDocumentRepository.findPage(id, { page, limit, document_type });
 
   return NextResponse.json(
-    { data: result.data, total: result.total, page, limit },
+    { documents: result.data, total: result.total, page, limit },
     { status: 200 }
   );
 }

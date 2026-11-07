@@ -1,3 +1,5 @@
+import type { PermissionModule } from "@/config/permissions";
+
 export type NavIconName =
   | "dashboard"
   | "appointments"
@@ -21,6 +23,8 @@ export interface NavBadge {
 
 export interface NavItem {
   id: string;
+  /** Shown only to users who can view this module (the SuperAdmin sees everything) */
+  module?: PermissionModule;
   label: string;
   href: string;
   icon: NavIconName;

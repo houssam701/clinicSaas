@@ -149,6 +149,12 @@ existing examples named below instead of inventing a new pattern.
   after a failed submit.
 - Show API field errors under each field (`fieldErrors[name][0]`) and a
   general banner for `error`.
+- Shared form pieces live in `src/components/ui/form-field.tsx` (`inputClass`, `labelClass`,
+  `FieldError`, `FormAlert`, `SubmitButton`); use them in new forms instead of copying them.
+- Delete buttons use `<DeleteButton>` from `src/components/ui/delete-button.tsx`: pass a bound
+  server action (`deletePatientAction.bind(null, id)`) and, from a detail page, `redirectTo`.
+- Links that open a stored URL render only `http(s)` links, and the API schema accepts only
+  those (`z.url({ protocol: /^https?$/ })`), so a `javascript:` URL can never become an `href`.
 - Confirmations use `<ConfirmDialog>` from `src/components/ui/confirm-dialog.tsx`
   (native `<dialog>`, no modal library). Never put a `<dialog>` directly inside a
   table cell or scroll container: `ConfirmDialog` portals to `<body>` and only
@@ -204,6 +210,10 @@ existing examples named below instead of inventing a new pattern.
     everyone below them. Every user insert must set `created_by_id`.
   - New Admin: full access (made by the SuperAdmin) or the creator's access (made by an Admin);
     new Staff: none. Admins cannot change roles or their own access.
+
+- Clinic sidebar links tied to a module set `module` on the `NavItem` (`src/config/navigation.ts`);
+  `clinicNavigationFor({ grid, showTeam })` hides them when the user cannot view that module.
+  Pages read access with `loadMyAccess()` (cached per request) to hide buttons; the API still checks.
 
 ### Prisma 8 bulk writes
 

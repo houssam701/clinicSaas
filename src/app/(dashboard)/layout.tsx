@@ -18,14 +18,14 @@ export default async function DashboardLayout({
 }) {
   await requirePageRole([UserRole.Admin, UserRole.Staff]);
 
-  // Team appears for Admins who can see staff or other admins
+  // Module links follow the user's access; Team appears for Admins who can see staff or other admins
   const access = await loadMyAccess();
   const showTeam =
     access?.me.role === UserRole.Admin && (access.grid.Staff.can_view || access.grid.Admins.can_view);
 
   return (
     <ThemeProvider defaultTheme="light">
-      <DashboardShell config={clinicNavigationFor({ showTeam })}>{children}</DashboardShell>
+      <DashboardShell config={clinicNavigationFor({ grid: access?.grid, showTeam })}>{children}</DashboardShell>
     </ThemeProvider>
   );
 }

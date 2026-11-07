@@ -5,6 +5,7 @@ import { PERMISSION_MODULES, type PermissionGrid } from "@/config/permissions";
 import { fullGrid, gridFromRows } from "@/lib/permission-grid";
 import { UserRole, type PublicUser } from "@/types/users";
 import type { UserPermissionModel } from "@/types/permissions";
+import type { ClinicModel } from "@/types/clinics";
 
 export type AccessPageData = {
   me: PublicUser;
@@ -18,19 +19,25 @@ export type AccessPageData = {
 };
 
 /**
- * The signed-in user and what they can do (everything for the SuperAdmin),
- * from one GET /api/auth/me call. Null when signed out.
+ * The signed-in user, their clinic (null for the SuperAdmin; its clinic_type
+ * tells a page which clinic-specific fields apply) and what they can do
+ * (everything for the SuperAdmin), from one GET /api/auth/me call.
+ * Null when signed out.
  *
  * Wrapped in React's cache(), so the layout and the page share one result per
  * request instead of each calling the API. A new request always reads fresh
  * permissions, so revoked access still applies on the next click.
  */
 export const loadMyAccess = cache(
-  async (): Promise<{ me: PublicUser; grid: PermissionGrid } | null> => {
+  async (): Promise<{ me: PublicUser; clinic: ClinicModel | null; grid: PermissionGrid } | null> => {
     const res = await serverApiFetch(API_PATHS.auth.me);
     if (!res.ok) return null;
-    const { user: me, permissions }: { user: PublicUser; permissions: UserPermissionModel[] } = await res.json();
-    return { me, grid: me.role === UserRole.SuperAdmin ? fullGrid() : gridFromRows(permissions) };
+    const {
+      user: me,
+      clinic,
+      permissions,
+    }: { user: PublicUser; clinic: ClinicModel | null; permissions: UserPermissionModel[] } = await res.json();
+    return { me, clinic, grid: me.role === UserRole.SuperAdmin ? fullGrid() : gridFromRows(permissions) };
   }
 );
 

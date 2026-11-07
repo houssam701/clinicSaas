@@ -95,6 +95,8 @@ All navigation and sidebar elements MUST adhere to SOLID principles:
     | Grant all / Revoke all | `HiOutlineCheckCircle` / `HiOutlineNoSymbol` |
     | Search input | `HiOutlineMagnifyingGlass` |
     | Warning / confirm destructive | `HiOutlineExclamationTriangle` |
+    | Add inside a card (e.g. Add document) | `HiOutlinePlus` |
+    | External link (opens in a new tab) | `HiOutlineArrowTopRightOnSquare` |
 - **Dropdowns — always `<Select>` (STRICT):**
   - Never style a raw `<select>`. Use `<Select>` from `src/components/ui/select.tsx`: it keeps the native element (works in Server Components, forms and phone pickers) but hides the browser arrow (`appearance-none`) and draws a `HiChevronUpDown` that turns `text-primary` on hover/focus.
   - `size="md"` (default) matches form inputs; `size="sm"` (h-9) matches toolbar buttons and filters. Pass `invalid` for validation errors (red border/ring, `aria-invalid`), and widths through `wrapperClassName`.

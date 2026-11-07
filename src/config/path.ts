@@ -34,7 +34,12 @@ export const PATHS = {
   // Clinic workspace (Admin / Staff)
   dashboard: "/dashboard",
   appointments: "/appointments",
-  patients: "/patients",
+  patients: {
+    list: (query?: QueryParams) => withQuery("/patients", query),
+    new: "/patients/new",
+    detail: (id: string, query?: QueryParams) => withQuery(`/patients/${segment(id)}`, query),
+    edit: (id: string) => `/patients/${segment(id)}/edit`,
+  },
   doctors: "/doctors",
   messages: "/messages",
   reviews: "/reviews",

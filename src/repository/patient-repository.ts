@@ -10,6 +10,7 @@ import type {
   CreateDocumentData,
   UpdateDocumentData,
 } from "../types/patients";
+import { pageOffset, type PaginatedResult } from "../types/pagination";
 
 // ─── Patient Repository ───────────────────────────────────────────────────────
 
@@ -36,15 +37,13 @@ export class PatientRepository {
    *  - clinic_id: filter to a specific clinic
    *  - search:    case-insensitive match on first_name, last_name, email, or phone
    */
-  static async findAll(filter?: {
+  static async findPage(filter: {
     clinic_id?: string;
     search?:    string;
-    page?:      number;
-    limit?:     number;
-  }): Promise<{ data: PatientModel[]; total: number }> {
-    const page  = filter?.page  ?? 1;
-    const limit = filter?.limit ?? 20;
-    const skip  = (page - 1) * limit;
+    page:       number;
+    limit:      number;
+  }): Promise<PaginatedResult<PatientModel>> {
+    const { page, limit } = filter;
 
     let query = db.orm.public.Patient
       .select(
@@ -53,11 +52,11 @@ export class PatientRepository {
       )
       .where((p) => p.deleted_at.isNull());
 
-    if (filter?.clinic_id) {
+    if (filter.clinic_id) {
       query = query.where({ clinic_id: filter.clinic_id });
     }
 
-    if (filter?.search) {
+    if (filter.search) {
       const s = filter.search;
       query = query.where((p) =>
         or(
@@ -70,7 +69,7 @@ export class PatientRepository {
     }
 
     const [data, agg] = await Promise.all([
-      query.orderBy((p) => p.created_at.desc()).limit(limit).offset(skip).all(),
+      query.orderBy((p) => p.created_at.desc()).limit(limit).offset(pageOffset({ page, limit })).all(),
       query.aggregate((a) => ({ count: a.count() })),
     ]);
 
@@ -229,28 +228,26 @@ export class MedicalHistoryRepository {
 
 export class PatientDocumentRepository {
   /** Paginated list of documents for a patient with optional type filter. */
-  static async findAll(
+  static async findPage(
     patientId: string,
-    filter?: {
+    filter: {
       document_type?: string;
-      page?:          number;
-      limit?:         number;
+      page:           number;
+      limit:          number;
     }
-  ): Promise<{ data: PatientDocumentModel[]; total: number }> {
-    const page  = filter?.page  ?? 1;
-    const limit = filter?.limit ?? 20;
-    const skip  = (page - 1) * limit;
+  ): Promise<PaginatedResult<PatientDocumentModel>> {
+    const { page, limit } = filter;
 
     let query = db.orm.public.PatientDocument
       .select("id", "patient_id", "name", "file_url", "document_type", "uploaded_at")
       .where({ patient_id: patientId });
 
-    if (filter?.document_type) {
+    if (filter.document_type) {
       query = query.where({ document_type: filter.document_type });
     }
 
     const [data, agg] = await Promise.all([
-      query.orderBy((d) => d.uploaded_at.desc()).limit(limit).offset(skip).all(),
+      query.orderBy((d) => d.uploaded_at.desc()).limit(limit).offset(pageOffset({ page, limit })).all(),
       query.aggregate((a) => ({ count: a.count() })),
     ]);
 
