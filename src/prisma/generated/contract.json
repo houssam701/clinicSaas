@@ -863,8 +863,15 @@
                   "kind": "scalar"
                 }
               },
+              "file_name": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "file_url": {
-                "nullable": false,
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -872,6 +879,13 @@
               },
               "id": {
                 "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "mime_type": {
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -886,6 +900,20 @@
               },
               "patient_id": {
                 "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "size_bytes": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "storage_key": {
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -922,17 +950,29 @@
                 "document_type": {
                   "column": "document_type"
                 },
+                "file_name": {
+                  "column": "file_name"
+                },
                 "file_url": {
                   "column": "file_url"
                 },
                 "id": {
                   "column": "id"
                 },
+                "mime_type": {
+                  "column": "mime_type"
+                },
                 "name": {
                   "column": "name"
                 },
                 "patient_id": {
                   "column": "patient_id"
+                },
+                "size_bytes": {
+                  "column": "size_bytes"
+                },
+                "storage_key": {
+                  "column": "storage_key"
                 },
                 "uploaded_at": {
                   "column": "uploaded_at"
@@ -1953,15 +1993,25 @@
                   "nativeType": "text",
                   "nullable": true
                 },
+                "file_name": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "file_url": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
-                  "nullable": false
+                  "nullable": true
                 },
                 "id": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
+                },
+                "mime_type": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "name": {
                   "codecId": "pg/text@1",
@@ -1972,6 +2022,16 @@
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
+                },
+                "size_bytes": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
+                "storage_key": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "uploaded_at": {
                   "codecId": "pg/timestamptz-string@1",
@@ -2012,7 +2072,13 @@
                   "id"
                 ]
               },
-              "uniques": []
+              "uniques": [
+                {
+                  "columns": [
+                    "storage_key"
+                  ]
+                }
+              ]
             },
             "Payment": {
               "checks": [
@@ -2478,7 +2544,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "842ce757ef146eaa331bde6eb1a433bd20f206ee4bd5def77977e34f93e950ce"
+    "storageHash": "cce34e76686c8f9c25876267986beab26c3ebb0a7841f68d75aeb0385e08312f"
   },
   "execution": {
     "executionHash": "b1966046a8c8f9506ea34c852271609f898197dc54e6eb3477191f0a804493c8",

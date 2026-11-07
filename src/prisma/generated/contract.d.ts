@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'842ce757ef146eaa331bde6eb1a433bd20f206ee4bd5def77977e34f93e950ce'>;
+  StorageHashBase<'cce34e76686c8f9c25876267986beab26c3ebb0a7841f68d75aeb0385e08312f'>;
 export type ExecutionHash =
   ExecutionHashBase<'b1966046a8c8f9506ea34c852271609f898197dc54e6eb3477191f0a804493c8'>;
 export type ProfileHash =
@@ -297,10 +297,14 @@ export type FieldOutputTypes = {
     };
     readonly PatientDocument: {
       readonly document_type: CodecTypes['pg/text@1']['output'] | null;
-      readonly file_url: CodecTypes['pg/text@1']['output'];
+      readonly file_name: CodecTypes['pg/text@1']['output'] | null;
+      readonly file_url: CodecTypes['pg/text@1']['output'] | null;
       readonly id: CodecTypes['pg/text@1']['output'];
+      readonly mime_type: CodecTypes['pg/text@1']['output'] | null;
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly patient_id: CodecTypes['pg/text@1']['output'];
+      readonly size_bytes: CodecTypes['pg/int4@1']['output'] | null;
+      readonly storage_key: CodecTypes['pg/text@1']['output'] | null;
       readonly uploaded_at: CodecTypes['pg/timestamptz-string@1']['output'];
     };
     readonly Payment: {
@@ -397,10 +401,14 @@ export type FieldInputTypes = {
     };
     readonly PatientDocument: {
       readonly document_type: CodecTypes['pg/text@1']['input'] | null;
-      readonly file_url: CodecTypes['pg/text@1']['input'];
+      readonly file_name: CodecTypes['pg/text@1']['input'] | null;
+      readonly file_url: CodecTypes['pg/text@1']['input'] | null;
       readonly id: CodecTypes['pg/text@1']['input'];
+      readonly mime_type: CodecTypes['pg/text@1']['input'] | null;
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly patient_id: CodecTypes['pg/text@1']['input'];
+      readonly size_bytes: CodecTypes['pg/int4@1']['input'] | null;
+      readonly storage_key: CodecTypes['pg/text@1']['input'] | null;
       readonly uploaded_at: CodecTypes['pg/timestamptz-string@1']['input'];
     };
     readonly Payment: {
@@ -497,10 +505,14 @@ export type StorageColumnTypes = {
     };
     readonly PatientDocument: {
       readonly document_type: CodecTypes['pg/text@1']['output'] | null;
-      readonly file_url: CodecTypes['pg/text@1']['output'];
+      readonly file_name: CodecTypes['pg/text@1']['output'] | null;
+      readonly file_url: CodecTypes['pg/text@1']['output'] | null;
       readonly id: CodecTypes['pg/text@1']['output'];
+      readonly mime_type: CodecTypes['pg/text@1']['output'] | null;
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly patient_id: CodecTypes['pg/text@1']['output'];
+      readonly size_bytes: CodecTypes['pg/int4@1']['output'] | null;
+      readonly storage_key: CodecTypes['pg/text@1']['output'] | null;
       readonly uploaded_at: CodecTypes['pg/timestamptz-string@1']['output'];
     };
     readonly Payment: {
@@ -597,10 +609,14 @@ export type StorageColumnInputTypes = {
     };
     readonly PatientDocument: {
       readonly document_type: CodecTypes['pg/text@1']['input'] | null;
-      readonly file_url: CodecTypes['pg/text@1']['input'];
+      readonly file_name: CodecTypes['pg/text@1']['input'] | null;
+      readonly file_url: CodecTypes['pg/text@1']['input'] | null;
       readonly id: CodecTypes['pg/text@1']['input'];
+      readonly mime_type: CodecTypes['pg/text@1']['input'] | null;
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly patient_id: CodecTypes['pg/text@1']['input'];
+      readonly size_bytes: CodecTypes['pg/int4@1']['input'] | null;
+      readonly storage_key: CodecTypes['pg/text@1']['input'] | null;
       readonly uploaded_at: CodecTypes['pg/timestamptz-string@1']['input'];
     };
     readonly Payment: {
@@ -720,10 +736,14 @@ export namespace Models {
   };
   export type public_PatientDocument = {
     document_type: CodecTypes['pg/text@1']['output'] | null;
-    file_url: CodecTypes['pg/text@1']['output'];
+    file_name: CodecTypes['pg/text@1']['output'] | null;
+    file_url: CodecTypes['pg/text@1']['output'] | null;
     id: CodecTypes['pg/text@1']['output'];
+    mime_type: CodecTypes['pg/text@1']['output'] | null;
     name: CodecTypes['pg/text@1']['output'];
     patient_id: CodecTypes['pg/text@1']['output'];
+    size_bytes: CodecTypes['pg/int4@1']['output'] | null;
+    storage_key: CodecTypes['pg/text@1']['output'] | null;
     uploaded_at: CodecTypes['pg/timestamptz-string@1']['output'];
     patient: public_Patient;
     readonly [RelationKeys]?: 'patient';
@@ -1191,15 +1211,25 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/text@1';
                   readonly nullable: true;
                 };
+                readonly file_name: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
                 readonly file_url: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
-                  readonly nullable: false;
+                  readonly nullable: true;
                 };
                 readonly id: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
+                };
+                readonly mime_type: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
                 };
                 readonly name: {
                   readonly nativeType: 'text';
@@ -1211,6 +1241,16 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
                 };
+                readonly size_bytes: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: true;
+                };
+                readonly storage_key: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
                 readonly uploaded_at: {
                   readonly nativeType: 'timestamptz';
                   readonly codecId: 'pg/timestamptz-string@1';
@@ -1218,7 +1258,7 @@ type ContractBase = Omit<
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [];
+              uniques: readonly [{ readonly columns: readonly ['storage_key'] }];
               indexes: readonly [
                 {
                   readonly name: 'PatientDocument_patient_id_idx_2f641dda';
@@ -2098,12 +2138,20 @@ type ContractBase = Omit<
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly file_name: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly file_url: {
-                readonly nullable: false;
+                readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
               readonly id: {
                 readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly mime_type: {
+                readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
               readonly name: {
@@ -2112,6 +2160,14 @@ type ContractBase = Omit<
               };
               readonly patient_id: {
                 readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly size_bytes: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly storage_key: {
+                readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
               readonly uploaded_at: {
@@ -2141,10 +2197,14 @@ type ContractBase = Omit<
               readonly namespaceId: 'public';
               readonly fields: {
                 readonly document_type: { readonly column: 'document_type' };
+                readonly file_name: { readonly column: 'file_name' };
                 readonly file_url: { readonly column: 'file_url' };
                 readonly id: { readonly column: 'id' };
+                readonly mime_type: { readonly column: 'mime_type' };
                 readonly name: { readonly column: 'name' };
                 readonly patient_id: { readonly column: 'patient_id' };
+                readonly size_bytes: { readonly column: 'size_bytes' };
+                readonly storage_key: { readonly column: 'storage_key' };
                 readonly uploaded_at: { readonly column: 'uploaded_at' };
               };
             };

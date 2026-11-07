@@ -3,15 +3,21 @@ import type { IconType } from "react-icons";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
+  HiOutlineArrowDownTray,
   HiOutlineArrowTopRightOnSquare,
   HiOutlineCake,
   HiOutlineCalendarDays,
+  HiOutlineDocument,
   HiOutlineDocumentText,
   HiOutlineEnvelope,
+  HiOutlineLink,
   HiOutlinePencilSquare,
   HiOutlinePhone,
+  HiOutlinePhoto,
   HiOutlineUser,
 } from "react-icons/hi2";
+import { formatBytes } from "@/config/documents";
+import { isFileStorageConfigured } from "@/services/storage";
 import { serverApiFetch } from "@/lib/server-api";
 import { API_PATHS, PATHS } from "@/config/path";
 import { loadMyAccess } from "@/lib/access-page";
@@ -23,7 +29,7 @@ import { BackLink } from "@/components/ui/back-link";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { Pagination } from "@/components/ui/pagination";
 import { MedicalHistoryCard } from "@/components/patients/medical-history-card";
-import { AddDocumentForm } from "@/components/patients/add-document-form";
+import { AddDocumentPanel } from "@/components/patients/add-document-panel";
 import { DEFAULT_PAGE_SIZE } from "@/types/pagination";
 import type { MedicalHistoryModel, PatientDocumentModel, PatientModel } from "@/types/patients";
 
@@ -36,8 +42,16 @@ const NOTICES = {
 
 const card = "rounded-md border border-slate-300/50 dark:border-slate-800/80 bg-white dark:bg-slate-900/70";
 
-/** Only http(s) links are rendered as links (the API refuses anything else). */
-const isWebLink = (url: string) => /^https?:\/\//i.test(url);
+const rowButton =
+  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-xs hover:border-primary/40 hover:bg-primary/5 hover:text-primary focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 transition-colors";
+
+/** Icon for a document: a link, an image, a PDF, or any other file. */
+function documentIcon(mimeType: string | null, uploaded: boolean): IconType {
+  if (!uploaded) return HiOutlineLink;
+  if (mimeType?.startsWith("image/")) return HiOutlinePhoto;
+  if (mimeType === "application/pdf") return HiOutlineDocumentText;
+  return HiOutlineDocument;
+}
 
 function Detail({ icon: Icon, label, children }: { icon: IconType; label: string; children: ReactNode }) {
   return (
@@ -221,54 +235,85 @@ export default async function PatientPage({
             Documents
             {docsTotal > 0 && <span className="text-sm font-semibold text-slate-400">{docsTotal}</span>}
           </h2>
-          {can.can_create && <AddDocumentForm patientId={id} />}
+          {can.can_create && <AddDocumentPanel patientId={id} uploadsEnabled={isFileStorageConfigured()} />}
         </header>
 
         {docsError ? (
           <p className="p-6 text-center text-sm text-red-600">Could not load documents. Please refresh the page.</p>
         ) : documents.length === 0 ? (
           <p className="p-8 text-center text-sm text-slate-500">
-            No documents yet.{can.can_create && " Add lab results, X-rays or referrals as links."}
+            No documents yet.{can.can_create && " Upload lab results, X-rays or referrals, or paste a link to one."}
           </p>
         ) : (
           <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-            {documents.map((doc) => (
-              <li key={doc.id} className="flex flex-col sm:flex-row sm:items-center gap-3 px-6 py-4">
-                <div className="min-w-0 flex-1">
-                  {isWebLink(doc.file_url) ? (
-                    <a
-                      href={doc.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group inline-flex items-center gap-1.5 font-semibold text-slate-800 dark:text-white hover:text-primary break-all"
-                    >
-                      {doc.name}
-                      <HiOutlineArrowTopRightOnSquare aria-hidden="true" className="h-4 w-4 shrink-0 text-slate-400 group-hover:text-primary" />
-                      <span className="sr-only">(opens in a new tab)</span>
+            {documents.map((doc) => {
+              const uploaded = Boolean(doc.storage_key);
+              const Icon = documentIcon(doc.mime_type, uploaded);
+              const openHref = API_PATHS.patients.documentFile(id, doc.id);
+              return (
+                <li key={doc.id} className="flex flex-col sm:flex-row sm:items-center gap-3 px-6 py-4">
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <Icon aria-hidden="true" className="mt-0.5 h-6 w-6 shrink-0 text-slate-400" />
+                    <div className="min-w-0">
+                      <a
+                        href={openHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold text-slate-800 dark:text-white hover:text-primary break-all"
+                      >
+                        {doc.name}
+                        <span className="sr-only"> (opens in a new tab)</span>
+                      </a>
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+                        {doc.document_type && (
+                          <span className="rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 font-bold text-slate-600 dark:text-slate-300">
+                            {doc.document_type}
+                          </span>
+                        )}
+                        {uploaded ? (
+                          <span>
+                            {doc.file_name}
+                            {doc.size_bytes != null && ` · ${formatBytes(doc.size_bytes)}`}
+                          </span>
+                        ) : (
+                          <span>Link</span>
+                        )}
+                        <span>Added {formatDate(doc.uploaded_at)}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <a href={openHref} target="_blank" rel="noopener noreferrer" className={rowButton} aria-label={`Open ${doc.name}`}>
+                      <HiOutlineArrowTopRightOnSquare aria-hidden="true" className="h-3.5 w-3.5" />
+                      Open
                     </a>
-                  ) : (
-                    <span className="font-semibold text-slate-800 dark:text-white break-all">{doc.name}</span>
-                  )}
-                  <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                    {doc.document_type && (
-                      <span className="rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 font-bold text-slate-600 dark:text-slate-300">
-                        {doc.document_type}
-                      </span>
+                    {uploaded && (
+                      <a
+                        href={API_PATHS.patients.documentFile(id, doc.id, { download: 1 })}
+                        className={rowButton}
+                        aria-label={`Download ${doc.name}`}
+                      >
+                        <HiOutlineArrowDownTray aria-hidden="true" className="h-3.5 w-3.5" />
+                        Download
+                      </a>
                     )}
-                    Added {formatDate(doc.uploaded_at)}
-                  </p>
-                </div>
-                {can.can_delete && (
-                  <DeleteButton
-                    action={deletePatientDocumentAction.bind(null, id, doc.id)}
-                    itemName={doc.name}
-                    title={`Delete "${doc.name}"?`}
-                    description="The document is removed from this patient. The file at its link is not touched."
-                    confirmLabel="Delete document"
-                  />
-                )}
-              </li>
-            ))}
+                    {can.can_delete && (
+                      <DeleteButton
+                        action={deletePatientDocumentAction.bind(null, id, doc.id)}
+                        itemName={doc.name}
+                        title={`Delete "${doc.name}"?`}
+                        description={
+                          uploaded
+                            ? "The document and its file are removed. This cannot be undone."
+                            : "The document is removed from this patient. The file at its link is not touched."
+                        }
+                        confirmLabel="Delete document"
+                      />
+                    )}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
 

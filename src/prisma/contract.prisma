@@ -123,7 +123,12 @@ model PatientDocument {
   patient_id    String
   patient       Patient                    @relation(fields: [patient_id], references: [id])
   name          String
-  file_url      String
+  // Exactly one of file_url (a link to a file hosted elsewhere) or storage_key (a file uploaded to our bucket)
+  file_url      String?
+  storage_key   String?                    @unique // Object key in the S3-compatible bucket
+  file_name     String? // Original file name of an upload
+  mime_type     String? // Content type of an upload, as stored in the bucket
+  size_bytes    Int? // Size of an upload, as stored in the bucket
   document_type String?
   uploaded_at   temporal.createdAtString()
 

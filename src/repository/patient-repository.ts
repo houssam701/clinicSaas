@@ -226,6 +226,11 @@ export class MedicalHistoryRepository {
 
 // ─── Patient Document Repository ─────────────────────────────────────────────
 
+const DOCUMENT_COLUMNS = [
+  "id", "patient_id", "name", "file_url", "storage_key", "file_name",
+  "mime_type", "size_bytes", "document_type", "uploaded_at",
+] as const;
+
 export class PatientDocumentRepository {
   /** Paginated list of documents for a patient with optional type filter. */
   static async findPage(
@@ -239,7 +244,7 @@ export class PatientDocumentRepository {
     const { page, limit } = filter;
 
     let query = db.orm.public.PatientDocument
-      .select("id", "patient_id", "name", "file_url", "document_type", "uploaded_at")
+      .select(...DOCUMENT_COLUMNS)
       .where({ patient_id: patientId });
 
     if (filter.document_type) {
@@ -257,7 +262,7 @@ export class PatientDocumentRepository {
   /** Retrieves a single document by its own ID. */
   static async findById(id: string): Promise<PatientDocumentModel | null> {
     const doc = await db.orm.public.PatientDocument
-      .select("id", "patient_id", "name", "file_url", "document_type", "uploaded_at")
+      .select(...DOCUMENT_COLUMNS)
       .first({ id });
     return doc ?? null;
   }
@@ -265,7 +270,7 @@ export class PatientDocumentRepository {
   /** Creates and returns a new patient document. */
   static async create(data: CreateDocumentData): Promise<PatientDocumentModel> {
     return db.orm.public.PatientDocument
-      .select("id", "patient_id", "name", "file_url", "document_type", "uploaded_at")
+      .select(...DOCUMENT_COLUMNS)
       .create(data);
   }
 
@@ -276,9 +281,27 @@ export class PatientDocumentRepository {
   ): Promise<PatientDocumentModel | null> {
     const updated = await db.orm.public.PatientDocument
       .where({ id })
-      .select("id", "patient_id", "name", "file_url", "document_type", "uploaded_at")
+      .select(...DOCUMENT_COLUMNS)
       .update(data);
     return updated ?? null;
+  }
+
+  /** Whether a document already points at this storage key (each upload is registered once). */
+  static async storageKeyInUse(storageKey: string): Promise<boolean> {
+    const result = await db.orm.public.PatientDocument
+      .where({ storage_key: storageKey })
+      .aggregate((a) => ({ count: a.count() }));
+    return result.count > 0;
+  }
+
+  /** Storage keys of every uploaded file of a patient (to remove them from the bucket). */
+  static async storageKeysForPatient(patientId: string): Promise<string[]> {
+    const rows = await db.orm.public.PatientDocument
+      .where({ patient_id: patientId })
+      .where((d) => d.storage_key.isNotNull())
+      .select("storage_key")
+      .all();
+    return rows.map((r) => r.storage_key).filter((k): k is string => Boolean(k));
   }
 
   /** Deletes a document by ID. */

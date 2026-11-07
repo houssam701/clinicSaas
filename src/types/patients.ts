@@ -1,5 +1,6 @@
 import { z } from "../lib/zod";
 import { PaginationQuerySchema } from "./pagination";
+import { DOCUMENT_MIME_TYPES, MAX_DOCUMENT_BYTES, formatBytes } from "../config/documents";
 import type { FieldOutputTypes } from "../prisma/generated/contract";
 import type { JsonValue } from "@prisma/orm-postgres/utils/json";
 
@@ -82,11 +83,37 @@ const FileUrlSchema = z.url({
   error: "File URL must be a valid http(s) link (e.g. https://...).",
 });
 
-export const CreatePatientDocumentSchema = z.object({
-  name:          z.string().trim().min(1, "Document name is required."),
-  file_url:      FileUrlSchema,
-  document_type: z.string().optional(),
+/** Step 1 of an upload: ask for a link to PUT the file to. */
+export const RequestDocumentUploadSchema = z.object({
+  file_name: z.string().trim().min(1, "Choose a file to upload.").max(255, "File name must be at most 255 characters."),
+  mime_type: z.enum(DOCUMENT_MIME_TYPES, { error: "This file type is not allowed." }),
+  size_bytes: z
+    .number()
+    .int()
+    .positive("The file is empty.")
+    .max(MAX_DOCUMENT_BYTES, `Files can be at most ${formatBytes(MAX_DOCUMENT_BYTES)}.`),
 });
+
+/**
+ * A document is either a link (file_url) or an uploaded file (storage_key from
+ * step 1, plus its original file_name). Exactly one of the two is required.
+ */
+export const CreatePatientDocumentSchema = z
+  .object({
+    name:          z.string().trim().min(1, "Document name is required."),
+    document_type: z.string().optional(),
+    file_url:      FileUrlSchema.optional(),
+    storage_key:   z.string().min(1).optional(),
+    file_name:     z.string().trim().min(1).max(255).optional(),
+  })
+  .refine((d) => Boolean(d.file_url) !== Boolean(d.storage_key), {
+    message: "Upload a file or paste a link.",
+    path: ["file_url"],
+  })
+  .refine((d) => !d.storage_key || Boolean(d.file_name), {
+    message: "File name is required for an upload.",
+    path: ["file_name"],
+  });
 
 export const UpdatePatientDocumentSchema = z
   .object({
@@ -108,6 +135,7 @@ export type UpdatePatientInput        = z.infer<typeof UpdatePatientSchema>;
 export type ListPatientsQueryInput    = z.infer<typeof ListPatientsQuerySchema>;
 export type MedicalHistoryUpsertInput = z.infer<typeof MedicalHistoryUpsertSchema>;
 export type CreateDocumentInput       = z.infer<typeof CreatePatientDocumentSchema>;
+export type RequestDocumentUploadInput = z.infer<typeof RequestDocumentUploadSchema>;
 export type UpdateDocumentInput       = z.infer<typeof UpdatePatientDocumentSchema>;
 export type ListDocumentsQueryInput   = z.infer<typeof ListDocumentsQuerySchema>;
 
@@ -143,8 +171,14 @@ export type MedicalHistoryData = {
 export type CreateDocumentData = {
   patient_id:     string;
   name:           string;
-  file_url:       string;
   document_type?: string;
+  // A link…
+  file_url?:      string;
+  // …or an upload (values read back from the bucket, not from the client)
+  storage_key?:   string;
+  file_name?:     string;
+  mime_type?:     string;
+  size_bytes?:    number;
 };
 
 export type UpdateDocumentData = {

@@ -7,6 +7,7 @@ import {
   authenticateForModule,
   canAccessClinic,
 } from "../../../../../../services/api-guard";
+import { deleteStoredFilesQuietly } from "../../../../../../services/storage";
 
 interface RouteContext {
   params: Promise<{ id: string; documentId: string }>;
@@ -115,6 +116,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
   }
 
+  // An uploaded file stays an upload: it cannot be turned into a link
+  if (document.storage_key && parsed.data.file_url) {
+    return NextResponse.json(
+      { error: "Validation failed", details: { fieldErrors: { file_url: ["An uploaded file cannot be replaced by a link."] } } },
+      { status: 422 }
+    );
+  }
+
   const updated = await PatientDocumentRepository.update(documentId, parsed.data);
   return NextResponse.json({ document: updated }, { status: 200 });
 }
@@ -161,5 +170,11 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
   }
 
   await PatientDocumentRepository.delete(documentId);
+
+  // Remove an uploaded file from storage too. The record is already gone, so a
+  // storage failure only leaves an unreachable file behind; it is logged, not returned.
+  if (document.storage_key) {
+    await deleteStoredFilesQuietly([document.storage_key], `document ${documentId} deleted`);
+  }
   return new NextResponse(null, { status: 204 });
 }

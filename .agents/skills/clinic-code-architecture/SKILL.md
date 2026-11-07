@@ -215,6 +215,20 @@ existing examples named below instead of inventing a new pattern.
   `clinicNavigationFor({ grid, showTeam })` hides them when the user cannot view that module.
   Pages read access with `loadMyAccess()` (cached per request) to hide buttons; the API still checks.
 
+### File storage (provider-independent)
+
+- Code depends only on the `FileStorage` interface (`src/services/storage/`, get it with
+  `getFileStorage()`). Never import `@aws-sdk/*` or write provider-specific code (R2, AWS, MinIO)
+  anywhere else. Configuration is the neutral `STORAGE_*` env vars; switching providers is a
+  config change.
+- The bucket is private. Uploads: API checks access + type/size, returns a presigned PUT
+  (Content-Type is signed); the browser PUTs directly; the save endpoint re-checks the stored
+  object with `stat()` (exists, inside the patient's prefix, size, type) and trusts only those
+  values. Downloads: an API route checks access, then redirects to a short-lived presigned GET.
+- Upload limits and allowed types live in `src/config/documents.ts`. Keys are random
+  (`clinics/{clinic}/patients/{patient}/{uuid}.{ext}`); original names stay in the database.
+- After a database delete, remove files with `deleteStoredFilesQuietly` (never throws).
+
 ### Prisma 8 bulk writes
 
 - `.where(...).delete()` and `.where(...).update()` affect **one** row. For every matching row use

@@ -100,6 +100,11 @@ export const API_PATHS = {
       withQuery(`/api/patients/${segment(id)}/documents`, query),
     document: (id: string, documentId: string) =>
       `/api/patients/${segment(id)}/documents/${segment(documentId)}`,
+    // Step 1 of an upload: returns a short-lived link to PUT the file to
+    documentUploadUrl: (id: string) => `/api/patients/${segment(id)}/documents/upload-url`,
+    // Opens (or with { download: 1 } saves) a document; redirects to a short-lived link
+    documentFile: (id: string, documentId: string, query?: QueryParams) =>
+      withQuery(`/api/patients/${segment(id)}/documents/${segment(documentId)}/file`, query),
   },
   appointments: {
     list: (query?: QueryParams) => withQuery("/api/appointments", query),

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PatientRepository } from "../../../../repository/patient-repository";
+import { PatientDocumentRepository, PatientRepository } from "../../../../repository/patient-repository";
+import { deleteStoredFilesQuietly } from "../../../../services/storage";
 import type { JsonValue } from "@prisma/orm-postgres/utils/json";
 import { UpdatePatientSchema } from "../../../../types/patients";
 import {
@@ -136,7 +137,11 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
   const accessError = canAccessClinic(session!.user.role, session!.user.clinic_id, patient.clinic_id);
   if (accessError) return accessError;
 
+  // Uploaded files are removed from storage after the records are gone (a
+  // storage failure only leaves unreachable files behind, so it is logged)
+  const storageKeys = await PatientDocumentRepository.storageKeysForPatient(id);
   await PatientRepository.deletePatient(id);
+  await deleteStoredFilesQuietly(storageKeys, `patient ${id} deleted`);
   return new NextResponse(null, { status: 204 });
 }
   
