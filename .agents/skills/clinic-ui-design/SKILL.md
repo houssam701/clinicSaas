@@ -46,20 +46,20 @@ All navigation and sidebar elements MUST adhere to SOLID principles:
 1. **Single Responsibility (SRP):**
    - Each component has one distinct job:
      - `SidebarBrand`: Renders logo and typography.
-     - `EmergencyCard`: Renders emergency tile with mic icon & red alert dot.
      - `SidebarItem`: Renders a single active-aware navigation link.
      - `SidebarNav`: Semantic `<nav>` list container.
-     - `ThemeToggle`: Theme switcher.
+     - `TopBar`: Welcomes the signed-in user (name, role, clinic) on every page and holds `ThemeMenu`.
+     - `ThemeMenu`: Light / Dark / Auto; it lives in the top bar, never in the sidebar.
      - `MobileSidebar`: Responsive sliding drawer for small screens.
      - `Sidebar`: Composed desktop container.
 
 2. **Open-Closed Principle (OCP):**
-   - Navigation links and emergency configurations are NEVER hardcoded in UI components.
+   - Navigation links are NEVER hardcoded in UI components.
    - All items come from the configuration object in `src/config/navigation.ts`.
    - To add a new menu link, update `navigationConfig.mainNav` without modifying component render logic.
 
 3. **Interface Segregation (ISP):**
-   - Navigation contracts are cleanly typed in `src/types/navigation.ts` (`NavItem`, `EmergencyActionConfig`, `BrandConfig`).
+   - Navigation contracts are cleanly typed in `src/types/navigation.ts` (`NavItem`, `BrandConfig`).
 
 ---
 

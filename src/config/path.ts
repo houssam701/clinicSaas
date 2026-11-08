@@ -47,11 +47,8 @@ export const PATHS = {
     edit: (id: string) => `/patients/${segment(id)}/edit`,
   },
   doctors: "/doctors",
-  messages: "/messages",
-  reviews: "/reviews",
   finances: "/finances",
   account: "/account",
-  emergency: "/emergency",
   // An Admin's own Staff and Admins (gated by the "Staff" / "Admins" permissions)
   team: {
     list: (query?: QueryParams) => withQuery("/team", query),

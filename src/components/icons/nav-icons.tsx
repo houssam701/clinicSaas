@@ -42,32 +42,6 @@ export function HeartLogoIcon({ className = "w-8 h-8", size, ...props }: IconPro
 }
 
 /**
- * Microphone Icon (Used in Emergency Tile)
- */
-export function MicIcon({ className = "w-5 h-5", size, ...props }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      width={size}
-      height={size}
-      aria-hidden="true"
-      {...props}
-    >
-      <rect x="9" y="2" width="6" height="12" rx="3" fill="currentColor" fillOpacity="0.2" />
-      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-      <line x1="12" y1="19" x2="12" y2="22" />
-      <line x1="8" y1="22" x2="16" y2="22" />
-    </svg>
-  );
-}
-
-/**
  * 4-Square Grid Dashboard Icon
  */
 export function DashboardIcon({ className = "w-5 h-5", size, ...props }: IconProps) {
@@ -173,52 +147,6 @@ export function DoctorsIcon({ className = "w-5 h-5", size, ...props }: IconProps
 }
 
 /**
- * Messages (Chat Bubble) Icon
- */
-export function MessagesIcon({ className = "w-5 h-5", size, ...props }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      width={size}
-      height={size}
-      aria-hidden="true"
-      {...props}
-    >
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </svg>
-  );
-}
-
-/**
- * Reviews (Star) Icon
- */
-export function ReviewsIcon({ className = "w-5 h-5", size, ...props }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      width={size}
-      height={size}
-      aria-hidden="true"
-      {...props}
-    >
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-    </svg>
-  );
-}
-
-/**
  * Finances (Wallet) Icon
  */
 export function FinancesIcon({ className = "w-5 h-5", size, ...props }: IconProps) {
@@ -264,85 +192,6 @@ export function LogoutIcon({ className = "w-5 h-5", size, ...props }: IconProps)
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
       <polyline points="16 17 21 12 16 7" />
       <line x1="21" y1="12" x2="9" y2="12" />
-    </svg>
-  );
-}
-
-/**
- * Sun Theme Icon
- */
-export function SunIcon({ className = "w-4 h-4", size, ...props }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      width={size}
-      height={size}
-      aria-hidden="true"
-      {...props}
-    >
-      <circle cx="12" cy="12" r="5" />
-      <line x1="12" y1="1" x2="12" y2="3" />
-      <line x1="12" y1="21" x2="12" y2="23" />
-      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-      <line x1="1" y1="12" x2="3" y2="12" />
-      <line x1="21" y1="12" x2="23" y2="12" />
-      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-    </svg>
-  );
-}
-
-/**
- * Moon Theme Icon
- */
-export function MoonIcon({ className = "w-4 h-4", size, ...props }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      width={size}
-      height={size}
-      aria-hidden="true"
-      {...props}
-    >
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-    </svg>
-  );
-}
-
-/**
- * Monitor / System Theme Icon
- */
-export function MonitorIcon({ className = "w-4 h-4", size, ...props }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      width={size}
-      height={size}
-      aria-hidden="true"
-      {...props}
-    >
-      <rect x="2" y="3" width="20" height="14" rx="2" />
-      <line x1="8" y1="21" x2="16" y2="21" />
-      <line x1="12" y1="17" x2="12" y2="21" />
     </svg>
   );
 }
@@ -409,24 +258,12 @@ export function NavIcon({ name, className = "w-5 h-5", ...props }: { name: NavIc
       return <PatientsIcon className={className} {...props} />;
     case "doctors":
       return <DoctorsIcon className={className} {...props} />;
-    case "messages":
-      return <MessagesIcon className={className} {...props} />;
-    case "reviews":
-      return <ReviewsIcon className={className} {...props} />;
     case "finances":
       return <FinancesIcon className={className} {...props} />;
     case "account":
       return <HiOutlineUserCircle aria-hidden="true" className={className} />;
     case "team":
       return <HiOutlineUserGroup aria-hidden="true" className={className} />;
-    case "emergency":
-      return <MicIcon className={className} {...props} />;
-    case "sun":
-      return <SunIcon className={className} {...props} />;
-    case "moon":
-      return <MoonIcon className={className} {...props} />;
-    case "monitor":
-      return <MonitorIcon className={className} {...props} />;
     default:
       return <DashboardIcon className={className} {...props} />;
   }

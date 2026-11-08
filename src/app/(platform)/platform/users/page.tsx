@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { serverApiFetch } from "@/lib/server-api";
 import { API_PATHS, PATHS } from "@/config/path";
+import { ROLE_BADGE } from "@/config/roles";
 import { DeleteUserButton } from "@/components/platform/delete-user-button";
 import { HiOutlineKey, HiOutlinePencilSquare, HiXMark } from "react-icons/hi2";
 import { UserRole, type PublicUser } from "@/types/users";
@@ -18,12 +19,6 @@ const ROLE_FILTERS: { label: string; value?: UserRole }[] = [
   { label: "Admins", value: UserRole.Admin },
   { label: "Staff", value: UserRole.Staff },
 ];
-
-const ROLE_BADGE: Record<UserRole, string> = {
-  [UserRole.SuperAdmin]: "bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300",
-  [UserRole.Admin]: "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
-  [UserRole.Staff]: "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-};
 
 const NOTICES = {
   created: "User created. They can now sign in with the email and password you set.",

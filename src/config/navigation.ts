@@ -9,13 +9,6 @@ export const navigationConfig: NavigationConfig = {
     logoEnd: "Sync",
     href: PATHS.dashboard,
   },
-  emergency: {
-    label: "Emergency",
-    icon: "emergency",
-    hasAlertDot: true,
-    href: PATHS.emergency,
-    description: "Urgent care & emergency call line",
-  },
   mainNav: [
     {
       id: "dashboard",
@@ -43,18 +36,6 @@ export const navigationConfig: NavigationConfig = {
       label: "Doctors",
       href: PATHS.doctors,
       icon: "doctors",
-    },
-    {
-      id: "messages",
-      label: "Messages",
-      href: PATHS.messages,
-      icon: "messages",
-    },
-    {
-      id: "reviews",
-      label: "Reviews",
-      href: PATHS.reviews,
-      icon: "reviews",
     },
     {
       id: "finances",

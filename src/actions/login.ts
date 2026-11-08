@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { parseSetCookie } from "@/lib/api";
 import { sendApiJson } from "@/lib/server-api";
 import { API_PATHS, PATHS } from "@/config/path";
+import { WELCOME_COOKIE, WELCOME_COOKIE_MAX_AGE_SECONDS } from "@/config/welcome";
 
 export type LoginState = {
   error?: string;
@@ -57,6 +58,9 @@ export async function loginAction(
         cookieStore.set(name, value, options);
       }
     }
+
+    // The first page after signing in shows the welcome animation
+    cookieStore.set(WELCOME_COOKIE, "1", { path: "/", maxAge: WELCOME_COOKIE_MAX_AGE_SECONDS, sameSite: "lax" });
 
     // PATHS.home resolves to the signed-in user's role home if no target was returned
     const { redirectTo } = await response

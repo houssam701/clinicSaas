@@ -5,15 +5,9 @@ export type NavIconName =
   | "appointments"
   | "patients"
   | "doctors"
-  | "messages"
-  | "reviews"
   | "finances"
   | "account"
-  | "team"
-  | "emergency"
-  | "sun"
-  | "moon"
-  | "monitor";
+  | "team";
 
 export interface NavBadge {
   count?: number;
@@ -33,14 +27,6 @@ export interface NavItem {
   disabled?: boolean;
 }
 
-export interface EmergencyActionConfig {
-  label: string;
-  icon: "emergency";
-  hasAlertDot: boolean;
-  href?: string;
-  description?: string;
-}
-
 export interface BrandConfig {
   name: string;
   logoStart: string;
@@ -50,7 +36,6 @@ export interface BrandConfig {
 
 export interface NavigationConfig {
   brand: BrandConfig;
-  emergency?: EmergencyActionConfig;
   mainNav: NavItem[];
   bottomNav: NavItem[];
 }

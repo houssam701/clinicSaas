@@ -10,14 +10,9 @@ import {
 } from "react-icons/hi2";
 import { serverApiFetch } from "@/lib/server-api";
 import { API_PATHS } from "@/config/path";
+import { ROLE_BADGE } from "@/config/roles";
 import { UserRole, type PublicUser } from "@/types/users";
 import type { ClinicModel } from "@/types/clinics";
-
-const ROLE_BADGE: Record<UserRole, string> = {
-  [UserRole.SuperAdmin]: "bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300",
-  [UserRole.Admin]: "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
-  [UserRole.Staff]: "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-};
 
 const ROLE_HINT: Record<UserRole, string> = {
   [UserRole.SuperAdmin]: "Manages clinics and users across the whole platform.",

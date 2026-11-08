@@ -94,7 +94,7 @@ export function MobileSidebar({ config = navigationConfig }: MobileSidebarProps)
         aria-label="Mobile Navigation"
       >
         {/* Drawer Header with Close Button */}
-        <div className="flex items-center justify-between px-6 pt-5 pb-1">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-200/80 dark:border-slate-800/80 px-6 pt-5 pb-4">
           <SidebarBrand brand={config.brand} />
           <button
             type="button"
@@ -106,10 +106,10 @@ export function MobileSidebar({ config = navigationConfig }: MobileSidebarProps)
           </button>
         </div>
 
-        {/* Sidebar Nav & Content */}
-        <div className="flex-1 overflow-y-auto">
+        {/* Sidebar Nav & Content: fills the drawer, and scrolls only if the links do not fit */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
           <Sidebar
-            className="w-full h-full border-r-0 shadow-none pt-0 px-6"
+            className="w-full min-h-full border-r-0 shadow-none pt-3 px-6"
             showBrand={false}
             config={config}
             onNavigate={() => setIsOpen(false)}

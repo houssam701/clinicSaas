@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { HiOutlineKey, HiOutlinePencilSquare } from "react-icons/hi2";
 import { serverApiFetch } from "@/lib/server-api";
 import { API_PATHS, PATHS } from "@/config/path";
+import { ROLE_BADGE } from "@/config/roles";
 import { loadMyAccess } from "@/lib/access-page";
 import { teamModuleFor } from "@/lib/permission-grid";
 import { DeleteUserButton } from "@/components/platform/delete-user-button";
@@ -10,11 +11,6 @@ import { Pagination } from "@/components/ui/pagination";
 import { totalPages } from "@/lib/pagination";
 import { DEFAULT_PAGE_SIZE } from "@/types/pagination";
 import { UserRole, type PublicUser } from "@/types/users";
-
-const ROLE_BADGE: Record<string, string> = {
-  [UserRole.Admin]: "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
-  [UserRole.Staff]: "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-};
 
 const NOTICES = {
   created: "Team member added. Set what they can do with Access.",
@@ -158,7 +154,7 @@ export default async function TeamPage({
                           <span className="block text-slate-500 dark:text-slate-400">{user.email}</span>
                         </td>
                         <td className="px-5 py-3.5">
-                          <span className={`px-2 py-0.5 rounded-md text-xs font-bold ${ROLE_BADGE[user.role]}`}>{user.role}</span>
+                          <span className={`px-2 py-0.5 rounded-md text-xs font-bold ${ROLE_BADGE[user.role as UserRole]}`}>{user.role}</span>
                         </td>
                         <td className="px-5 py-3.5 text-slate-500 dark:text-slate-400 whitespace-nowrap">
                           {new Date(user.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
