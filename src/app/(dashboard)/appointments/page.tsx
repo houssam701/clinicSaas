@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { HiChevronLeft, HiChevronRight, HiOutlineMagnifyingGlass, HiXMark } from "react-icons/hi2";
 import { FilterForm } from "@/components/ui/filter-form";
+import { isValidUuid } from "@/services/api-guard";
 import { serverApiFetch } from "@/lib/server-api";
 import { API_PATHS, PATHS } from "@/config/path";
 import { loadMyAccess } from "@/lib/access-page";
@@ -65,6 +66,8 @@ type SearchParams = {
   page?: string;
   saved?: string;
   search?: string;
+  /** One patient's appointments (from their page's "See all") */
+  patient?: string;
 };
 
 /**
@@ -102,6 +105,7 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
   const zone = access!.clinic?.timezone ?? "UTC";
   const today = todayIn(zone);
   const search = params.search?.trim().slice(0, 100) || undefined;
+  const patientFilter = params.patient && isValidUuid(params.patient) ? params.patient : undefined;
   const savedView = cookieStore.get(VIEW_COOKIE)?.value;
   // Search results are a list across dates
   const view: AppointmentsView = search ? "list" : isView(params.view) ? params.view : isView(savedView) ? savedView : "calendar";
@@ -122,7 +126,8 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
   // A search looks through all admins unless one is picked.
   const me = access!.me;
   const isProvider = me.role === UserRole.Admin;
-  const defaultStaff = isProvider && !search ? me.id : "all";
+  // A search or one patient's list looks through all admins unless one is picked
+  const defaultStaff = isProvider && !search && !patientFilter ? me.id : "all";
   const staffSelection = params.staff || defaultStaff;
   const staffFilter = staffSelection === "all" ? undefined : staffSelection; // sent to the API
   const statusFilter = Object.values(AppointmentStatus).includes(params.status as AppointmentStatus)
@@ -146,6 +151,7 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
     staff: staffSelection === defaultStaff ? undefined : staffSelection,
     status: statusFilter,
     search,
+    patient: patientFilter,
   };
   const singleAdmin = staffFilter && staffFilter !== "unassigned" ? staffFilter : undefined;
   const back = PATHS.appointments.list({ ...query, page: view === "list" && page > 1 ? page : undefined });
@@ -160,6 +166,7 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
         user_id: staffFilter,
         status: statusFilter,
         search,
+        patient_id: patientFilter,
         // Past: most recent first
         sort: mode === "past" ? "desc" : "asc",
         page: view === "list" ? page : 1,
@@ -173,6 +180,8 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
     : {};
   const { staff = [] }: { staff?: AppointmentStaffMember[] } = staffRes.ok ? await staffRes.json() : {};
   const loadError = !apptRes.ok;
+  const filteredPatient = patientFilter ? appointments.find((a) => a.patient)?.patient : undefined;
+  const filteredPatientName = filteredPatient ? patientName(filteredPatient) : undefined;
 
   if (view === "list" && !loadError && total > 0 && page > totalPages(total, LIST_PAGE_SIZE)) {
     redirect(PATHS.appointments.list({ ...query, page: totalPages(total, LIST_PAGE_SIZE) }));
@@ -319,7 +328,7 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
               <Link href={hrefFor({ date: addDays(date, step) })} className={navButton} aria-label={`Next ${mode}`}>
                 <HiChevronRight aria-hidden="true" className="h-4 w-4" />
               </Link>
-              <DateJump date={date} keep={{ view, mode, staff: query.staff, status: statusFilter, search }} />
+              <DateJump date={date} keep={{ view, mode, staff: query.staff, status: statusFilter, search, patient: patientFilter }} />
             </>
           )}
           <AppointmentFilters
@@ -327,7 +336,7 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
             meId={isProvider ? me.id : undefined}
             currentStaff={staffSelection}
             currentStatus={statusFilter}
-            keep={{ view, mode, date: openEnded ? undefined : date, search }}
+            keep={{ view, mode, date: openEnded ? undefined : date, search, patient: patientFilter }}
           />
         </div>
       </div>
@@ -359,6 +368,7 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
         <input type="hidden" name="mode" value={mode === "past" ? "past" : "upcoming"} />
         {params.staff && <input type="hidden" name="staff" value={params.staff} />}
         {statusFilter && <input type="hidden" name="status" value={statusFilter} />}
+        {patientFilter && <input type="hidden" name="patient" value={patientFilter} />}
         <label htmlFor="appointment-search" className="sr-only">
           Search appointments by patient, phone, admin or reason
         </label>
@@ -377,6 +387,21 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
           />
         </div>
       </FilterForm>
+
+      {patientFilter && (
+        <p role="status" className="flex flex-wrap items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200">
+          <span>
+            Showing the appointments of <strong>{filteredPatientName ?? "one patient"}</strong>
+          </span>
+          <Link href={PATHS.patients.detail(patientFilter)} className="font-semibold text-primary hover:underline">
+            Patient file
+          </Link>
+          <span aria-hidden="true" className="text-slate-300">·</span>
+          <Link href={hrefFor({ patient: undefined })} className="font-semibold text-primary hover:underline">
+            Show everyone
+          </Link>
+        </p>
+      )}
 
       <h2 className="text-lg font-bold text-slate-800 dark:text-white">{periodLabel}</h2>
 

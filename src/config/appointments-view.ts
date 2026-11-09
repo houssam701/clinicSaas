@@ -1,3 +1,5 @@
+import { PATHS } from "@/config/path";
+
 /** The two ways to look at appointments; both show the same period and filters. */
 export type AppointmentsView = "calendar" | "list";
 
@@ -17,11 +19,17 @@ export const LIST_PAGE_SIZE = 25;
 
 /**
  * The page a form returns to, from its ?back= param: only paths inside
- * /appointments are accepted (no open redirect), otherwise the default.
+ * /appointments, the dashboard, or a patient's page are accepted (no open
+ * redirect), otherwise the default.
  */
 export function safeAppointmentsBack(back: string | undefined, fallback: string): string {
-  if (!back || !back.startsWith("/appointments") || back.startsWith("//") || back.includes("\\")) return fallback;
-  return back;
+  if (!back || back.startsWith("//") || back.includes("\\")) return fallback;
+  const allowed =
+    back.startsWith("/appointments") ||
+    back === PATHS.dashboard ||
+    back.startsWith(`${PATHS.dashboard}?`) ||
+    back.startsWith(`${PATHS.patients.list()}/`);
+  return allowed ? back : fallback;
 }
 
 /** Adds ?saved=1 to a back path, so the page shows "Appointment saved." */

@@ -30,6 +30,8 @@ import { DeleteButton } from "@/components/ui/delete-button";
 import { Pagination } from "@/components/ui/pagination";
 import { MedicalHistoryCard } from "@/components/patients/medical-history-card";
 import { AddDocumentPanel } from "@/components/patients/add-document-panel";
+import { PATIENT_APPOINTMENTS_SHOWN, PatientAppointments } from "@/components/patients/patient-appointments";
+import type { AppointmentWithPeople } from "@/types/appointments";
 import { DEFAULT_PAGE_SIZE } from "@/types/pagination";
 import type { MedicalHistoryModel, PatientDocumentModel, PatientModel } from "@/types/patients";
 
@@ -85,15 +87,27 @@ export default async function PatientPage({
   const notice = created ? NOTICES.created : updated ? NOTICES.updated : undefined;
   const docsPage = Math.max(1, Math.floor(Number(docs)) || 1);
 
-  const [access, patientRes, historyRes, docsRes] = await Promise.all([
+  // The appointment lists load alongside the rest; without Appointments access
+  // the API refuses them and the section is not shown
+  const nowIso = new Date().toISOString();
+  const apptList = (sort: "asc" | "desc", range: { from?: string; to?: string }) =>
+    serverApiFetch(API_PATHS.appointments.list({ patient_id: id, sort, limit: PATIENT_APPOINTMENTS_SHOWN, ...range }));
+  const [access, patientRes, historyRes, docsRes, upcomingRes, pastRes] = await Promise.all([
     loadMyAccess(),
     serverApiFetch(API_PATHS.patients.detail(id)),
     serverApiFetch(API_PATHS.patients.medicalHistory(id)),
     serverApiFetch(API_PATHS.patients.documents(id, { page: docsPage, limit: DOCS_PAGE_SIZE })),
+    apptList("asc", { from: nowIso }),
+    apptList("desc", { to: nowIso }),
   ]);
   const can = access?.grid.Patients;
   if (!can?.can_view) redirect(PATHS.patients.list());
   if (!patientRes.ok) notFound();
+
+  const canAppointments = !!access?.grid.Appointments.can_view;
+  type ApptPage = { appointments?: AppointmentWithPeople[]; total?: number };
+  const upcoming: ApptPage = upcomingRes.ok ? await upcomingRes.json() : {};
+  const past: ApptPage = pastRes.ok ? await pastRes.json() : {};
 
   const { patient }: { patient: PatientModel } = await patientRes.json();
   // 404 on medical history means nothing has been recorded yet
@@ -203,6 +217,21 @@ export default async function PatientPage({
           </Detail>
         </dl>
       </section>
+
+      {/* Appointments */}
+      {canAppointments && (
+        <PatientAppointments
+          patientId={id}
+          upcoming={upcoming.appointments ?? []}
+          upcomingTotal={upcoming.total ?? 0}
+          past={past.appointments ?? []}
+          pastTotal={past.total ?? 0}
+          zone={access!.clinic?.timezone ?? "UTC"}
+          canBook={!!access!.grid.Appointments.can_create}
+          back={PATHS.patients.detail(id)}
+          error={!upcomingRes.ok || !pastRes.ok}
+        />
+      )}
 
       {/* Medical history */}
       {historyError ? (
