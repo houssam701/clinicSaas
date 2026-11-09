@@ -87,3 +87,13 @@ export function visibleHours(placed: { startMinute: number; endMinute: number }[
 /** "09:30" from minutes since midnight. */
 export const minuteLabel = (minute: number) =>
   `${String(Math.floor(minute / 60) % 24).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
+
+/**
+ * The id of the next appointment: the first scheduled one (in start order)
+ * that has not ended yet at `now`. Undefined when there is none.
+ */
+export function nextScheduledId<T extends TimedItem & { status: string }>(items: T[], now = Date.now()): string | undefined {
+  return items.find(
+    (a) => a.status === "Scheduled" && new Date(a.scheduled_time).getTime() + a.duration_minutes * 60000 > now
+  )?.id;
+}
