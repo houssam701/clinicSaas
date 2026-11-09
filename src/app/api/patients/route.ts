@@ -25,6 +25,7 @@ import { authenticateForModule, canAccessClinic } from "@/services";
  *   clinic_id?: string  (UUID, SuperAdmin only)
  *   search?:    string  (every word must match first_name, last_name, email or phone)
  *   sort?:      recent (default, newest first) | name (A–Z)
+ *   created_from?: ISO-8601 instant with offset: only patients added since then
  *
  * Responses:
  *   200  { patients: PatientModel[], total: number, page: number, limit: number }
@@ -47,6 +48,7 @@ export async function GET(request: NextRequest) {
     clinic_id: sp.get("clinic_id") ?? undefined,
     search:    sp.get("search")    ?? undefined,
     sort:      sp.get("sort")      ?? undefined,
+    created_from: sp.get("created_from") ?? undefined,
   };
 
   const parsed = ListPatientsQuerySchema.safeParse(raw);
@@ -57,7 +59,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const { page, limit, search, sort } = parsed.data;
+  const { page, limit, search, sort, created_from } = parsed.data;
 
   // 4. Determine effective clinic_id
   //    Admin and Staff are always locked to their own clinic regardless of query param.
@@ -76,7 +78,7 @@ export async function GET(request: NextRequest) {
   }
 
   // 5. Fetch paginated patients
-  const result = await PatientRepository.findPage({ clinic_id, search, sort, page, limit });
+  const result = await PatientRepository.findPage({ clinic_id, search, sort, created_from, page, limit });
 
   return NextResponse.json(
     { patients: result.data, total: result.total, page, limit },

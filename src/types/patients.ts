@@ -65,6 +65,8 @@ export const ListPatientsQuerySchema = PaginationQuerySchema.extend({
   search:    z.string().trim().max(100).optional(),
   /** "recent" = newest first (default), "name" = A–Z */
   sort:      z.enum(["recent", "name"]).default("recent"),
+  /** Only patients added at or after this instant (e.g. the start of the week) */
+  created_from: z.iso.datetime({ offset: true, error: "Choose a valid date and time." }).optional(),
 });
 
 // ─── Medical History Schemas ──────────────────────────────────────────────────

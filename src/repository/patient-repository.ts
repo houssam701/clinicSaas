@@ -45,6 +45,8 @@ export class PatientRepository {
     clinic_id?: string;
     search?:    string;
     sort?:      "recent" | "name";
+    /** Added at or after this instant */
+    created_from?: string;
     page:       number;
     limit:      number;
   }): Promise<PaginatedResult<PatientModel>> {
@@ -56,6 +58,10 @@ export class PatientRepository {
         "date_of_birth", "gender", "specialized_data", "created_at", "updated_at", "deleted_at"
       )
       .where((p) => p.deleted_at.isNull());
+
+    if (filter.created_from) {
+      query = query.where((p) => p.created_at.gte(filter.created_from!));
+    }
 
     if (filter.clinic_id) {
       query = query.where({ clinic_id: filter.clinic_id });
