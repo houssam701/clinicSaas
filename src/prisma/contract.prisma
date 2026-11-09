@@ -40,6 +40,7 @@ model Clinic {
   name        String
   clinic_type ClinicType
   timezone    String                     @default("UTC") // IANA zone (e.g. "Asia/Beirut"): what "today" and "09:00" mean for this clinic
+  currency    String                     @default("USD") // ISO 4217 code (e.g. "USD", "EUR"): how this clinic's amounts are shown
   created_at  temporal.createdAtString()
   updated_at  temporal.updatedAtString()
 
@@ -152,6 +153,7 @@ model Appointment {
   updated_at       temporal.updatedAtString()
 
   invoices Invoice[]
+  payments Payment[]
 
   @@index([clinic_id, scheduled_time])
   @@index([patient_id])
@@ -166,6 +168,7 @@ model Invoice {
   patient        Patient                    @relation(fields: [patient_id], references: [id])
   appointment_id String? // Nullable for walk-in payments, standalone products, or generic consultations
   appointment    Appointment?               @relation(fields: [appointment_id], references: [id])
+  title          String? // What is charged, e.g. a treatment or "Visit on 9 Nov"
   total_amount   Numeric(12, 2)
   status         InvoiceStatus              @default(Unpaid)
   due_date       DateString?
@@ -186,6 +189,8 @@ model Payment {
   clinic         Clinic                     @relation(fields: [clinic_id], references: [id])
   invoice_id     String
   invoice        Invoice                    @relation(fields: [invoice_id], references: [id])
+  appointment_id String? // The visit the money was received at, if any
+  appointment    Appointment?               @relation(fields: [appointment_id], references: [id])
   amount         Numeric(12, 2)
   payment_method PaymentMethod
   payment_date   TimestamptzString
@@ -196,4 +201,5 @@ model Payment {
 
   @@index([clinic_id])
   @@index([invoice_id])
+  @@index([appointment_id])
 }

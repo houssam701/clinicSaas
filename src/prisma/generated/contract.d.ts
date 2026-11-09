@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'591b87ad925168dd52d2e65df17f689734bbbaf9ae21b4cb0915e5dafd24dc39'>;
+  StorageHashBase<'ef234c61211a4ea69721ed4e36935602112745a7033d277bd2edc24876febfec'>;
 export type ExecutionHash =
   ExecutionHashBase<'b1966046a8c8f9506ea34c852271609f898197dc54e6eb3477191f0a804493c8'>;
 export type ProfileHash =
@@ -265,6 +265,7 @@ export type FieldOutputTypes = {
     readonly Clinic: {
       readonly clinic_type: 'Dentistry' | 'Therapy';
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly currency: CodecTypes['pg/text@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly timezone: CodecTypes['pg/text@1']['output'];
@@ -279,6 +280,7 @@ export type FieldOutputTypes = {
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly patient_id: CodecTypes['pg/text@1']['output'];
       readonly status: 'Unpaid' | 'Partial' | 'Paid';
+      readonly title: CodecTypes['pg/text@1']['output'] | null;
       readonly total_amount: Numeric<12, 2>;
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
     };
@@ -310,6 +312,7 @@ export type FieldOutputTypes = {
     };
     readonly Payment: {
       readonly amount: Numeric<12, 2>;
+      readonly appointment_id: CodecTypes['pg/text@1']['output'] | null;
       readonly clinic_id: CodecTypes['pg/text@1']['output'];
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly deleted_at: CodecTypes['pg/timestamptz-string@1']['output'] | null;
@@ -370,6 +373,7 @@ export type FieldInputTypes = {
     readonly Clinic: {
       readonly clinic_type: 'Dentistry' | 'Therapy';
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly currency: CodecTypes['pg/text@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly timezone: CodecTypes['pg/text@1']['input'];
@@ -384,6 +388,7 @@ export type FieldInputTypes = {
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly patient_id: CodecTypes['pg/text@1']['input'];
       readonly status: 'Unpaid' | 'Partial' | 'Paid';
+      readonly title: CodecTypes['pg/text@1']['input'] | null;
       readonly total_amount: CodecTypes['pg/numeric@1']['input'];
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['input'];
     };
@@ -415,6 +420,7 @@ export type FieldInputTypes = {
     };
     readonly Payment: {
       readonly amount: CodecTypes['pg/numeric@1']['input'];
+      readonly appointment_id: CodecTypes['pg/text@1']['input'] | null;
       readonly clinic_id: CodecTypes['pg/text@1']['input'];
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly deleted_at: CodecTypes['pg/timestamptz-string@1']['input'] | null;
@@ -475,6 +481,7 @@ export type StorageColumnTypes = {
     readonly Clinic: {
       readonly clinic_type: 'Dentistry' | 'Therapy';
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly currency: CodecTypes['pg/text@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly timezone: CodecTypes['pg/text@1']['output'];
@@ -489,6 +496,7 @@ export type StorageColumnTypes = {
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly patient_id: CodecTypes['pg/text@1']['output'];
       readonly status: 'Unpaid' | 'Partial' | 'Paid';
+      readonly title: CodecTypes['pg/text@1']['output'] | null;
       readonly total_amount: Numeric<12, 2>;
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
     };
@@ -520,6 +528,7 @@ export type StorageColumnTypes = {
     };
     readonly Payment: {
       readonly amount: Numeric<12, 2>;
+      readonly appointment_id: CodecTypes['pg/text@1']['output'] | null;
       readonly clinic_id: CodecTypes['pg/text@1']['output'];
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly deleted_at: CodecTypes['pg/timestamptz-string@1']['output'] | null;
@@ -580,6 +589,7 @@ export type StorageColumnInputTypes = {
     readonly Clinic: {
       readonly clinic_type: 'Dentistry' | 'Therapy';
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly currency: CodecTypes['pg/text@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly timezone: CodecTypes['pg/text@1']['input'];
@@ -594,6 +604,7 @@ export type StorageColumnInputTypes = {
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly patient_id: CodecTypes['pg/text@1']['input'];
       readonly status: 'Unpaid' | 'Partial' | 'Paid';
+      readonly title: CodecTypes['pg/text@1']['input'] | null;
       readonly total_amount: CodecTypes['pg/numeric@1']['input'];
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['input'];
     };
@@ -625,6 +636,7 @@ export type StorageColumnInputTypes = {
     };
     readonly Payment: {
       readonly amount: CodecTypes['pg/numeric@1']['input'];
+      readonly appointment_id: CodecTypes['pg/text@1']['input'] | null;
       readonly clinic_id: CodecTypes['pg/text@1']['input'];
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly deleted_at: CodecTypes['pg/timestamptz-string@1']['input'] | null;
@@ -684,12 +696,14 @@ export namespace Models {
     clinic: public_Clinic;
     invoices: public_Invoice[];
     patient: public_Patient;
+    payments: public_Payment[];
     staff: public_User | null;
-    readonly [RelationKeys]?: 'clinic' | 'invoices' | 'patient' | 'staff';
+    readonly [RelationKeys]?: 'clinic' | 'invoices' | 'patient' | 'payments' | 'staff';
   };
   export type public_Clinic = {
     clinic_type: 'Dentistry' | 'Therapy';
     created_at: CodecTypes['pg/timestamptz-string@1']['output'];
+    currency: CodecTypes['pg/text@1']['output'];
     id: CodecTypes['pg/text@1']['output'];
     name: CodecTypes['pg/text@1']['output'];
     timezone: CodecTypes['pg/text@1']['output'];
@@ -710,6 +724,7 @@ export namespace Models {
     id: CodecTypes['pg/text@1']['output'];
     patient_id: CodecTypes['pg/text@1']['output'];
     status: 'Unpaid' | 'Partial' | 'Paid';
+    title: CodecTypes['pg/text@1']['output'] | null;
     total_amount: Numeric<12, 2>;
     updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
     appointment: public_Appointment | null;
@@ -755,6 +770,7 @@ export namespace Models {
   };
   export type public_Payment = {
     amount: Numeric<12, 2>;
+    appointment_id: CodecTypes['pg/text@1']['output'] | null;
     clinic_id: CodecTypes['pg/text@1']['output'];
     created_at: CodecTypes['pg/timestamptz-string@1']['output'];
     deleted_at: CodecTypes['pg/timestamptz-string@1']['output'] | null;
@@ -764,9 +780,10 @@ export namespace Models {
     payment_date: CodecTypes['pg/timestamptz-string@1']['output'];
     payment_method: 'Cash' | 'Card' | 'Transfer' | 'Insurance';
     updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
+    appointment: public_Appointment | null;
     clinic: public_Clinic;
     invoice: public_Invoice;
-    readonly [RelationKeys]?: 'clinic' | 'invoice';
+    readonly [RelationKeys]?: 'appointment' | 'clinic' | 'invoice';
   };
   export type public_SharedMedicalHistory = {
     allergies: CodecTypes['pg/text@1']['output'] | null;
@@ -981,6 +998,15 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/timestamptz-string@1';
                   readonly nullable: false;
                 };
+                readonly currency: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'USD'>;
+                  };
+                };
                 readonly id: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
@@ -1056,6 +1082,11 @@ type ContractBase = Omit<
                     readonly kind: 'literal';
                     readonly value: DefaultLiteralValue<'pg/text@1', 'Unpaid'>;
                   };
+                };
+                readonly title: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
                 };
                 readonly total_amount: {
                   readonly nativeType: 'numeric';
@@ -1304,6 +1335,11 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly typeParams: { readonly precision: 12; readonly scale: 2 };
                 };
+                readonly appointment_id: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
                 readonly clinic_id: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
@@ -1354,6 +1390,12 @@ type ContractBase = Omit<
               uniques: readonly [];
               indexes: readonly [
                 {
+                  readonly name: 'Payment_appointment_id_idx_5a77e0f0';
+                  readonly prefix: 'Payment_appointment_id_idx';
+                  readonly columns: readonly ['appointment_id'];
+                  readonly unique: false;
+                },
+                {
                   readonly name: 'Payment_clinic_id_idx_4265e318';
                   readonly prefix: 'Payment_clinic_id_idx';
                   readonly columns: readonly ['clinic_id'];
@@ -1388,6 +1430,18 @@ type ContractBase = Omit<
                   readonly target: {
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'Invoice';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Payment';
+                    readonly columns: readonly ['appointment_id'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Appointment';
                     readonly columns: readonly ['id'];
                   };
                 },
@@ -1764,6 +1818,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly payments: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Payment';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['appointment_id'];
+                };
+              };
               readonly staff: {
                 readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
                 readonly cardinality: 'N:1';
@@ -1803,6 +1868,10 @@ type ContractBase = Omit<
                   readonly kind: 'scalar';
                   readonly codecId: 'pg/timestamptz-string@1';
                 };
+              };
+              readonly currency: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
               readonly id: {
                 readonly nullable: false;
@@ -1884,6 +1953,7 @@ type ContractBase = Omit<
               readonly fields: {
                 readonly clinic_type: { readonly column: 'clinic_type' };
                 readonly created_at: { readonly column: 'created_at' };
+                readonly currency: { readonly column: 'currency' };
                 readonly id: { readonly column: 'id' };
                 readonly name: { readonly column: 'name' };
                 readonly timezone: { readonly column: 'timezone' };
@@ -1929,6 +1999,10 @@ type ContractBase = Omit<
               };
               readonly status: {
                 readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly title: {
+                readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
               readonly total_amount: {
@@ -2008,6 +2082,7 @@ type ContractBase = Omit<
                 readonly id: { readonly column: 'id' };
                 readonly patient_id: { readonly column: 'patient_id' };
                 readonly status: { readonly column: 'status' };
+                readonly title: { readonly column: 'title' };
                 readonly total_amount: { readonly column: 'total_amount' };
                 readonly updated_at: { readonly column: 'updated_at' };
               };
@@ -2238,6 +2313,10 @@ type ContractBase = Omit<
                   readonly typeParams: { readonly precision: 12; readonly scale: 2 };
                 };
               };
+              readonly appointment_id: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly clinic_id: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -2288,6 +2367,18 @@ type ContractBase = Omit<
               };
             };
             readonly relations: {
+              readonly appointment: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Appointment';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: true;
+                readonly on: {
+                  readonly localFields: readonly ['appointment_id'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
               readonly clinic: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
@@ -2318,6 +2409,7 @@ type ContractBase = Omit<
               readonly namespaceId: 'public';
               readonly fields: {
                 readonly amount: { readonly column: 'amount' };
+                readonly appointment_id: { readonly column: 'appointment_id' };
                 readonly clinic_id: { readonly column: 'clinic_id' };
                 readonly created_at: { readonly column: 'created_at' };
                 readonly deleted_at: { readonly column: 'deleted_at' };

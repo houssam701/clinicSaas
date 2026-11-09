@@ -1,10 +1,13 @@
 import { z } from "../lib/zod";
 import { PaginationQuerySchema } from "./pagination";
 import type { FieldOutputTypes } from "../prisma/generated/contract";
-import { isValidTimeZone } from "../lib/time-zone";
+import { isValidCurrency, isValidTimeZone } from "../lib/time-zone";
 
 /** An IANA time zone such as "Asia/Beirut". */
 const TimeZoneSchema = z.string().trim().refine(isValidTimeZone, "Choose a valid time zone.");
+
+/** An ISO 4217 currency code such as "USD". */
+const CurrencySchema = z.string().trim().toUpperCase().refine(isValidCurrency, "Choose a valid currency.");
 
 // ─── Enum ─────────────────────────────────────────────────────────────────────
 // Matches contract.prisma ClinicType enum and Prisma 8 generated types
@@ -25,6 +28,7 @@ export const CreateClinicSchema = z.object({
     message: "Clinic type must be Dentistry or Therapy.",
   }),
   timezone: TimeZoneSchema.default("UTC"),
+  currency: CurrencySchema.default("USD"),
 });
 
 export const UpdateClinicSchema = z
@@ -36,10 +40,11 @@ export const UpdateClinicSchema = z
       })
       .optional(),
     timezone: TimeZoneSchema.optional(),
+    currency: CurrencySchema.optional(),
   })
   .refine(
-    (data) => data.name !== undefined || data.clinic_type !== undefined || data.timezone !== undefined,
-    { message: "Provide a clinic name, type or time zone to update." }
+    (data) => data.name !== undefined || data.clinic_type !== undefined || data.timezone !== undefined || data.currency !== undefined,
+    { message: "Provide a clinic name, type, time zone or currency to update." }
   );
 
 export const DeleteClinicSchema = z.object({
@@ -61,10 +66,12 @@ export type CreateClinicData = {
   name: string;
   clinic_type: ClinicType;
   timezone: string;
+  currency: string;
 };
 
 export type UpdateClinicData = {
   name?: string;
   clinic_type?: ClinicType;
   timezone?: string;
+  currency?: string;
 };

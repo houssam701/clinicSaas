@@ -113,11 +113,14 @@ export const API_PATHS = {
     list: (query?: QueryParams) => withQuery("/api/invoices", query),
     detail: (id: string) => `/api/invoices/${segment(id)}`,
     payments: (id: string) => `/api/invoices/${segment(id)}/payments`,
+    payment: (id: string, paymentId: string) => `/api/invoices/${segment(id)}/payments/${segment(paymentId)}`,
   },
   appointments: {
     list: (query?: QueryParams) => withQuery("/api/appointments", query),
     detail: (id: string) => `/api/appointments/${segment(id)}`,
     status: (id: string) => `/api/appointments/${segment(id)}/status`,
     staff: "/api/appointments/staff",
+    // Money received during this appointment
+    payment: (id: string) => `/api/appointments/${segment(id)}/payment`,
   },
 } as const;

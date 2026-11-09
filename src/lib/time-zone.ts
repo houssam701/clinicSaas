@@ -6,6 +6,22 @@
 
 export const DEFAULT_TIME_ZONE = "UTC";
 
+/** True for an ISO 4217 currency code Intl knows, e.g. "USD" or "EUR". */
+export function isValidCurrency(code: string): boolean {
+  if (!/^[A-Z]{3}$/.test(code)) return false;
+  try {
+    new Intl.NumberFormat("en-US", { style: "currency", currency: code });
+    return typeof Intl.supportedValuesOf !== "function" || Intl.supportedValuesOf("currency").includes(code);
+  } catch {
+    return false;
+  }
+}
+
+/** Every currency code the runtime supports, for a picker. */
+export function listCurrencies(): string[] {
+  return typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("currency") : ["USD", "EUR"];
+}
+
 /** True for a zone Intl knows, e.g. "Asia/Beirut" or "UTC". */
 export function isValidTimeZone(zone: string): boolean {
   try {

@@ -68,6 +68,7 @@ export async function GET(
  *   name?        string
  *   clinic_type? string
  *   timezone?    string (IANA, e.g. "Asia/Beirut")
+ *   currency?    string (ISO 4217, e.g. "USD")
  *
  * Responses:
  *   200  { message: "Clinic updated successfully", clinic: ClinicModel }
@@ -146,6 +147,7 @@ export async function PATCH(
     name: parsed.data.name,
     clinic_type: parsed.data.clinic_type,
     timezone: parsed.data.timezone,
+    currency: parsed.data.currency,
   });
 
   return NextResponse.json(

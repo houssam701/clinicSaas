@@ -263,6 +263,21 @@
                   "namespace": "public"
                 }
               },
+              "payments": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "appointment_id"
+                  ]
+                },
+                "to": {
+                  "model": "Payment",
+                  "namespace": "public"
+                }
+              },
               "staff": {
                 "cardinality": "N:1",
                 "nullable": true,
@@ -336,6 +351,13 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "currency": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
               },
@@ -453,6 +475,9 @@
                 "created_at": {
                   "column": "created_at"
                 },
+                "currency": {
+                  "column": "currency"
+                },
                 "id": {
                   "column": "id"
                 },
@@ -532,6 +557,13 @@
                   "entityName": "InvoiceStatus",
                   "namespaceId": "public",
                   "plane": "domain"
+                }
+              },
+              "title": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "total_amount": {
@@ -643,6 +675,9 @@
                 },
                 "status": {
                   "column": "status"
+                },
+                "title": {
+                  "column": "title"
                 },
                 "total_amount": {
                   "column": "total_amount"
@@ -1005,6 +1040,13 @@
                   }
                 }
               },
+              "appointment_id": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "clinic_id": {
                 "nullable": false,
                 "type": {
@@ -1076,6 +1118,22 @@
               }
             },
             "relations": {
+              "appointment": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "appointment_id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Appointment",
+                  "namespace": "public"
+                }
+              },
               "clinic": {
                 "cardinality": "N:1",
                 "nullable": false,
@@ -1113,6 +1171,9 @@
               "fields": {
                 "amount": {
                   "column": "amount"
+                },
+                "appointment_id": {
+                  "column": "appointment_id"
                 },
                 "clinic_id": {
                   "column": "clinic_id"
@@ -1716,6 +1777,15 @@
                   "nativeType": "timestamptz",
                   "nullable": false
                 },
+                "currency": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "USD"
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
                 "id": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -1808,6 +1878,11 @@
                     "namespaceId": "public",
                     "plane": "storage"
                   }
+                },
+                "title": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "total_amount": {
                   "codecId": "pg/numeric@1",
@@ -2117,6 +2192,11 @@
                     "scale": 2
                   }
                 },
+                "appointment_id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "clinic_id": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -2201,9 +2281,33 @@
                     "namespaceId": "public",
                     "tableName": "Invoice"
                   }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "appointment_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Payment"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Appointment"
+                  }
                 }
               ],
               "indexes": [
+                {
+                  "columns": [
+                    "appointment_id"
+                  ],
+                  "name": "Payment_appointment_id_idx_5a77e0f0",
+                  "prefix": "Payment_appointment_id_idx",
+                  "unique": false
+                },
                 {
                   "columns": [
                     "clinic_id"
@@ -2563,7 +2667,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "591b87ad925168dd52d2e65df17f689734bbbaf9ae21b4cb0915e5dafd24dc39"
+    "storageHash": "ef234c61211a4ea69721ed4e36935602112745a7033d277bd2edc24876febfec"
   },
   "execution": {
     "executionHash": "b1966046a8c8f9506ea34c852271609f898197dc54e6eb3477191f0a804493c8",

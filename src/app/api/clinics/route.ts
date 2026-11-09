@@ -78,6 +78,7 @@ export async function GET(request: NextRequest) {
  *   name        string (min 1 char)
  *   clinic_type "Dentistry" | "Therapy"
  *   timezone?   string (IANA, e.g. "Asia/Beirut"; default "UTC")
+ *   currency?   string (ISO 4217, e.g. "EUR"; default "USD")
  *
  * Responses:
  *   201  { message: "Clinic created successfully", clinic: ClinicModel }

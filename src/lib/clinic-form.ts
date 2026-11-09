@@ -6,7 +6,7 @@
  * helpers belong here.
  */
 
-type ClinicFormField = "name" | "clinic_type" | "timezone";
+type ClinicFormField = "name" | "clinic_type" | "timezone" | "currency";
 
 export type ClinicFormState = {
   error?: string;
@@ -20,6 +20,7 @@ export function readClinicForm(formData: FormData) {
     name:        text("name"),
     clinic_type: text("clinic_type"),
     timezone:    text("timezone"),
+    currency:    text("currency"),
   };
 }
 

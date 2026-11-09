@@ -6,7 +6,7 @@ import { useFormStatus } from "react-dom";
 import type { ClinicFormState } from "@/lib/clinic-form";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
-import { listTimeZones } from "@/lib/time-zone";
+import { listCurrencies, listTimeZones } from "@/lib/time-zone";
 import { ClinicType } from "@/types/clinics";
 import { PATHS } from "@/config/path";
 
@@ -15,6 +15,8 @@ export interface ClinicFormValues {
   clinic_type: ClinicType;
   /** IANA zone; empty on create until the browser's zone is filled in */
   timezone: string;
+  /** ISO 4217 code */
+  currency: string;
 }
 
 type ClinicFormMode = "create" | "edit";
@@ -29,6 +31,7 @@ const EMPTY_VALUES: ClinicFormValues = {
   name: "",
   clinic_type: ClinicType.Dentistry,
   timezone: "",
+  currency: "USD",
 };
 
 const TYPE_OPTIONS: { value: ClinicType; label: string; hint: string }[] = [
@@ -69,6 +72,10 @@ function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: st
 const initialState: ClinicFormState = {};
 
 const noSubscribe = () => () => {};
+
+const currencyNames = new Intl.DisplayNames(["en"], { type: "currency" });
+/** "EUR" → "Euro" (the code itself if the runtime has no name for it). */
+const currencyName = (code: string) => currencyNames.of(code) ?? code;
 const browserTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
 export interface ClinicFormProps {
@@ -95,6 +102,7 @@ export function ClinicForm({ mode, action, initialValues = EMPTY_VALUES }: Clini
       setValues((prev) => ({ ...prev, [field]: e.target.value }));
 
   const timeZones = useMemo(() => listTimeZones(), []);
+  const currencies = useMemo(() => listCurrencies(), []);
   // A new clinic starts in the browser's zone ("" while rendering on the server)
   const browserZone = useSyncExternalStore(noSubscribe, browserTimeZone, () => "");
   const timezone = values.timezone || browserZone;
@@ -187,6 +195,34 @@ export function ClinicForm({ mode, action, initialValues = EMPTY_VALUES }: Clini
         ) : (
           <p id="timezone-hint" className="mt-1.5 text-xs text-slate-500">
             Appointments are shown in this zone, wherever the team signs in from.
+          </p>
+        )}
+      </div>
+
+      {/* Currency: how this clinic's amounts are shown */}
+      <div>
+        <label htmlFor="currency" className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+          Currency
+        </label>
+        <Select
+          id="currency"
+          name="currency"
+          value={values.currency}
+          onChange={set("currency")}
+          invalid={!!errors.currency}
+          aria-describedby={errors.currency ? "currency-error" : "currency-hint"}
+        >
+          {currencies.map((code) => (
+            <option key={code} value={code}>
+              {code} · {currencyName(code)}
+            </option>
+          ))}
+        </Select>
+        {errors.currency ? (
+          <FieldError id="currency-error" messages={errors.currency} />
+        ) : (
+          <p id="currency-hint" className="mt-1.5 text-xs text-slate-500">
+            Invoices and payments of this clinic are shown in this currency.
           </p>
         )}
       </div>

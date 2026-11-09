@@ -30,6 +30,16 @@ export type InvoiceSummary = InvoiceModel & {
   balance: string;
 };
 
+/** An invoice with its (non-deleted) payments, newest first. */
+export type InvoiceDetail = InvoiceSummary & { payments: PaymentModel[] };
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  [PaymentMethod.Cash]: "Cash",
+  [PaymentMethod.Card]: "Card",
+  [PaymentMethod.Transfer]: "Bank transfer",
+  [PaymentMethod.Insurance]: "Insurance",
+};
+
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
 /**
@@ -60,11 +70,19 @@ export const AmountSchema = z
 
 const DueDateSchema = z.iso.date({ error: "Due date must be a valid date (YYYY-MM-DD)." });
 
+const TitleSchema = z.string().trim().min(1, "Describe what is charged.").max(200, "Keep it under 200 characters.");
+
+const NotesSchema = z.string().trim().max(500, "Notes must be at most 500 characters.");
+
+/** When the money was received; defaults to now. */
+const PaymentDateSchema = z.iso.datetime({ offset: true, error: "Choose a valid date and time." });
+
 /** clinic_id is only read for the SuperAdmin; Admin and Staff invoice in their own clinic. */
 export const CreateInvoiceSchema = z.object({
   clinic_id:      z.string().uuid("Please select a valid clinic.").optional(),
   patient_id:     z.string().uuid("Choose a patient."),
   appointment_id: z.string().uuid("Choose a valid appointment.").nullable().optional(),
+  title:          TitleSchema,
   total_amount:   AmountSchema,
   due_date:       DueDateSchema.nullable().optional(),
 });
@@ -72,6 +90,7 @@ export const CreateInvoiceSchema = z.object({
 /** The status is not editable: it follows from the payments. */
 export const UpdateInvoiceSchema = z
   .object({
+    title:        TitleSchema.optional(),
     total_amount: AmountSchema.optional(),
     due_date:     DueDateSchema.nullable().optional(),
   })
@@ -81,26 +100,62 @@ export const ListInvoicesQuerySchema = PaginationQuerySchema.extend({
   clinic_id:  z.string().uuid().optional(),
   patient_id: z.string().uuid().optional(),
   status:     z.nativeEnum(InvoiceStatus).optional(),
+  /** "1": only invoices with something left to pay */
+  open:       z.enum(["1"]).optional().transform((v) => v === "1"),
   /** Words matched against the patient's name, phone and email */
   search:     z.string().trim().max(100).optional(),
+});
+
+/** Money received on an invoice. Overpaying is refused by the API. */
+export const CreatePaymentSchema = z.object({
+  amount:         AmountSchema,
+  payment_method: z.nativeEnum(PaymentMethod, { error: "Choose how it was paid." }),
+  payment_date:   PaymentDateSchema.optional(),
+  notes:          NotesSchema.nullable().optional(),
+  /** The visit it was received at (same patient and clinic) */
+  appointment_id: z.string().uuid().nullable().optional(),
+});
+
+/**
+ * Money received during an appointment: applied to one of the patient's open
+ * invoices (invoice_id), or, without one, recorded as a paid visit charge.
+ */
+export const AppointmentPaymentSchema = z.object({
+  amount:         AmountSchema,
+  payment_method: z.nativeEnum(PaymentMethod, { error: "Choose how it was paid." }),
+  invoice_id:     z.string().uuid("Choose a valid treatment.").nullable().optional(),
+  notes:          NotesSchema.nullable().optional(),
 });
 
 // ─── Inferred Types ───────────────────────────────────────────────────────────
 export type CreateInvoiceInput     = z.infer<typeof CreateInvoiceSchema>;
 export type UpdateInvoiceInput     = z.infer<typeof UpdateInvoiceSchema>;
 export type ListInvoicesQueryInput = z.infer<typeof ListInvoicesQuerySchema>;
+export type CreatePaymentInput     = z.infer<typeof CreatePaymentSchema>;
+export type AppointmentPaymentInput = z.infer<typeof AppointmentPaymentSchema>;
 
 // ─── Repository data shapes ───────────────────────────────────────────────────
 export type CreateInvoiceData = {
   clinic_id:       string;
   patient_id:      string;
   appointment_id?: string | null;
+  title:           string;
   total_amount:    string;
   due_date?:       string | null;
 };
 
 export type UpdateInvoiceData = {
+  title?:        string;
   total_amount?: string;
   due_date?:     string | null;
-  status?:       InvoiceStatus;
+};
+
+export type CreatePaymentData = {
+  clinic_id:       string;
+  invoice_id:      string;
+  appointment_id?: string | null;
+  amount:          string;
+  payment_method:  PaymentMethod;
+  payment_date:    string;
+  notes?:          string | null;
 };

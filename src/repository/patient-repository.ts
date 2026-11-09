@@ -145,8 +145,11 @@ export class PatientRepository {
         .all();
 
       for (const appt of appointments) {
-        // Null-out appointment_id on linked invoices (nullable FK)
+        // Null-out appointment_id on linked invoices and payments (nullable FKs)
         await tx.orm.public.Invoice
+          .where({ appointment_id: appt.id })
+          .updateAndCount({ appointment_id: null });
+        await tx.orm.public.Payment
           .where({ appointment_id: appt.id })
           .updateAndCount({ appointment_id: null });
       }

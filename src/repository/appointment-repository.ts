@@ -154,12 +154,14 @@ export class AppointmentRepository {
   }
 
   /**
-   * Deletes an appointment. Invoices that referenced it are kept (financial
-   * records) and simply lose the link, so the foreign key never blocks the delete.
+   * Deletes an appointment. Invoices and payments that referenced it are kept
+   * (financial records) and simply lose the link, so the foreign keys never
+   * block the delete.
    */
   static async deleteAppointment(id: string): Promise<boolean> {
     return db.transaction(async (tx) => {
       await tx.orm.public.Invoice.where({ appointment_id: id }).updateAndCount({ appointment_id: null });
+      await tx.orm.public.Payment.where({ appointment_id: id }).updateAndCount({ appointment_id: null });
       await tx.orm.public.Appointment.where({ id }).delete();
       return true;
     });

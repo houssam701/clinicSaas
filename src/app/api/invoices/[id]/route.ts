@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { InvoiceRepository, statusFor } from "@/repository/invoice-repository";
+import { InvoiceRepository } from "@/repository/invoice-repository";
 import { UpdateInvoiceSchema } from "@/types/invoices";
-import { toCents } from "@/lib/money";
 import { authorizeInvoice, invoiceFieldError } from "@/services/invoice-rules";
 
 interface RouteContext {
@@ -17,7 +16,7 @@ interface RouteContext {
  * Authorization: SuperAdmin, or Admin/Staff with can_view on "Finances" (own clinic)
  *
  * Responses:
- *   200  { invoice: InvoiceSummary }
+ *   200  { invoice: InvoiceDetail } (with its payments, newest first)
  *   400  Invalid UUID
  *   401  Unauthorized
  *   403  Forbidden
@@ -33,13 +32,13 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 /**
  * PATCH /api/invoices/[id]
  *
- * Changes the total or the due date. The total cannot go below what is
+ * Changes the title, total or due date. The total cannot go below what is
  * already paid; the status is recalculated from the payments.
  *
  * Auth:          Required
  * Authorization: SuperAdmin, or Admin/Staff with can_edit on "Finances" (own clinic)
  *
- * Body: { total_amount?, due_date? }
+ * Body: { title?, total_amount?, due_date? }
  *
  * Responses:
  *   200  { invoice: InvoiceModel }
@@ -51,7 +50,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
  */
 export async function PATCH(request: NextRequest, context: RouteContext) {
   const { id } = await context.params;
-  const { invoice, error } = await authorizeInvoice(id, "can_edit");
+  const { error } = await authorizeInvoice(id, "can_edit");
   if (error) return error;
 
   let body: unknown;
@@ -66,14 +65,12 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
   }
 
-  const paidCents = toCents(invoice.paid_amount);
-  const totalCents = parsed.data.total_amount ? toCents(parsed.data.total_amount) : toCents(invoice.total_amount);
-  if (totalCents < paidCents) {
-    return invoiceFieldError("total_amount", `The total cannot be less than what is already paid (${invoice.paid_amount}).`);
+  const result = await InvoiceRepository.update(id, parsed.data);
+  if ("refused" in result) {
+    if (result.refused.reason === "not_found") return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+    return invoiceFieldError("total_amount", `The total cannot be less than what is already paid (${result.refused.balance}).`);
   }
-
-  const updated = await InvoiceRepository.update(id, { ...parsed.data, status: statusFor(totalCents, paidCents) });
-  return NextResponse.json({ invoice: updated }, { status: 200 });
+  return NextResponse.json({ invoice: result.invoice }, { status: 200 });
 }
 
 /**

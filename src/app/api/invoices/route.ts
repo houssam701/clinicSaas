@@ -22,6 +22,7 @@ import { invoiceFieldError } from "@/services/invoice-rules";
  *   clinic_id?      UUID (SuperAdmin only)
  *   patient_id?     UUID
  *   status?         Unpaid | Partial | Paid
+ *   open?           "1": only invoices with something left to pay
  *   search?         every word must match the patient's name, phone or email
  *
  * Responses:
@@ -42,6 +43,7 @@ export async function GET(request: NextRequest) {
     clinic_id:  sp.get("clinic_id")  ?? undefined,
     patient_id: sp.get("patient_id") ?? undefined,
     status:     sp.get("status")     ?? undefined,
+    open:       sp.get("open")       ?? undefined,
     search:     sp.get("search")     ?? undefined,
   });
   if (!parsed.success) {
@@ -76,7 +78,7 @@ export async function GET(request: NextRequest) {
  *   The patient must be in that clinic, and a linked appointment must be
  *   that patient's, in that clinic.
  *
- * Body: CreateInvoiceSchema fields (total_amount as "150.00" or 150)
+ * Body: { patient_id, title, total_amount ("150.00" or 150), appointment_id?, due_date? }
  *
  * Responses:
  *   201  { invoice: InvoiceModel }
