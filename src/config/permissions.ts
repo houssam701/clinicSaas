@@ -49,7 +49,7 @@ export const PERMISSION_MODULE_INFO: Record<
   Doctors: { description: "Doctor profiles and schedules", enforced: false },
   Messages: { description: "Conversations with patients", enforced: false },
   Reviews: { description: "Patient reviews and ratings", enforced: false },
-  Finances: { description: "Invoices and payments", enforced: false },
+  Finances: { description: "Invoices and payments", enforced: true },
   Staff: { description: "See, add, edit and remove staff, and set their access", enforced: true },
   Admins: { description: "See, add, edit and remove other admins, and set their access", enforced: true },
 };

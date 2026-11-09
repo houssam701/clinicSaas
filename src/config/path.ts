@@ -109,6 +109,11 @@ export const API_PATHS = {
     documentFile: (id: string, documentId: string, query?: QueryParams) =>
       withQuery(`/api/patients/${segment(id)}/documents/${segment(documentId)}/file`, query),
   },
+  invoices: {
+    list: (query?: QueryParams) => withQuery("/api/invoices", query),
+    detail: (id: string) => `/api/invoices/${segment(id)}`,
+    payments: (id: string) => `/api/invoices/${segment(id)}/payments`,
+  },
   appointments: {
     list: (query?: QueryParams) => withQuery("/api/appointments", query),
     detail: (id: string) => `/api/appointments/${segment(id)}`,
