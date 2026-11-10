@@ -35,6 +35,8 @@ export type AppointmentListFilter = {
   patient_id?: string;
   /** A staff member's id, or "unassigned" */
   user_id?:    string;
+  /** With a staff member's id: also the appointments no one holds yet */
+  include_unassigned?: boolean;
   status?:     AppointmentStatus;
   /** Every word must match the patient (name, phone, email), the admin's name or the reason */
   search?:     string;
@@ -70,7 +72,10 @@ export class AppointmentRepository {
     if (filter.patient_id) query = query.where({ patient_id: filter.patient_id });
     if (filter.status)     query = query.where({ status:     filter.status     });
     if (filter.user_id === "unassigned") query = query.where((a) => a.user_id.isNull());
-    else if (filter.user_id)             query = query.where({ user_id: filter.user_id });
+    else if (filter.user_id && filter.include_unassigned) {
+      const userId = filter.user_id;
+      query = query.where((a) => or(a.user_id.eq(userId), a.user_id.isNull()));
+    } else if (filter.user_id) query = query.where({ user_id: filter.user_id });
     if (filter.from) query = query.where((a) => a.scheduled_time.gte(filter.from!));
     if (filter.to)   query = query.where((a) => a.scheduled_time.lt(filter.to!));
     for (const pattern of searchPatterns(filter.search)) {

@@ -43,7 +43,7 @@ export function AppointmentFilters({ staff, meId, currentStaff, currentStatus, k
       >
         {me && (
           <option value={me.id}>
-            Me ({me.first_name} {me.last_name})
+            Me ({me.first_name} {me.last_name}) + unassigned
           </option>
         )}
         <option value="all">All admins</option>

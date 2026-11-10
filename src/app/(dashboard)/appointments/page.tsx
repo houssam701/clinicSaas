@@ -154,6 +154,8 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
     patient: patientFilter,
   };
   const singleAdmin = staffFilter && staffFilter !== "unassigned" ? staffFilter : undefined;
+  // An admin's own view also shows the appointments no one holds yet, so they are never hidden
+  const withUnassigned = singleAdmin !== undefined && singleAdmin === me.id;
   const back = PATHS.appointments.list({ ...query, page: view === "list" && page > 1 ? page : undefined });
 
   // ── Data ──
@@ -164,6 +166,7 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
         from,
         to,
         user_id: staffFilter,
+        include_unassigned: withUnassigned ? 1 : undefined,
         status: statusFilter,
         search,
         patient_id: patientFilter,
@@ -257,7 +260,11 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
         };
       });
       const unassigned = appointments.filter((a) => !a.user_id);
-      if (staffFilter === "unassigned" || (!staffFilter && (unassigned.length > 0 || people.size === 0))) {
+      if (
+        staffFilter === "unassigned" ||
+        (!staffFilter && (unassigned.length > 0 || people.size === 0)) ||
+        (withUnassigned && unassigned.length > 0)
+      ) {
         columns.push({
           key: "unassigned",
           title: "Unassigned",

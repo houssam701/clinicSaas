@@ -22,6 +22,7 @@ import { checkAppointmentConflict, checkAppointmentPeople } from "@/services/app
  *   clinic_id?:  UUID    (SuperAdmin only)
  *   patient_id?: UUID
  *   user_id?:    UUID | "unassigned"
+ *   include_unassigned?: "1" — with a user_id, also the appointments no one holds
  *   status?:     Scheduled | Completed | Canceled | NoShow
  *   search?:     string (every word must match the patient's name, phone or email,
  *                the admin's name, or the reason for visit)
@@ -47,6 +48,7 @@ export async function GET(request: NextRequest) {
     clinic_id:  sp.get("clinic_id")  ?? undefined,
     patient_id: sp.get("patient_id") ?? undefined,
     user_id:    sp.get("user_id")    ?? undefined,
+    include_unassigned: sp.get("include_unassigned") ?? undefined,
     status:     sp.get("status")     ?? undefined,
     search:     sp.get("search")     ?? undefined,
     from:       sp.get("from")       ?? undefined,

@@ -85,6 +85,8 @@ export const ListAppointmentsQuerySchema = PaginationQuerySchema.extend({
   patient_id: z.string().uuid().optional(),
   /** A staff member's id, or "unassigned" for appointments without one */
   user_id:    z.union([z.string().uuid(), z.literal("unassigned")]).optional(),
+  /** "1" with a user_id: also the unassigned appointments (an admin's own view) */
+  include_unassigned: z.enum(["1"]).optional().transform((v) => v === "1"),
   status:     z.nativeEnum(AppointmentStatus).optional(),
   /** Words matched against the patient (name, phone, email), the admin's name and the reason */
   search:     z.string().trim().max(100).optional(),
