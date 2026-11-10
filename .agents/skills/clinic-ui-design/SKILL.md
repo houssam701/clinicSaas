@@ -97,6 +97,13 @@ All navigation and sidebar elements MUST adhere to SOLID principles:
     | Warning / confirm destructive | `HiOutlineExclamationTriangle` |
     | Add inside a card (e.g. Add document) | `HiOutlinePlus` |
     | External link (opens in a new tab) | `HiOutlineArrowTopRightOnSquare` |
+- **Statuses — `<Badge>`, kept quiet (STRICT):**
+  - A status (appointment, treatment) is `<Badge tone=…>` from `src/components/ui/badge.tsx`: a 6px coloured dot beside a label in the normal text colour. No pill, no ring, no tinted block: those read as generated UI.
+  - `variant="tag"` (pale tint, dark text of the same hue, 4px corners) only for the one thing on a screen that needs attention, e.g. "Owes $450.00".
+  - Roles and types are not statuses: show them as plain secondary text (`text-sm text-slate-500`), never coloured.
+  - Tones carry meaning: red = owed/unpaid, amber = partial/no-show, green = paid/completed, blue = scheduled, gray = canceled/neutral. Appointment tones come from `STATUS_STYLE[status].tone`, treatments from `<InvoiceStatusBadge>`.
+  - Emphasis markers ("Next", "Today") are `text-xs font-semibold text-primary`, not filled blocks.
+
 - **Placeholders and examples stay neutral (STRICT):**
   - The same screens serve every tenant type (Dentistry, Therapy, and future ones) and every country. Never put a specialty, a condition, a drug, a person's name, a phone format or a brand in a placeholder or hint ("tooth pain", "Smile Dental Center", "Sara", "+961 ...", "Metformin").
   - Describe what goes in the field instead: "First name", "name@example.com", "Phone number", "Why is the patient coming?", "Any known allergies", "Document name".

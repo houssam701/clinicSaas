@@ -9,6 +9,7 @@ import { StatusButtons } from "@/components/appointments/status-buttons";
 import { STATUS_STYLE } from "@/components/appointments/status-style";
 import { APPOINTMENT_STATUS_LABELS, AppointmentStatus, type AppointmentWithPeople } from "@/types/appointments";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 const rowButton =
   "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-xs hover:border-primary/40 hover:bg-primary/5 hover:text-primary focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 transition-colors";
@@ -46,7 +47,7 @@ export function AppointmentList({ appointments, zone, can, canViewPatients, back
           >
             <span>
               {formatDay(date, "long")}
-              {date === today && <span className="ml-2 rounded bg-primary px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-white">Today</span>}
+              {date === today && <span className="ml-2 shrink-0 text-xs font-semibold text-primary">Today</span>}
             </span>
             <span className="text-xs font-semibold text-slate-400">
               {items.length} {items.length === 1 ? "appointment" : "appointments"}
@@ -79,9 +80,7 @@ export function AppointmentList({ appointments, zone, can, canViewPatients, back
                         <span className="font-semibold text-slate-800 dark:text-white">{patient}</span>
                       )}
                       <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
-                        <span className={cn("rounded-md px-2 py-0.5 font-bold", STATUS_STYLE[status].badge)}>
-                          {APPOINTMENT_STATUS_LABELS[status]}
-                        </span>
+                        <Badge tone={STATUS_STYLE[status].tone}>{APPOINTMENT_STATUS_LABELS[status]}</Badge>
                         <span>{appt.staff ? patientName(appt.staff) : "Unassigned"}</span>
                         {appt.reason_for_visit && <span className="truncate">· {appt.reason_for_visit}</span>}
                       </p>

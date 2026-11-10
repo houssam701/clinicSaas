@@ -5,6 +5,7 @@ import { formatDate } from "@/lib/patient-format";
 import { formatMoney, sumCents, toCents } from "@/lib/money";
 import { InvoiceStatusBadge, PaidBar } from "@/components/finances/invoice-status";
 import { InvoiceStatus, type InvoiceSummary } from "@/types/invoices";
+import { Badge } from "@/components/ui/badge";
 
 /** How many treatments the patient page shows before "See all". */
 export const PATIENT_TREATMENTS_SHOWN = 5;
@@ -35,11 +36,14 @@ export function PatientFinances({ patientId, invoices, total, owed, currency, ca
         <div className="flex items-center gap-3">
           <HiOutlineBanknotes aria-hidden="true" className="h-5 w-5 text-primary" />
           <h2 className="font-bold text-slate-800 dark:text-white">Finances</h2>
-          {!error && (
-            <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${owedCents > 0 ? "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"}`}>
-              {owedCents > 0 ? `Owes ${money(owed)}` : "Nothing owed"}
-            </span>
-          )}
+          {!error &&
+            (owedCents > 0 ? (
+              <Badge tone="red" variant="tag">
+                Owes {money(owed)}
+              </Badge>
+            ) : (
+              <Badge tone="green">Nothing owed</Badge>
+            ))}
         </div>
         {canCreate && (
           <Link
@@ -69,13 +73,15 @@ export function PatientFinances({ patientId, invoices, total, owed, currency, ca
                     </span>
                     <PaidBar paidCents={toCents(inv.paid_amount)} totalCents={toCents(inv.total_amount)} className="mt-1.5 w-40" />
                   </span>
-                  {inv.status !== InvoiceStatus.Paid && (
-                    <span className="shrink-0 text-right text-sm font-bold tabular-nums text-slate-800 dark:text-white">
-                      {money(inv.balance)}
-                      <span className="block text-xs font-medium text-slate-500">left</span>
-                    </span>
-                  )}
-                  <InvoiceStatusBadge status={inv.status} />
+                  {/* The status, then what is left to pay */}
+                  <span className="flex shrink-0 flex-col items-end gap-1">
+                    <InvoiceStatusBadge status={inv.status} />
+                    {inv.status !== InvoiceStatus.Paid && (
+                      <span className="text-sm font-bold tabular-nums text-slate-800 dark:text-white">
+                        {money(inv.balance)} <span className="font-medium text-slate-500">left</span>
+                      </span>
+                    )}
+                  </span>
                 </Link>
               </li>
             ))}

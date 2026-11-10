@@ -20,12 +20,12 @@ import {
   type AppointmentStaffMember,
   type AppointmentWithPeople,
 } from "@/types/appointments";
-import { cn } from "@/lib/utils";
 import { HiOutlineBanknotes } from "react-icons/hi2";
 import { formatMoney, toCents } from "@/lib/money";
 import { RecordPaymentForm } from "@/components/finances/record-payment-form";
 import { recordVisitPaymentAction } from "@/actions/record-visit-payment";
 import type { InvoiceSummary } from "@/types/invoices";
+import { Badge } from "@/components/ui/badge";
 
 const card = "rounded-md border border-slate-300/50 dark:border-slate-800/80 bg-white dark:bg-slate-900/70";
 
@@ -85,9 +85,10 @@ export default async function AppointmentPage({
         <BackLink href={back}>Back to appointments</BackLink>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">{patient}</h1>
-          <span className={cn("rounded-md px-2 py-0.5 text-xs font-bold", STATUS_STYLE[status].badge)}>
+          {/* Alone beside the title, the status reads better as a tag than a dot */}
+          <Badge tone={STATUS_STYLE[status].tone} variant="tag">
             {APPOINTMENT_STATUS_LABELS[status]}
-          </span>
+          </Badge>
         </div>
         <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-1">
           {formatDay(start.date, "long")}, {formatTime(appointment.scheduled_time, zone)}–{formatTime(end, zone)} ·{" "}

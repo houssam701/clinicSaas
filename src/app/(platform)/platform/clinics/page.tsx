@@ -16,11 +16,6 @@ const TYPE_FILTERS: { label: string; value?: ClinicType }[] = [
   { label: "Therapy", value: ClinicType.Therapy },
 ];
 
-const TYPE_BADGE: Record<ClinicType, string> = {
-  [ClinicType.Dentistry]: "bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300",
-  [ClinicType.Therapy]: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300",
-};
-
 const NOTICES = {
   created: "Clinic created. You can now add its admins and staff from Users.",
   updated: "Clinic updated.",
@@ -196,9 +191,7 @@ export default async function PlatformClinicsPage({
                     <span className="block text-xs text-slate-500 dark:text-slate-400">View its users</span>
                   </td>
                   <td className="px-5 py-3.5">
-                    <span className={`px-2 py-0.5 rounded-md text-xs font-bold ${TYPE_BADGE[clinic.clinic_type as ClinicType]}`}>
-                      {clinic.clinic_type}
-                    </span>
+                    <span className="text-slate-600 dark:text-slate-300">{clinic.clinic_type}</span>
                   </td>
                   <td className="px-5 py-3.5 text-slate-500 dark:text-slate-400 whitespace-nowrap">
                     {new Date(clinic.created_at).toLocaleDateString("en-GB", {

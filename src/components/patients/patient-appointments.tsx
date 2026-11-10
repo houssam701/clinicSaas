@@ -6,6 +6,7 @@ import { patientName } from "@/lib/patient-format";
 import { STATUS_STYLE } from "@/components/appointments/status-style";
 import { APPOINTMENT_STATUS_LABELS, AppointmentStatus, type AppointmentWithPeople } from "@/types/appointments";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 /** How many appointments each list shows before "See all". */
 export const PATIENT_APPOINTMENTS_SHOWN = 5;
@@ -44,10 +45,8 @@ function Row({ appt, zone, back, highlight }: { appt: AppointmentWithPeople; zon
         <span className="min-w-0 flex-1 truncate text-sm text-slate-600 dark:text-slate-300">
           {[appt.staff ? patientName(appt.staff) : "Unassigned", appt.reason_for_visit].filter(Boolean).join(" · ")}
         </span>
-        {highlight && <span className="shrink-0 rounded-md bg-primary px-2 py-0.5 text-xs font-bold text-white">Next</span>}
-        <span className={cn("shrink-0 rounded-md px-2 py-0.5 text-xs font-bold", STATUS_STYLE[status].badge)}>
-          {APPOINTMENT_STATUS_LABELS[status]}
-        </span>
+        {highlight && <span className="shrink-0 text-xs font-semibold text-primary">Next</span>}
+        <Badge tone={STATUS_STYLE[status].tone}>{APPOINTMENT_STATUS_LABELS[status]}</Badge>
       </Link>
     </li>
   );

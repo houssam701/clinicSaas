@@ -319,9 +319,7 @@ export default async function PatientPage({
                       </a>
                       <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
                         {doc.document_type && (
-                          <span className="rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 font-bold text-slate-600 dark:text-slate-300">
-                            {doc.document_type}
-                          </span>
+                          <span className="font-medium text-slate-600 dark:text-slate-300">{doc.document_type}</span>
                         )}
                         {uploaded ? (
                           <span>

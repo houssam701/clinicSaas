@@ -1,5 +1,5 @@
 import { ThemeMenu } from "@/components/layout/theme-menu";
-import { ROLE_BADGE, ROLE_LABEL } from "@/config/roles";
+import { ROLE_LABEL } from "@/config/roles";
 import type { UserRole } from "@/types/users";
 
 /** Who is signed in, as shown in the top bar. */
@@ -22,9 +22,8 @@ export function TopBar({ user }: { user?: ShellUser }) {
           <>
             <p className="truncate text-lg font-bold text-slate-800 dark:text-white">Welcome back, {user.firstName}</p>
             <p className="mt-1 flex min-w-0 items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-              <span className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-bold ${ROLE_BADGE[user.role]}`}>
-                {ROLE_LABEL[user.role]}
-              </span>
+              <span className="shrink-0">{ROLE_LABEL[user.role]}</span>
+              <span aria-hidden="true">·</span>
               <span className="truncate">{user.place}</span>
             </p>
           </>

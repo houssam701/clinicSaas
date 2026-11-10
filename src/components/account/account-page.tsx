@@ -10,7 +10,7 @@ import {
 } from "react-icons/hi2";
 import { serverApiFetch } from "@/lib/server-api";
 import { API_PATHS } from "@/config/path";
-import { ROLE_BADGE } from "@/config/roles";
+import { ROLE_LABEL } from "@/config/roles";
 import { UserRole, type PublicUser } from "@/types/users";
 import type { ClinicModel } from "@/types/clinics";
 
@@ -81,9 +81,7 @@ export default async function AccountPage() {
             {user.first_name} {user.last_name}
           </h2>
           <p className="break-all text-sm text-slate-500 dark:text-slate-400">{user.email}</p>
-          <span className={`mt-2 inline-block px-2 py-0.5 rounded-md text-xs font-bold ${ROLE_BADGE[role]}`}>
-            {role}
-          </span>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{ROLE_LABEL[role]}</p>
         </div>
       </section>
 

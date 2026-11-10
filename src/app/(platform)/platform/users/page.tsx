@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { serverApiFetch } from "@/lib/server-api";
 import { API_PATHS, PATHS } from "@/config/path";
-import { ROLE_BADGE } from "@/config/roles";
+import { ROLE_LABEL } from "@/config/roles";
 import { DeleteUserButton } from "@/components/platform/delete-user-button";
 import { HiOutlineKey, HiOutlinePencilSquare, HiXMark } from "react-icons/hi2";
 import { UserRole, type PublicUser } from "@/types/users";
@@ -191,9 +191,7 @@ export default async function PlatformUsersPage({
                     <span className="block text-slate-500 dark:text-slate-400">{user.email}</span>
                   </td>
                   <td className="px-5 py-3.5">
-                    <span className={`px-2 py-0.5 rounded-md text-xs font-bold ${ROLE_BADGE[user.role as UserRole]}`}>
-                      {user.role}
-                    </span>
+                    <span className="text-sm text-slate-500 dark:text-slate-400">{ROLE_LABEL[user.role as UserRole]}</span>
                   </td>
                   <td className="px-5 py-3.5 text-slate-600 dark:text-slate-300">
                     {user.clinic_id ? (clinicName.get(user.clinic_id) ?? "Unknown clinic") : (

@@ -1,5 +1,6 @@
 import { InvoiceStatus } from "@/types/invoices";
 import { cn } from "@/lib/utils";
+import { Badge, type BadgeTone } from "@/components/ui/badge";
 
 export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
   [InvoiceStatus.Unpaid]: "Unpaid",
@@ -7,19 +8,19 @@ export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
   [InvoiceStatus.Paid]: "Paid",
 };
 
-const BADGE: Record<InvoiceStatus, string> = {
-  [InvoiceStatus.Unpaid]: "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300",
-  [InvoiceStatus.Partial]: "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300",
-  [InvoiceStatus.Paid]: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300",
+const TONE: Record<InvoiceStatus, BadgeTone> = {
+  [InvoiceStatus.Unpaid]: "red",
+  [InvoiceStatus.Partial]: "amber",
+  [InvoiceStatus.Paid]: "green",
 };
 
 /** The status of a treatment as a colored badge. */
 export function InvoiceStatusBadge({ status, className }: { status: string; className?: string }) {
   const s = status as InvoiceStatus;
   return (
-    <span className={cn("inline-block shrink-0 rounded-md px-2 py-0.5 text-xs font-bold", BADGE[s], className)}>
+    <Badge tone={TONE[s] ?? "gray"} className={className}>
       {INVOICE_STATUS_LABELS[s] ?? status}
-    </span>
+    </Badge>
   );
 }
 

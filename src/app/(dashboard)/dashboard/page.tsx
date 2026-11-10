@@ -19,6 +19,7 @@ import { STATUS_STYLE } from "@/components/appointments/status-style";
 import { APPOINTMENT_STATUS_LABELS, AppointmentStatus, type AppointmentWithPeople } from "@/types/appointments";
 import { UserRole } from "@/types/users";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 const card = "rounded-md border border-slate-300/50 dark:border-slate-800/80 bg-white dark:bg-slate-900/70";
 
@@ -210,11 +211,9 @@ export default async function DashboardPage() {
                         </span>
                       </span>
                       {isNext && (
-                        <span className="shrink-0 rounded-md bg-primary px-2 py-0.5 text-xs font-bold text-white">Next</span>
+                        <span className="shrink-0 text-xs font-semibold text-primary">Next</span>
                       )}
-                      <span className={cn("shrink-0 rounded-md px-2 py-0.5 text-xs font-bold", STATUS_STYLE[status].badge)}>
-                        {APPOINTMENT_STATUS_LABELS[status]}
-                      </span>
+                      <Badge tone={STATUS_STYLE[status].tone}>{APPOINTMENT_STATUS_LABELS[status]}</Badge>
                     </Link>
                   </li>
                 );
