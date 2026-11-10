@@ -153,6 +153,31 @@ export class InvoiceRepository {
     return result.count > 0;
   }
 
+  /**
+   * A clinic's money at a glance: what is still owed on open invoices, and
+   * what was received since `collectedFrom` (exact amount strings).
+   */
+  static async summary(clinicId: string | undefined, collectedFrom: string): Promise<{ outstanding: string; collected: string }> {
+    const inClinic = <Q extends { where: (w: { clinic_id: string }) => Q }>(q: Q) => (clinicId ? q.where({ clinic_id: clinicId }) : q);
+    const [openTotal, paidOnOpen, collected] = await Promise.all([
+      inClinic(db.orm.public.Invoice.where((i) => i.deleted_at.isNull()).where((i) => i.status.neq(InvoiceStatus.Paid)))
+        .aggregate((a) => ({ sum: a.sum("total_amount") })),
+      inClinic(
+        db.orm.public.Payment
+          .where((p) => p.deleted_at.isNull())
+          .where((p) => p.invoice.some((i) => i.status.neq(InvoiceStatus.Paid)))
+          .where((p) => p.invoice.some((i) => i.deleted_at.isNull()))
+      ).aggregate((a) => ({ sum: a.sum("amount") })),
+      inClinic(db.orm.public.Payment.where((p) => p.deleted_at.isNull()).where((p) => p.payment_date.gte(collectedFrom)))
+        .aggregate((a) => ({ sum: a.sum("amount") })),
+    ]);
+    const cents = (v: string | null | undefined) => (v ? toCents(v) : 0);
+    return {
+      outstanding: fromCents(cents(openTotal.sum) - cents(paidOnOpen.sum)),
+      collected: fromCents(cents(collected.sum)),
+    };
+  }
+
   // ── Invoices ─────────────────────────────────────────────────────────────────
 
   /** Creates an unpaid invoice. */

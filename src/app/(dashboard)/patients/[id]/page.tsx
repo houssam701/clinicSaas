@@ -32,6 +32,9 @@ import { MedicalHistoryCard } from "@/components/patients/medical-history-card";
 import { AddDocumentPanel } from "@/components/patients/add-document-panel";
 import { PATIENT_APPOINTMENTS_SHOWN, PatientAppointments } from "@/components/patients/patient-appointments";
 import type { AppointmentWithPeople } from "@/types/appointments";
+import { PATIENT_TREATMENTS_SHOWN, PatientFinances, owedOn } from "@/components/patients/patient-finances";
+import type { InvoiceSummary } from "@/types/invoices";
+import { fromCents } from "@/lib/money";
 import { DEFAULT_PAGE_SIZE } from "@/types/pagination";
 import type { MedicalHistoryModel, PatientDocumentModel, PatientModel } from "@/types/patients";
 
@@ -92,13 +95,16 @@ export default async function PatientPage({
   const nowIso = new Date().toISOString();
   const apptList = (sort: "asc" | "desc", range: { from?: string; to?: string }) =>
     serverApiFetch(API_PATHS.appointments.list({ patient_id: id, sort, limit: PATIENT_APPOINTMENTS_SHOWN, ...range }));
-  const [access, patientRes, historyRes, docsRes, upcomingRes, pastRes] = await Promise.all([
+  const [access, patientRes, historyRes, docsRes, upcomingRes, pastRes, latestInvRes, openInvRes] = await Promise.all([
     loadMyAccess(),
     serverApiFetch(API_PATHS.patients.detail(id)),
     serverApiFetch(API_PATHS.patients.medicalHistory(id)),
     serverApiFetch(API_PATHS.patients.documents(id, { page: docsPage, limit: DOCS_PAGE_SIZE })),
     apptList("asc", { from: nowIso }),
     apptList("desc", { to: nowIso }),
+    // Finances: the latest treatments, and every open one (for what is owed)
+    serverApiFetch(API_PATHS.invoices.list({ patient_id: id, limit: PATIENT_TREATMENTS_SHOWN })),
+    serverApiFetch(API_PATHS.invoices.list({ patient_id: id, open: 1, limit: 200 })),
   ]);
   const can = access?.grid.Patients;
   if (!can?.can_view) redirect(PATHS.patients.list());
@@ -108,6 +114,11 @@ export default async function PatientPage({
   type ApptPage = { appointments?: AppointmentWithPeople[]; total?: number };
   const upcoming: ApptPage = upcomingRes.ok ? await upcomingRes.json() : {};
   const past: ApptPage = pastRes.ok ? await pastRes.json() : {};
+
+  const canFinances = !!access?.grid.Finances.can_view;
+  type InvPage = { invoices?: InvoiceSummary[]; total?: number };
+  const latestInv: InvPage = latestInvRes.ok ? await latestInvRes.json() : {};
+  const openInv: InvPage = openInvRes.ok ? await openInvRes.json() : {};
 
   const { patient }: { patient: PatientModel } = await patientRes.json();
   // 404 on medical history means nothing has been recorded yet
@@ -230,6 +241,19 @@ export default async function PatientPage({
           canBook={!!access!.grid.Appointments.can_create}
           back={PATHS.patients.detail(id)}
           error={!upcomingRes.ok || !pastRes.ok}
+        />
+      )}
+
+      {/* Finances */}
+      {canFinances && (
+        <PatientFinances
+          patientId={id}
+          invoices={latestInv.invoices ?? []}
+          total={latestInv.total ?? 0}
+          owed={fromCents(owedOn(openInv.invoices ?? []))}
+          currency={access!.clinic?.currency}
+          canCreate={!!access!.grid.Finances.can_create}
+          error={!latestInvRes.ok || !openInvRes.ok}
         />
       )}
 

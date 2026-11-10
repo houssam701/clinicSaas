@@ -47,7 +47,14 @@ export const PATHS = {
     edit: (id: string) => `/patients/${segment(id)}/edit`,
   },
   doctors: "/doctors",
-  finances: "/finances",
+  // Treatments (invoices) and the payments on them
+  finances: {
+    // ?status=Unpaid|Partial|Paid, ?search=, ?page=
+    list: (query?: QueryParams) => withQuery("/finances", query),
+    // ?patient= and ?appointment= prefill the form, ?back= is where it returns
+    new: (query?: QueryParams) => withQuery("/finances/new", query),
+    detail: (id: string, query?: QueryParams) => withQuery(`/finances/${segment(id)}`, query),
+  },
   account: "/account",
   // An Admin's own Staff and Admins (gated by the "Staff" / "Admins" permissions)
   team: {
@@ -111,6 +118,8 @@ export const API_PATHS = {
   },
   invoices: {
     list: (query?: QueryParams) => withQuery("/api/invoices", query),
+    // ?from=<instant>: what is still owed, and what was collected since then
+    summary: (query?: QueryParams) => withQuery("/api/invoices/summary", query),
     detail: (id: string) => `/api/invoices/${segment(id)}`,
     payments: (id: string) => `/api/invoices/${segment(id)}/payments`,
     payment: (id: string, paymentId: string) => `/api/invoices/${segment(id)}/payments/${segment(paymentId)}`,

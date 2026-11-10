@@ -40,8 +40,9 @@ export const navigationConfig: NavigationConfig = {
     {
       id: "finances",
       label: "Finances",
-      href: PATHS.finances,
+      href: PATHS.finances.list(),
       icon: "finances",
+      module: "Finances",
     },
   ],
   bottomNav: [

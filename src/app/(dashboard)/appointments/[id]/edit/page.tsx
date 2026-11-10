@@ -21,6 +21,11 @@ import {
   type AppointmentWithPeople,
 } from "@/types/appointments";
 import { cn } from "@/lib/utils";
+import { HiOutlineBanknotes } from "react-icons/hi2";
+import { formatMoney, toCents } from "@/lib/money";
+import { RecordPaymentForm } from "@/components/finances/record-payment-form";
+import { recordVisitPaymentAction } from "@/actions/record-visit-payment";
+import type { InvoiceSummary } from "@/types/invoices";
 
 const card = "rounded-md border border-slate-300/50 dark:border-slate-800/80 bg-white dark:bg-slate-900/70";
 
@@ -63,6 +68,16 @@ export default async function AppointmentPage({
   const patient = appointment.patient ? patientName(appointment.patient) : "Unknown patient";
   const start = zonedParts(new Date(appointment.scheduled_time), zone);
   const end = new Date(new Date(appointment.scheduled_time).getTime() + appointment.duration_minutes * 60000);
+
+  // Money received at this visit: needs Finances create access; the patient's
+  // open treatments are the places it can go (or a separate visit charge)
+  const canTakePayment = !!access!.grid.Finances.can_create;
+  const currency = access!.clinic?.currency;
+  const openRes = canTakePayment
+    ? await serverApiFetch(API_PATHS.invoices.list({ patient_id: appointment.patient_id, open: 1, limit: 50 }))
+    : null;
+  const { invoices: openTreatments = [] }: { invoices?: InvoiceSummary[] } = openRes?.ok ? await openRes.json() : {};
+  const money = (amount: string) => formatMoney(toCents(amount), currency);
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -107,6 +122,37 @@ export default async function AppointmentPage({
           )}
         </div>
       ) : null}
+
+      {/* Money received at this visit */}
+      {canTakePayment && appointment.patient && (
+        <section className={`${card} p-6 sm:p-8`}>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 font-bold text-slate-800 dark:text-white">
+              <HiOutlineBanknotes aria-hidden="true" className="h-5 w-5 text-primary" />
+              Payment received
+            </h2>
+            <Link
+              href={PATHS.finances.new({ patient: appointment.patient_id, appointment: appointment.id, back: PATHS.appointments.edit(appointment.id) })}
+              className="text-sm font-semibold text-primary hover:underline"
+            >
+              + New treatment for this patient
+            </Link>
+          </div>
+          <RecordPaymentForm
+            action={recordVisitPaymentAction.bind(null, appointment.id, appointment.patient_id)}
+            balance=""
+            balanceLabel=""
+            currency={currency}
+            submitLabel="Save payment"
+            treatments={openTreatments.map((inv) => ({
+              id: inv.id,
+              label: `${inv.title ?? "Treatment"} · ${money(inv.balance)} left`,
+              balance: inv.balance,
+              balanceLabel: money(inv.balance),
+            }))}
+          />
+        </section>
+      )}
 
       {can.can_edit ? (
         <div className={`${card} p-6 sm:p-8`}>
