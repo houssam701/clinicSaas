@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../lib/zod";
 import type { FieldOutputTypes } from "../prisma/generated/contract";
 import type { JsonValue } from "@prisma/orm-postgres/utils/json";
 
@@ -10,10 +10,10 @@ export type PatientDocumentModel  = FieldOutputTypes["public"]["PatientDocument"
 // ─── Patient Schemas ──────────────────────────────────────────────────────────
 
 export const CreatePatientSchema = z.object({
-  clinic_id:        z.string().uuid("Invalid clinic_id format"),
-  first_name:       z.string().min(1, "First name is required"),
-  last_name:        z.string().min(1, "Last name is required"),
-  email:            z.string().email("Invalid email").optional(),
+  clinic_id:        z.string().uuid("Please select a valid clinic."),
+  first_name:       z.string().min(1, "First name is required."),
+  last_name:        z.string().min(1, "Last name is required."),
+  email:            z.string().email("Enter a valid email address.").optional(),
   phone:            z.string().min(1).optional(),
   date_of_birth:    z.string().optional(), // DateString
   gender:           z.string().optional(),
@@ -31,7 +31,7 @@ export const UpdatePatientSchema = z
     specialized_data: z.unknown().optional(),
   })
   .refine((d) => Object.keys(d).length > 0, {
-    message: "At least one field must be provided for update",
+    message: "Change at least one field before saving.",
   });
 
 export const ListPatientsQuerySchema = z.object({
@@ -53,8 +53,8 @@ export const MedicalHistoryUpsertSchema = z.object({
 // ─── Patient Document Schemas ─────────────────────────────────────────────────
 
 export const CreatePatientDocumentSchema = z.object({
-  name:          z.string().min(1, "Document name is required"),
-  file_url:      z.string().url("file_url must be a valid URL"),
+  name:          z.string().min(1, "Document name is required."),
+  file_url:      z.string().url("File URL must be a valid URL (e.g. https://...)."),
   document_type: z.string().optional(),
 });
 
@@ -65,7 +65,7 @@ export const UpdatePatientDocumentSchema = z
     document_type: z.string().optional(),
   })
   .refine((d) => Object.keys(d).length > 0, {
-    message: "At least one field must be provided for update",
+    message: "Change at least one field before saving.",
   });
 
 export const ListDocumentsQuerySchema = z.object({
