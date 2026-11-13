@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import * as argon2 from "argon2";
 import { auth } from "../../../../lib/auth";
 import { UserRepository } from "../../../../repository/user-repository";
+import { ClinicRepository } from "../../../../repository/clinic-repository";
 import { UpdateUserData, UpdateUserSchema, UserRole } from "../../../../types/users";
 
 interface RouteContext {
@@ -72,7 +73,8 @@ export async function GET(
  * PATCH /api/users/[id]
  *
  * Updates an existing user's information:
- *   - SuperAdmin: Can update any field on any user.
+ *   - SuperAdmin: Can update any field on any user, but cannot create a second SuperAdmin
+ *                 or remove the role from the only one.
  *   - Admin: Can update Staff in their clinic or their own info; cannot change clinic_id or escalate roles.
  *   - Staff: Can only update their own first_name, last_name, or password.
  *
@@ -82,7 +84,7 @@ export async function GET(
  *   401  Unauthorized
  *   403  Forbidden
  *   404  User not found
- *   409  Email already in use
+ *   409  Email already in use / a SuperAdmin already exists
  */
 export async function PATCH(
   request: NextRequest,
@@ -120,7 +122,27 @@ export async function PATCH(
 
   // Authorization and permission boundary checks
   if (callerRole === UserRole.SuperAdmin) {
-    // SuperAdmin can update any user and fields
+    // SuperAdmin can update any user and fields, but the platform keeps exactly one SuperAdmin
+    const targetIsSuperAdmin = targetUser.role === UserRole.SuperAdmin;
+
+    if (!targetIsSuperAdmin && parsed.data.role === UserRole.SuperAdmin) {
+      return NextResponse.json(
+        { error: "Only one SuperAdmin is allowed on the platform" },
+        { status: 409 }
+      );
+    }
+    if (targetIsSuperAdmin && parsed.data.role !== undefined && parsed.data.role !== UserRole.SuperAdmin) {
+      return NextResponse.json(
+        { error: "Bad Request: The SuperAdmin role cannot be removed from the only SuperAdmin" },
+        { status: 400 }
+      );
+    }
+    if (targetIsSuperAdmin && parsed.data.clinic_id) {
+      return NextResponse.json(
+        { error: "Bad Request: A SuperAdmin cannot belong to a clinic" },
+        { status: 400 }
+      );
+    }
   } else if (callerRole === UserRole.Admin) {
     const isSelf = targetUser.id === session.user.id;
     const isStaffInClinic =
@@ -170,6 +192,24 @@ export async function PATCH(
     }
   } else {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // Admin and Staff must keep a clinic (contract: clinic_id is null only for SuperAdmin)
+  if (targetUser.role !== UserRole.SuperAdmin && parsed.data.clinic_id === null) {
+    return NextResponse.json(
+      { error: "Validation failed", details: { fieldErrors: { clinic_id: ["Admin and Staff users must be assigned to a clinic."] } } },
+      { status: 400 }
+    );
+  }
+
+  // A new clinic must exist, otherwise the update fails on the foreign key
+  if (parsed.data.clinic_id && parsed.data.clinic_id !== targetUser.clinic_id) {
+    if (!(await ClinicRepository.exists(parsed.data.clinic_id))) {
+      return NextResponse.json(
+        { error: "Validation failed", details: { fieldErrors: { clinic_id: ["Clinic not found."] } } },
+        { status: 400 }
+      );
+    }
   }
 
   // Check email uniqueness if changing email
