@@ -35,6 +35,12 @@ export interface FileStorage {
   /** The object's size and type, or null when nothing is stored under `key`. */
   stat(key: string): Promise<StoredObject | null>;
 
+  /**
+   * Moves an object to a new key in the same bucket (copy, then delete the
+   * original). Used to take a saved upload out of the waiting folder.
+   */
+  move(fromKey: string, toKey: string): Promise<void>;
+
   /** Deletes the objects; keys that do not exist are ignored. */
   delete(keys: string[]): Promise<void>;
 }

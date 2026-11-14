@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PatientDocumentRepository } from "@/repository/patient-repository";
 import { CreatePatientDocumentSchema, ListDocumentsQuerySchema } from "@/types/patients";
-import { MAX_DOCUMENT_BYTES, formatBytes, isAllowedMimeType, patientDocumentsPrefix } from "@/config/documents";
+import {
+  MAX_DOCUMENT_BYTES,
+  formatBytes,
+  isAllowedMimeType,
+  patientDocumentsPrefix,
+  pendingDocumentsPrefix,
+} from "@/config/documents";
 import { authorizePatient, storageUnavailable } from "@/services/patient-access";
 import { deleteStoredFilesQuietly, getFileStorage } from "@/services/storage";
 
@@ -66,9 +72,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
  *   - a link:   { name, document_type?, file_url }   (http(s) only)
  *   - an upload: { name, document_type?, storage_key, file_name }, where
  *     storage_key comes from POST .../documents/upload-url and the file was
- *     already PUT to storage. The stored file is checked here (it exists, is
- *     in this patient's folder, has an allowed type and size); its size and
- *     type are read from storage, never trusted from the client.
+ *     already PUT to the waiting folder (pending/...). The stored file is
+ *     checked here (it exists, is in this patient's waiting folder, has an
+ *     allowed type and size; size and type are read from storage, never
+ *     trusted from the client), then moved to the patient's folder and saved.
+ *     Uploads never saved stay in pending/ and the bucket's lifecycle rule
+ *     deletes them.
  *
  * Auth:          Required
  * Authorization: SuperAdmin, or Admin/Staff with can_create on "Patients" (scoped to their clinic)
@@ -110,13 +119,16 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ document }, { status: 201 });
   }
 
-  // An upload: the key must be inside this patient's folder…
+  // An upload: the key must be in this patient's waiting folder…
   const key = storage_key!;
-  if (!key.startsWith(patientDocumentsPrefix(patient.clinic_id, patient.id)) || key.includes("..")) {
+  const pendingPrefix = pendingDocumentsPrefix(patient.clinic_id, patient.id);
+  const fileName = key.slice(pendingPrefix.length);
+  if (!key.startsWith(pendingPrefix) || key.includes("..") || !fileName || fileName.includes("/")) {
     return invalid("storage_key", "This upload does not belong to this patient.");
   }
-  // …and saved only once
-  if (await PatientDocumentRepository.storageKeyInUse(key)) {
+  // …and saved only once (once saved it lives in the patient's folder)
+  const finalKey = `${patientDocumentsPrefix(patient.clinic_id, patient.id)}${fileName}`;
+  if (await PatientDocumentRepository.storageKeyInUse(finalKey)) {
     return NextResponse.json({ error: "This upload was already saved." }, { status: 409 });
   }
 
@@ -143,14 +155,27 @@ export async function POST(request: NextRequest, context: RouteContext) {
     );
   }
 
-  const document = await PatientDocumentRepository.create({
-    patient_id: id,
-    name,
-    document_type,
-    storage_key: key,
-    file_name,
-    mime_type: stored.contentType,
-    size_bytes: stored.size,
-  });
-  return NextResponse.json({ document }, { status: 201 });
+  // Out of the waiting folder, into the patient's folder
+  try {
+    await getFileStorage().move(key, finalKey);
+  } catch (e) {
+    return storageUnavailable(e); // still in pending/: the lifecycle rule cleans it up
+  }
+
+  try {
+    const document = await PatientDocumentRepository.create({
+      patient_id: id,
+      name,
+      document_type,
+      storage_key: finalKey,
+      file_name,
+      mime_type: stored.contentType,
+      size_bytes: stored.size,
+    });
+    return NextResponse.json({ document }, { status: 201 });
+  } catch (e) {
+    // Never leave a file in a patient's folder that no document points to
+    await deleteStoredFilesQuietly([finalKey], "document save failed");
+    throw e;
+  }
 }

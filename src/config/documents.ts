@@ -3,6 +3,13 @@
  * early) and the API (which enforces them). Change limits and file types here.
  */
 
+/**
+ * Whether "Paste link" (a document that is a link to a file hosted elsewhere)
+ * is offered when adding a document. Hidden for now; set to true to bring the
+ * tab back. Documents already saved as links still open either way.
+ */
+export const LINK_DOCUMENTS_ENABLED = false;
+
 /** Largest file a user may upload: 20 MB. */
 export const MAX_DOCUMENT_BYTES = 20 * 1024 * 1024;
 
@@ -67,8 +74,23 @@ export function formatBytes(bytes: number): string {
 }
 
 /**
- * Folder in the bucket for one patient's files. Keys never contain the
+ * Folder in the bucket for one patient's saved files. Keys never contain the
  * original file name (that lives in the database), only a random id.
  */
 export const patientDocumentsPrefix = (clinicId: string, patientId: string) =>
   `clinics/${clinicId}/patients/${patientId}/`;
+
+/**
+ * The waiting folder: every upload lands here first and is moved to the
+ * patient's folder only when the document is saved. A bucket lifecycle rule
+ * deletes anything under PENDING_ROOT older than a day, so abandoned uploads
+ * (the user never clicked Save) clean themselves up.
+ *
+ *   Cloudflare R2 → bucket → Settings → Object lifecycle rules:
+ *   prefix "pending/", delete objects after 1 day.
+ */
+export const PENDING_ROOT = "pending/";
+
+/** The waiting folder of one patient (clinic and patient in the path, so a save can check ownership). */
+export const pendingDocumentsPrefix = (clinicId: string, patientId: string) =>
+  `${PENDING_ROOT}${clinicId}/${patientId}/`;

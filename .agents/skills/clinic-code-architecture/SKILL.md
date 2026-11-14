@@ -232,6 +232,9 @@ existing examples named below instead of inventing a new pattern.
 - Upload limits and allowed types live in `src/config/documents.ts`. Keys are random
   (`clinics/{clinic}/patients/{patient}/{uuid}.{ext}`); original names stay in the database.
 - After a database delete, remove files with `deleteStoredFilesQuietly` (never throws).
+- Uploads land in the waiting folder `pending/{clinic}/{patient}/` (`pendingDocumentsPrefix`) and are moved
+  to the patient folder (`FileStorage.move`) only when the document is saved. A bucket lifecycle rule
+  (prefix `pending/`, delete after 1 day) removes abandoned uploads; never put saved files under `pending/`.
 
 ### Dates, times and appointments
 

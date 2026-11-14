@@ -16,7 +16,7 @@ import {
   HiOutlinePhoto,
   HiOutlineUser,
 } from "react-icons/hi2";
-import { formatBytes } from "@/config/documents";
+import { LINK_DOCUMENTS_ENABLED, formatBytes } from "@/config/documents";
 import { isFileStorageConfigured } from "@/services/storage";
 import { serverApiFetch } from "@/lib/server-api";
 import { API_PATHS, PATHS } from "@/config/path";
@@ -295,7 +295,7 @@ export default async function PatientPage({
           <p className="p-6 text-center text-sm text-red-600">Could not load documents. Please refresh the page.</p>
         ) : documents.length === 0 ? (
           <p className="p-8 text-center text-sm text-slate-500">
-            No documents yet.{can.can_create && " Upload a file or paste a link to one."}
+            No documents yet.{can.can_create && (LINK_DOCUMENTS_ENABLED ? " Upload a file or paste a link to one." : " Upload one with Add document.")}
           </p>
         ) : (
           <ul className="divide-y divide-slate-100 dark:divide-slate-800">

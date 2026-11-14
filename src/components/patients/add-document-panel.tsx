@@ -5,6 +5,7 @@ import { HiOutlineArrowUpTray, HiOutlineLink, HiOutlinePlus } from "react-icons/
 import { UploadDocumentForm } from "@/components/patients/upload-document-form";
 import { LinkDocumentForm } from "@/components/patients/add-document-form";
 import { cn } from "@/lib/utils";
+import { LINK_DOCUMENTS_ENABLED } from "@/config/documents";
 
 type Tab = "upload" | "link";
 
@@ -20,12 +21,14 @@ export interface AddDocumentPanelProps {
 }
 
 /**
- * "Add document" button that opens a panel with two ways to add a document:
- * upload a file from the computer (default) or paste a link to one online.
+ * "Add document" button that opens a panel to add a document: upload a file
+ * from the computer, and (when LINK_DOCUMENTS_ENABLED) paste a link to one
+ * online. Renders nothing when neither way is available.
  */
 export function AddDocumentPanel({ patientId, uploadsEnabled }: AddDocumentPanelProps) {
+  const tabs = TABS.filter((t) => (t.id === "upload" ? uploadsEnabled : LINK_DOCUMENTS_ENABLED));
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<Tab>(uploadsEnabled ? "upload" : "link");
+  const [tab, setTab] = useState<Tab>(tabs[0]?.id ?? "upload");
   // A new key after each save remounts the forms empty
   const [formKey, setFormKey] = useState(0);
 
@@ -34,6 +37,8 @@ export function AddDocumentPanel({ patientId, uploadsEnabled }: AddDocumentPanel
     setOpen(false);
     setFormKey((k) => k + 1);
   };
+
+  if (tabs.length === 0) return null;
 
   if (!open) {
     return (
@@ -47,8 +52,6 @@ export function AddDocumentPanel({ patientId, uploadsEnabled }: AddDocumentPanel
       </button>
     );
   }
-
-  const tabs = uploadsEnabled ? TABS : TABS.filter((t) => t.id === "link");
 
   return (
     <div className="w-full space-y-4 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-4">

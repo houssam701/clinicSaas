@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { RequestDocumentUploadSchema } from "@/types/patients";
-import { UPLOAD_URL_TTL_SECONDS, extensionFor, patientDocumentsPrefix } from "@/config/documents";
+import { UPLOAD_URL_TTL_SECONDS, extensionFor, pendingDocumentsPrefix } from "@/config/documents";
 import { authorizePatient, storageUnavailable } from "@/services/patient-access";
 import { getFileStorage } from "@/services/storage";
 
@@ -47,8 +47,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
   }
 
-  // A random key inside the patient's folder; the original name is kept in the database
-  const storage_key = `${patientDocumentsPrefix(patient.clinic_id, patient.id)}${crypto.randomUUID()}.${extensionFor(parsed.data.mime_type)}`;
+  // A random key in the patient's waiting folder; saving the document moves it
+  // to their folder, and a bucket rule deletes whatever is never saved
+  const storage_key = `${pendingDocumentsPrefix(patient.clinic_id, patient.id)}${crypto.randomUUID()}.${extensionFor(parsed.data.mime_type)}`;
 
   try {
     const upload_url = await getFileStorage().createUploadUrl({

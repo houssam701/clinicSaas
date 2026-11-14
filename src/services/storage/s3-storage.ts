@@ -1,4 +1,6 @@
 import {
+  CopyObjectCommand,
+  DeleteObjectCommand,
   DeleteObjectsCommand,
   GetObjectCommand,
   HeadObjectCommand,
@@ -92,6 +94,14 @@ export class S3FileStorage implements FileStorage {
       if (error instanceof S3ServiceException && error.$metadata.httpStatusCode === 404) return null;
       throw error;
     }
+  }
+
+  async move(fromKey: string, toKey: string): Promise<void> {
+    // Standard S3: server-side copy (no download), then remove the original.
+    // CopySource is "bucket/key" with the key URL-encoded, slashes kept.
+    const source = `${this.bucket}/${fromKey.split("/").map(encodeURIComponent).join("/")}`;
+    await this.client.send(new CopyObjectCommand({ Bucket: this.bucket, Key: toKey, CopySource: source }));
+    await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: fromKey }));
   }
 
   async delete(keys: string[]): Promise<void> {
