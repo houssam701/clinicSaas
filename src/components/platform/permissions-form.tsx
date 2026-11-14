@@ -8,6 +8,7 @@ import {
   PERMISSION_ACTIONS,
   PERMISSION_ACTION_LABELS,
   PERMISSION_MODULE_INFO,
+  moduleActions,
   type PermissionAction,
   type PermissionModule,
 } from "@/config/permissions";
@@ -79,8 +80,10 @@ export function PermissionsForm({ action, initialGrid, modules, ceiling }: Permi
   }, {});
 
   const dirty = !sameGrid(grid, saved);
-  const canTick = (m: PermissionModule, a: PermissionAction) => ceiling[m][a] || saved[m][a];
-  const lockedCount = modules.reduce((n, m) => n + PERMISSION_ACTIONS.filter((a) => !canTick(m, a)).length, 0);
+  // A module may offer only some actions (Reports: View only)
+  const offers = (m: PermissionModule, a: PermissionAction) => moduleActions(m).includes(a);
+  const canTick = (m: PermissionModule, a: PermissionAction) => offers(m, a) && (ceiling[m][a] || saved[m][a]);
+  const lockedCount = modules.reduce((n, m) => n + PERMISSION_ACTIONS.filter((a) => offers(m, a) && !canTick(m, a)).length, 0);
 
   const setCell = (module: PermissionModule, permAction: PermissionAction, checked: boolean) =>
     setGrid((prev) => ({ ...prev, [module]: toggle(prev[module], permAction, checked) }));
@@ -157,7 +160,13 @@ export function PermissionsForm({ action, initialGrid, modules, ceiling }: Permi
                     </span>
                     <span className="block text-xs text-slate-500 dark:text-slate-400">{info.description}</span>
                   </th>
-                  {PERMISSION_ACTIONS.map((a) => (
+                  {PERMISSION_ACTIONS.map((a) =>
+                    !offers(module, a) ? (
+                      <td key={a} className="px-3 py-3.5 text-center text-slate-300 dark:text-slate-600">
+                        <span aria-hidden="true">—</span>
+                        <span className="sr-only">{`${module} has no ${PERMISSION_ACTION_LABELS[a]}`}</span>
+                      </td>
+                    ) : (
                     <td key={a} className="px-3 py-3.5 text-center">
                       <input
                         type="checkbox"
@@ -170,7 +179,8 @@ export function PermissionsForm({ action, initialGrid, modules, ceiling }: Permi
                         className="h-5 w-5 rounded border-slate-300 accent-primary focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 disabled:opacity-30"
                       />
                     </td>
-                  ))}
+                    )
+                  )}
                   <td className="px-5 py-3.5 text-center">
                     {/* Not submitted: it only flips the four boxes in this row */}
                     <input

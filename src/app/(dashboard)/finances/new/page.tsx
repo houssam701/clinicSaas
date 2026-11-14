@@ -22,12 +22,17 @@ export default async function NewTreatmentPage({
   searchParams: Promise<{ patient?: string; appointment?: string; back?: string }>;
 }) {
   const params = await searchParams;
-  const back = params.back?.startsWith("/") && !params.back.startsWith("//") && !params.back.includes("\\") ? params.back : PATHS.finances.list();
-
   const access = await loadMyAccess();
-  if (!access?.grid.Finances.can_create) redirect(PATHS.finances.list());
-
   const patientId = params.patient && isValidUuid(params.patient) ? params.patient : undefined;
+  // Without Reports there is no clinic-wide list to return to
+  const fallback = access?.grid.Reports.can_view
+    ? PATHS.finances.list()
+    : patientId
+      ? PATHS.patients.detail(patientId)
+      : PATHS.patients.list();
+  const back = params.back?.startsWith("/") && !params.back.startsWith("//") && !params.back.includes("\\") ? params.back : fallback;
+  if (!access?.grid.Finances.can_create) redirect(fallback);
+
   const patientRes = patientId ? await serverApiFetch(API_PATHS.patients.detail(patientId)) : null;
   const patient: PatientModel | null = patientRes?.ok ? (await patientRes.json()).patient : null;
 

@@ -17,7 +17,7 @@ const SummaryQuerySchema = z.object({
  *
  * Auth:          Required
  * Authorization: SuperAdmin (any clinic via ?clinic_id), or Admin/Staff with
- *                can_view on "Finances" (always their own clinic)
+ *                can_view on "Reports" (always their own clinic)
  *
  * Responses:
  *   200  { outstanding: "1500.00", collected: "320.00" }
@@ -26,7 +26,8 @@ const SummaryQuerySchema = z.object({
  *   403  Forbidden
  */
 export async function GET(request: NextRequest) {
-  const { session, error } = await authenticateForModule("Finances", "can_view");
+  // Clinic-wide figures are a report: "Reports", not "Finances"
+  const { session, error } = await authenticateForModule("Reports", "can_view");
   if (error) return error;
 
   const sp = request.nextUrl.searchParams;

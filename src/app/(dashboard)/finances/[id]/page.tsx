@@ -45,6 +45,9 @@ export default async function TreatmentPage({
   if (!res.ok) notFound();
 
   const { invoice }: { invoice: InvoiceDetail } = await res.json();
+  // Without Reports there is no clinic-wide list: back and "after delete" go to the patient
+  const canReports = !!access!.grid.Reports.can_view;
+  const home = canReports ? PATHS.finances.list() : PATHS.patients.detail(invoice.patient_id);
   const currency = access!.clinic?.currency;
   const zone = access!.clinic?.timezone ?? "UTC";
   const money = (amount: string) => formatMoney(toCents(amount), currency);
@@ -54,7 +57,7 @@ export default async function TreatmentPage({
 
   return (
     <div className="max-w-4xl space-y-6">
-      <BackLink href={PATHS.finances.list()}>Back to finances</BackLink>
+      <BackLink href={home}>{canReports ? "Back to finances" : "Back to patient"}</BackLink>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
@@ -86,7 +89,7 @@ export default async function TreatmentPage({
             title={`Delete "${title}"?`}
             description="The treatment and its payments disappear from the app. They are kept in the records for audit."
             confirmLabel="Delete treatment"
-            redirectTo={PATHS.finances.list({ deleted: 1 })}
+            redirectTo={canReports ? PATHS.finances.list({ deleted: 1 }) : PATHS.patients.detail(invoice.patient_id)}
           />
         )}
       </div>

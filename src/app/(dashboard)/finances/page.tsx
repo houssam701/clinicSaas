@@ -66,12 +66,33 @@ export default async function FinancesPage({
   const patient = params.patient && isValidUuid(params.patient) ? params.patient : undefined;
   const monthStart = zonedTimeToUtc(`${todayIn(zone).slice(0, 7)}-01`, "00:00", zone).toISOString();
 
+  // The clinic-wide view (totals, every patient) is a report; one patient's list is not
+  const canReports = !!access!.grid.Reports.can_view;
+  if (!canReports && !patient) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">Finances</h1>
+        <div className={`${card} p-10 text-center`}>
+          <p className="font-semibold text-slate-700 dark:text-slate-200">The clinic&apos;s finance overview is not part of your access.</p>
+          <p className="mt-1 text-sm text-slate-500">
+            Each patient&apos;s treatments and what they owe are on their page, under Finances.{" "}
+            {access!.grid.Patients.can_view && (
+              <Link href={PATHS.patients.list()} className="font-semibold text-primary hover:underline">
+                Go to patients
+              </Link>
+            )}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const [listRes, summaryRes] = await Promise.all([
     serverApiFetch(API_PATHS.invoices.list({ status, search, patient_id: patient, page, limit: PAGE_SIZE })),
-    serverApiFetch(API_PATHS.invoices.summary({ from: monthStart })),
+    canReports ? serverApiFetch(API_PATHS.invoices.summary({ from: monthStart })) : null,
   ]);
   const { invoices = [], total = 0 }: { invoices?: InvoiceSummary[]; total?: number } = listRes.ok ? await listRes.json() : {};
-  const summary: { outstanding?: string; collected?: string } = summaryRes.ok ? await summaryRes.json() : {};
+  const summary: { outstanding?: string; collected?: string } = summaryRes?.ok ? await summaryRes.json() : {};
   const loadError = !listRes.ok;
 
   if (!loadError && total > 0 && page > totalPages(total, PAGE_SIZE)) {
@@ -106,7 +127,7 @@ export default async function FinancesPage({
       )}
 
       {/* Totals */}
-      {summaryRes.ok && (
+      {summaryRes?.ok && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Link href={PATHS.finances.list({ status: InvoiceStatus.Unpaid })} className={`${card} flex items-center gap-4 p-5 hover:border-primary/40`}>
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400">
@@ -134,9 +155,17 @@ export default async function FinancesPage({
           <span>
             Showing the treatments of <strong>{invoices[0]?.patient ? patientName(invoices[0].patient) : "one patient"}</strong>
           </span>
-          <Link href={PATHS.finances.list({ status, search })} className="font-semibold text-primary hover:underline">
-            Show everyone
-          </Link>
+          {canReports ? (
+            <Link href={PATHS.finances.list({ status, search })} className="font-semibold text-primary hover:underline">
+              Show everyone
+            </Link>
+          ) : (
+            access!.grid.Patients.can_view && (
+              <Link href={PATHS.patients.detail(patient)} className="font-semibold text-primary hover:underline">
+                Patient file
+              </Link>
+            )
+          )}
         </p>
       )}
 

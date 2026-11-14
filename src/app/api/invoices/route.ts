@@ -4,7 +4,7 @@ import { PatientRepository } from "@/repository/patient-repository";
 import { ClinicRepository } from "@/repository/clinic-repository";
 import { CreateInvoiceSchema, ListInvoicesQuerySchema } from "@/types/invoices";
 import { UserRole } from "@/types/users";
-import { authenticateForModule, canAccessClinic } from "@/services";
+import { authenticateForModule, canAccessClinic, checkModulePermission } from "@/services";
 import { invoiceFieldError } from "@/services/invoice-rules";
 
 /**
@@ -15,6 +15,9 @@ import { invoiceFieldError } from "@/services/invoice-rules";
  * Auth:          Required
  * Authorization: SuperAdmin, or Admin/Staff with can_view on "Finances"
  *   - Admin/Staff: always scoped to their own clinic
+ *   - One patient's treatments (?patient_id=) need only "Finances"; a list
+ *     across every patient is a clinic-wide figure and also needs can_view
+ *     on "Reports"
  *   - SuperAdmin: may filter by ?clinic_id
  *
  * Query Params:
@@ -56,6 +59,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden: User is not associated with a clinic" }, { status: 403 });
     }
     clinic_id = caller.clinic_id;
+    // Every patient's treatments at once is a report, not one patient's record
+    if (!parsed.data.patient_id) {
+      const reportsError = await checkModulePermission(caller.id, "Reports", "can_view");
+      if (reportsError) return reportsError;
+    }
   } else {
     clinic_id = parsed.data.clinic_id;
   }

@@ -2,6 +2,7 @@ import {
   MANAGEMENT_MODULES,
   PERMISSION_ACTIONS,
   PERMISSION_MODULES,
+  moduleActions,
   type PermissionFlags,
   type PermissionGrid,
   type PermissionModule,
@@ -20,8 +21,11 @@ const flags = (value: boolean): PermissionFlags =>
 export const emptyGrid = (): PermissionGrid =>
   Object.fromEntries(PERMISSION_MODULES.map((m) => [m, flags(false)])) as PermissionGrid;
 
+/** Everything a module offers (only the actions that apply to it). */
 export const fullGrid = (): PermissionGrid =>
-  Object.fromEntries(PERMISSION_MODULES.map((m) => [m, flags(true)])) as PermissionGrid;
+  Object.fromEntries(
+    PERMISSION_MODULES.map((m) => [m, Object.fromEntries(PERMISSION_ACTIONS.map((a) => [a, moduleActions(m).includes(a)]))])
+  ) as PermissionGrid;
 
 const isKnownModule = (name: string): name is PermissionModule =>
   (PERMISSION_MODULES as readonly string[]).includes(name);
@@ -49,12 +53,16 @@ export function rowsFromGrid(grid: PermissionGrid) {
   );
 }
 
-/** Removes what a role can never hold: management modules for Staff, and action-without-view. */
+/**
+ * Removes what can never be held: management modules for Staff, actions a
+ * module does not offer (e.g. Reports has View only), and action-without-view.
+ */
 export function normalizeForRole(grid: PermissionGrid, role: UserRole | string): PermissionGrid {
   const out = emptyGrid();
   for (const m of PERMISSION_MODULES) {
     if (role === UserRole.Staff && MANAGEMENT_MODULES.includes(m)) continue;
-    const f = grid[m];
+    const allowed = moduleActions(m);
+    const f = Object.fromEntries(PERMISSION_ACTIONS.map((a) => [a, allowed.includes(a) && grid[m][a]])) as PermissionFlags;
     out[m] = { ...f, can_view: f.can_view || f.can_create || f.can_edit || f.can_delete };
   }
   return out;
