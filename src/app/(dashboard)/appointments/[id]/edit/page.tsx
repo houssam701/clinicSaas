@@ -20,11 +20,11 @@ import {
   type AppointmentStaffMember,
   type AppointmentWithPeople,
 } from "@/types/appointments";
-import { HiOutlineBanknotes } from "react-icons/hi2";
-import { formatMoney, toCents } from "@/lib/money";
+import { HiOutlineBanknotes, HiOutlinePrinter } from "react-icons/hi2";
+import { formatMoney, fromCents, sumCents, toCents } from "@/lib/money";
 import { RecordPaymentForm } from "@/components/finances/record-payment-form";
 import { recordVisitPaymentAction } from "@/actions/record-visit-payment";
-import type { InvoiceSummary } from "@/types/invoices";
+import { PAYMENT_METHOD_LABELS, type InvoiceSummary, type PaymentMethod, type VisitPayment } from "@/types/invoices";
 import { Badge } from "@/components/ui/badge";
 
 const card = "rounded-md border border-slate-300/50 dark:border-slate-800/80 bg-white dark:bg-slate-900/70";
@@ -72,12 +72,19 @@ export default async function AppointmentPage({
   // Money received at this visit: needs Finances create access; the patient's
   // open treatments are the places it can go (or a separate visit charge)
   const canTakePayment = !!access!.grid.Finances.can_create;
+  const canSeeMoney = !!access!.grid.Finances.can_view;
   const currency = access!.clinic?.currency;
-  const openRes = canTakePayment
-    ? await serverApiFetch(API_PATHS.invoices.list({ patient_id: appointment.patient_id, open: 1, limit: 50 }))
-    : null;
+  const [openRes, visitPaymentsRes] = await Promise.all([
+    canTakePayment
+      ? serverApiFetch(API_PATHS.invoices.list({ patient_id: appointment.patient_id, open: 1, limit: 50 }))
+      : null,
+    // What was already taken at this visit
+    canSeeMoney ? serverApiFetch(API_PATHS.appointments.payments(appointment.id)) : null,
+  ]);
   const { invoices: openTreatments = [] }: { invoices?: InvoiceSummary[] } = openRes?.ok ? await openRes.json() : {};
+  const { payments: visitPayments = [] }: { payments?: VisitPayment[] } = visitPaymentsRes?.ok ? await visitPaymentsRes.json() : {};
   const money = (amount: string) => formatMoney(toCents(amount), currency);
+  const visitTotal = fromCents(sumCents(visitPayments.map((p) => p.amount)));
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -152,6 +159,54 @@ export default async function AppointmentPage({
               balanceLabel: money(inv.balance),
             }))}
           />
+        </section>
+      )}
+
+      {/* Money already taken at this visit */}
+      {canSeeMoney && visitPayments.length > 0 && (
+        <section className={card}>
+          <h2 className="flex items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 px-6 py-4 font-bold text-slate-800 dark:text-white">
+            Payments at this visit
+            <span className="text-sm font-semibold tabular-nums text-slate-500 dark:text-slate-400">Total {money(visitTotal)}</span>
+          </h2>
+          <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+            {visitPayments.map((payment) => (
+              <li key={payment.id} className="flex items-center gap-4 px-6 py-3">
+                <span className="min-w-0 flex-1">
+                  <span className="block font-bold tabular-nums text-slate-800 dark:text-white">{money(payment.amount)}</span>
+                  <span className="block truncate text-xs text-slate-500 dark:text-slate-400">
+                    {[
+                      formatTime(payment.payment_date, zone),
+                      PAYMENT_METHOD_LABELS[payment.payment_method as PaymentMethod],
+                      payment.notes,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                </span>
+                {payment.invoice && (
+                  <Link
+                    href={PATHS.receipt(payment.invoice.id, payment.id)}
+                    target="_blank"
+                    prefetch={false}
+                    className="inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-xs hover:border-primary/40 hover:bg-primary/5 hover:text-primary focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 transition-colors"
+                  >
+                    <HiOutlinePrinter aria-hidden="true" className="h-3.5 w-3.5" />
+                    Receipt<span className="sr-only"> (opens in a new tab)</span>
+                  </Link>
+                )}
+                {payment.invoice && (
+                  <Link
+                    href={PATHS.finances.detail(payment.invoice.id)}
+                    prefetch={false}
+                    className="shrink-0 truncate text-sm font-semibold text-primary hover:underline"
+                  >
+                    {payment.invoice.title ?? "Treatment"}
+                  </Link>
+                )}
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 

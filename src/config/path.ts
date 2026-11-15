@@ -55,6 +55,8 @@ export const PATHS = {
     new: (query?: QueryParams) => withQuery("/finances/new", query),
     detail: (id: string, query?: QueryParams) => withQuery(`/finances/${segment(id)}`, query),
   },
+  // A printable receipt for one payment (a page of its own, no sidebar)
+  receipt: (invoiceId: string, paymentId: string) => `/receipts/${segment(invoiceId)}/${segment(paymentId)}`,
   account: "/account",
   // An Admin's own Staff and Admins (gated by the "Staff" / "Admins" permissions)
   team: {
@@ -131,5 +133,7 @@ export const API_PATHS = {
     staff: "/api/appointments/staff",
     // Money received during this appointment
     payment: (id: string) => `/api/appointments/${segment(id)}/payment`,
+    // The payments taken at this appointment
+    payments: (id: string) => `/api/appointments/${segment(id)}/payments`,
   },
 } as const;

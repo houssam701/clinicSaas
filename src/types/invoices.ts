@@ -30,6 +30,9 @@ export type InvoiceSummary = InvoiceModel & {
   balance: string;
 };
 
+/** A payment taken at a visit, with the treatment it went to. */
+export type VisitPayment = PaymentModel & { invoice: { id: string; title: string | null } | null };
+
 /** An invoice with its (non-deleted) payments, newest first. */
 export type InvoiceDetail = InvoiceSummary & { payments: PaymentModel[] };
 

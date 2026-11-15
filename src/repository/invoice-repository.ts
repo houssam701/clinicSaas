@@ -13,6 +13,7 @@ import {
   type InvoiceSummary,
   type PaymentModel,
   type UpdateInvoiceData,
+  type VisitPayment,
 } from "../types/invoices";
 
 const INVOICE_FIELDS = [
@@ -250,6 +251,22 @@ export class InvoiceRepository {
       await tx.orm.public.Invoice.where({ id: data.invoice_id }).update({ status });
       return { payment, status };
     });
+  }
+
+  /**
+   * The (non-deleted) payments taken at one appointment, newest first, each
+   * with the treatment it went to (only treatments that are not deleted).
+   */
+  static async paymentsForAppointment(appointmentId: string): Promise<VisitPayment[]> {
+    const rows = await db.orm.public.Payment
+      .select(...PAYMENT_FIELDS)
+      .where({ appointment_id: appointmentId })
+      .where((p) => p.deleted_at.isNull())
+      .where((p) => p.invoice.some((i) => i.deleted_at.isNull()))
+      .include("invoice", (i) => i.select("id", "title"))
+      .orderBy((p) => p.payment_date.desc())
+      .all();
+    return rows as unknown as VisitPayment[];
   }
 
   /** One active payment of an invoice, or null. */
