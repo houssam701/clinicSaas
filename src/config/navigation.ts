@@ -44,6 +44,13 @@ export const navigationConfig: NavigationConfig = {
       icon: "finances",
       module: "Finances",
     },
+    {
+      id: "reports",
+      label: "Reports",
+      href: PATHS.reports(),
+      icon: "reports",
+      module: "Reports",
+    },
   ],
   bottomNav: [
     {

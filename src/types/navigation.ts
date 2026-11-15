@@ -6,6 +6,7 @@ export type NavIconName =
   | "patients"
   | "doctors"
   | "finances"
+  | "reports"
   | "account"
   | "team";
 

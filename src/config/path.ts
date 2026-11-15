@@ -55,6 +55,8 @@ export const PATHS = {
     new: (query?: QueryParams) => withQuery("/finances/new", query),
     detail: (id: string, query?: QueryParams) => withQuery(`/finances/${segment(id)}`, query),
   },
+  // Clinic-wide figures (gated by the "Reports" permission); ?from=&to= (YYYY-MM-DD) or ?range=
+  reports: (query?: QueryParams) => withQuery("/reports", query),
   // A printable receipt for one payment (a page of its own, no sidebar)
   receipt: (invoiceId: string, paymentId: string) => `/receipts/${segment(invoiceId)}/${segment(paymentId)}`,
   account: "/account",
@@ -126,6 +128,8 @@ export const API_PATHS = {
     payments: (id: string) => `/api/invoices/${segment(id)}/payments`,
     payment: (id: string, paymentId: string) => `/api/invoices/${segment(id)}/payments/${segment(paymentId)}`,
   },
+  // ?from=&to= (YYYY-MM-DD, clinic days, both included)
+  reports: (query?: QueryParams) => withQuery("/api/reports", query),
   appointments: {
     list: (query?: QueryParams) => withQuery("/api/appointments", query),
     detail: (id: string) => `/api/appointments/${segment(id)}`,

@@ -1,5 +1,5 @@
 import React from "react";
-import { HiOutlineUserCircle, HiOutlineUserGroup } from "react-icons/hi2";
+import { HiOutlineChartBar, HiOutlineUserCircle, HiOutlineUserGroup } from "react-icons/hi2";
 import { NavIconName } from "@/types/navigation";
 
 export interface IconProps extends React.SVGProps<SVGSVGElement> {
@@ -260,6 +260,8 @@ export function NavIcon({ name, className = "w-5 h-5", ...props }: { name: NavIc
       return <DoctorsIcon className={className} {...props} />;
     case "finances":
       return <FinancesIcon className={className} {...props} />;
+    case "reports":
+      return <HiOutlineChartBar aria-hidden="true" className={className} />;
     case "account":
       return <HiOutlineUserCircle aria-hidden="true" className={className} />;
     case "team":
