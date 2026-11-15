@@ -5,14 +5,17 @@ import { UserForm } from "@/components/platform/user-form";
 import { createUserAction } from "@/actions/create-user";
 import type { ClinicModel } from "@/types/clinics";
 import { MAX_PAGE_SIZE } from "@/types/pagination";
+import { UserRole } from "@/types/users";
 
 /**
  * Server Component: New Platform User
  *
  * Loads clinics from GET /api/clinics for the clinic picker.
  * The form itself posts to POST /api/users through createUserAction.
+ * ?clinic_id= preselects that clinic (for a new Admin).
  */
-export default async function NewPlatformUserPage() {
+export default async function NewPlatformUserPage({ searchParams }: { searchParams: Promise<{ clinic_id?: string }> }) {
+  const { clinic_id } = await searchParams;
   const clinicsRes = await serverApiFetch(API_PATHS.clinics.list({ limit: MAX_PAGE_SIZE }));
   const clinics: ClinicModel[] = clinicsRes.ok ? (await clinicsRes.json()).clinics : [];
 
@@ -33,6 +36,11 @@ export default async function NewPlatformUserPage() {
           mode="create"
           action={createUserAction}
           clinics={clinics.map(({ id, name }) => ({ id, name }))}
+          initialValues={
+            clinic_id && clinics.some((c) => c.id === clinic_id)
+              ? { first_name: "", last_name: "", email: "", role: UserRole.Admin, clinic_id }
+              : undefined
+          }
         />
       </div>
     </div>

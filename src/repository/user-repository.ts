@@ -37,6 +37,18 @@ export class UserRepository {
     return user ?? null;
   }
 
+  /**
+   * What a signed-in session must still match, read on every request: the
+   * user exists, their role and clinic, and their password hash (a change
+   * signs out every session). Never returned to a client.
+   */
+  static async findSessionState(id: string) {
+    const user = await db.orm.public.User
+      .select("id", "clinic_id", "role", "first_name", "last_name", "email", "password_hash")
+      .first({ id });
+    return user ?? null;
+  }
+
   // ── User Creation ────────────────────────────────────────────────────────────
 
   /**

@@ -79,7 +79,7 @@ export default async function PlatformUsersPage({
           </p>
         </div>
         <Link
-          href={PATHS.platform.users.new}
+          href={PATHS.platform.users.new()}
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-md text-white bg-gradient-to-r from-primary to-blue-700 shadow-[0_8px_16px_-4px_rgba(38,98,240,0.25)] hover:-translate-y-0.5 transition-all"
         >
           + New user

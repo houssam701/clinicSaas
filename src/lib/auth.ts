@@ -1,6 +1,7 @@
 import NextAuth, { type NextAuthConfig, type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import * as argon2 from "argon2";
+import { createHash } from "node:crypto";
 import { UserRepository } from "../repository/user-repository";
 import { LoginSchema, UserRole } from "../types/users";
 
@@ -16,6 +17,8 @@ declare module "next-auth" {
   interface User {
     role: UserRole;
     clinic_id?: string | null;
+    /** Fingerprint of the password hash at sign-in (see passwordStamp) */
+    password_stamp?: string;
   }
 }
 
@@ -24,9 +27,18 @@ declare module "@auth/core/jwt" {
     id?: string;
     role?: UserRole;
     clinic_id?: string | null;
+    password_stamp?: string;
   }
 }
 
+/**
+ * A short fingerprint of the stored password hash. The session keeps it, so
+ * changing a password (which changes the hash) signs out every session of
+ * that user. The JWT is encrypted, and this is a hash of a hash.
+ */
+function passwordStamp(passwordHash: string): string {
+  return createHash("sha256").update(passwordHash).digest("base64url").slice(0, 16);
+}
 
 
 export const authConfig: NextAuthConfig = {
@@ -59,6 +71,7 @@ export const authConfig: NextAuthConfig = {
           name:      `${user.first_name} ${user.last_name}`,
           role:      user.role as UserRole,
           clinic_id: user.clinic_id,
+          password_stamp: passwordStamp(user.password_hash),
         };
       },
     }),
@@ -66,17 +79,38 @@ export const authConfig: NextAuthConfig = {
 
   session: {
     strategy: "jwt",
-    maxAge: 60 * 60 * 8, // 8 hours — keeps role/clinic_id reasonably fresh
+    maxAge: 60 * 60 * 8, // 8 hours; role, clinic and the user itself are re-checked on every request (jwt callback)
   },
 
   callbacks: {
-    // Persist role + clinic_id into the JWT at sign-in
-    jwt({ token, user }) {
+    /**
+     * At sign-in: store who the user is. On every later request: re-read the
+     * user, so a role or clinic change applies on the next click, and a
+     * deleted user or a changed password ends the session (null clears it).
+     */
+    async jwt({ token, user }) {
       if (user) {
-        token.role      = user.role;
-        token.clinic_id = user.clinic_id;
-        token.id        = user.id;
+        token.role           = user.role;
+        token.clinic_id      = user.clinic_id;
+        token.id             = user.id;
+        token.password_stamp = user.password_stamp;
+        return token;
       }
+      if (!token.id) return null;
+
+      let current;
+      try {
+        current = await UserRepository.findSessionState(token.id);
+      } catch {
+        // Database unreachable: keep the session; every API call fails anyway until it is back
+        return token;
+      }
+      if (!current || passwordStamp(current.password_hash) !== token.password_stamp) return null;
+
+      token.role      = current.role as UserRole;
+      token.clinic_id = current.clinic_id;
+      token.name      = `${current.first_name} ${current.last_name}`;
+      token.email     = current.email;
       return token;
     },
     // Expose role + clinic_id + id on the session object readable in route handlers

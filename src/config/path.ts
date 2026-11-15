@@ -79,7 +79,8 @@ export const PATHS = {
     account: "/platform/account",
     users: {
       list: (query?: QueryParams) => withQuery("/platform/users", query),
-      new: "/platform/users/new",
+      // ?clinic_id= preselects the clinic (e.g. from "Clinics without an admin")
+      new: (query?: QueryParams) => withQuery("/platform/users/new", query),
       edit: (id: string) => `/platform/users/${segment(id)}/edit`,
       access: (id: string) => `/platform/users/${segment(id)}/access`,
     },
@@ -102,6 +103,10 @@ export const API_PATHS = {
       `/api/users/${segment(id)}/permissions/${segment(permissionId)}`,
   },
   adminUsers: "/api/admin/users",
+  // The SuperAdmin's platform overview
+  platform: {
+    overview: "/api/platform/overview",
+  },
   clinics: {
     list: (query?: QueryParams) => withQuery("/api/clinics", query),
     detail: (id: string) => `/api/clinics/${segment(id)}`,
