@@ -33,7 +33,7 @@ export const platformNavigationConfig: NavigationConfig = {
     {
       id: "platform-account",
       label: "Account",
-      href: PATHS.platform.account,
+      href: PATHS.platform.account(),
       icon: "account",
     },
   ],

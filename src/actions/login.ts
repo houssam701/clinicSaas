@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { parseSetCookie } from "@/lib/api";
+import { forwardSetCookies } from "@/lib/forward-cookies";
 import { sendApiJson } from "@/lib/server-api";
 import { API_PATHS, PATHS } from "@/config/path";
 import { WELCOME_COOKIE, WELCOME_COOKIE_MAX_AGE_SECONDS } from "@/config/welcome";
@@ -43,21 +43,8 @@ export async function loginAction(
 
   // 1. If login succeeded, forward the auth cookies from the API response to the browser
   if (response.ok) {
+    await forwardSetCookies(response);
     const cookieStore = await cookies();
-    const setCookies =
-      typeof response.headers.getSetCookie === "function"
-        ? response.headers.getSetCookie()
-        : response.headers.get("set-cookie")
-        ? [response.headers.get("set-cookie")!]
-        : [];
-
-    for (const cookieHeader of setCookies) {
-      if (!cookieHeader) continue;
-      const { name, value, options } = parseSetCookie(cookieHeader);
-      if (name) {
-        cookieStore.set(name, value, options);
-      }
-    }
 
     // The first page after signing in shows the welcome animation
     cookieStore.set(WELCOME_COOKIE, "1", { path: "/", maxAge: WELCOME_COOKIE_MAX_AGE_SECONDS, sameSite: "lax" });
@@ -85,6 +72,10 @@ export async function loginAction(
       error: "Please check the highlighted fields.",
       fieldErrors: details?.fieldErrors,
     };
+  }
+
+  if (response.status === 429) {
+    return { error: data.error ?? "Too many failed sign-in attempts. Please wait and try again." };
   }
 
   if (response.status === 401) {

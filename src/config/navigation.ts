@@ -50,7 +50,7 @@ export const navigationConfig: NavigationConfig = {
     {
       id: "account",
       label: "Account",
-      href: PATHS.account,
+      href: PATHS.account(),
       icon: "account",
     },
   ],

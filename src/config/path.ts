@@ -58,7 +58,8 @@ export const PATHS = {
   reports: (query?: QueryParams) => withQuery("/reports", query),
   // A printable receipt for one payment (a page of its own, no sidebar)
   receipt: (invoiceId: string, paymentId: string) => `/receipts/${segment(invoiceId)}/${segment(paymentId)}`,
-  account: "/account",
+  // ?password=changed shows the "password changed" notice
+  account: (query?: QueryParams) => withQuery("/account", query),
   // An Admin's own Staff and Admins (gated by the "Staff" / "Admins" permissions)
   team: {
     list: (query?: QueryParams) => withQuery("/team", query),
@@ -75,7 +76,7 @@ export const PATHS = {
       new: "/platform/clinics/new",
       edit: (id: string) => `/platform/clinics/${segment(id)}/edit`,
     },
-    account: "/platform/account",
+    account: (query?: QueryParams) => withQuery("/platform/account", query),
     users: {
       list: (query?: QueryParams) => withQuery("/platform/users", query),
       // ?clinic_id= preselects the clinic (e.g. from "Clinics without an admin")
@@ -93,6 +94,8 @@ export const API_PATHS = {
     login: "/api/auth/login",
     logout: "/api/auth/logout",
     me: "/api/auth/me",
+    // The signed-in user changes their own password (needs the current one)
+    password: "/api/auth/password",
   },
   users: {
     list: (query?: QueryParams) => withQuery("/api/users", query),

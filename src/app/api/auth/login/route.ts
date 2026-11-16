@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AuthError } from "next-auth";
-import { signIn } from "../../../../lib/auth";
+import { signIn, TooManyAttemptsError } from "../../../../lib/auth";
+import { describeWait } from "../../../../services/attempt-limit";
 import { LoginSchema, UserRole } from "../../../../types/users";
 import { UserRepository } from "../../../../repository/user-repository";
 import { getHomePathForRole } from "../../../../services/role-routing";
@@ -21,6 +22,7 @@ import { PATHS } from "../../../../config/path";
  *   200  { message, redirectTo }  (redirectTo = the user's role home path)
  *   400  Zod validation error or malformed JSON
  *   401  Invalid email or password
+ *   429  Too many wrong passwords for this email lately ({ error, retry_after }, Retry-After header)
  */
 export async function POST(request: NextRequest) {
   // 1. Parse + validate body with Zod
@@ -47,6 +49,15 @@ export async function POST(request: NextRequest) {
       redirect: false, // Do not redirect — return JSON response
     });
   } catch (error) {
+    if (error instanceof TooManyAttemptsError) {
+      return NextResponse.json(
+        {
+          error: `Too many failed sign-in attempts. Try again in ${describeWait(error.retryAfterSeconds)}.`,
+          retry_after: error.retryAfterSeconds,
+        },
+        { status: 429, headers: { "Retry-After": String(error.retryAfterSeconds) } }
+      );
+    }
     if (error instanceof AuthError) {
       return NextResponse.json(
         { error: "Invalid email or password" },

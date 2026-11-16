@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import * as argon2 from "argon2";
+import { hashPassword } from "@/lib/password";
 import { auth } from "../../../../lib/auth";
 import { UserRepository } from "../../../../repository/user-repository";
 import { ClinicRepository } from "../../../../repository/clinic-repository";
@@ -78,7 +78,8 @@ export async function GET(
  *                 or remove the role from the only one.
  *   - Admin: Can update their own info, and Staff/Admins in their clinic when they have can_edit on
  *            "Staff"/"Admins"; cannot change clinic_id or anyone's role.
- *   - Staff: Can only update their own first_name, last_name, or password.
+ *   - Staff: Can only update their own first_name and last_name.
+ *   - Nobody changes their own password here: POST /api/auth/password (needs the current one).
  *
  * Responses:
  *   200  { message: "User updated successfully", user: PublicUser }
@@ -117,6 +118,14 @@ export async function PATCH(
   const targetUser = await UserRepository.findById(id);
   if (!targetUser) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
+  // Your own password changes only through POST /api/auth/password, which asks for the current one
+  if (parsed.data.password && targetUser.id === session.user.id) {
+    return NextResponse.json(
+      { error: "Forbidden: Change your own password from your Account page" },
+      { status: 403 }
+    );
   }
 
   const callerRole = session.user.role;
@@ -185,7 +194,7 @@ export async function PATCH(
       parsed.data.email !== undefined
     ) {
       return NextResponse.json(
-        { error: "Forbidden: Staff may only update first_name, last_name, or password" },
+        { error: "Forbidden: Staff may only update first_name or last_name" },
         { status: 403 }
       );
     }
@@ -229,12 +238,7 @@ export async function PATCH(
   if (parsed.data.clinic_id !== undefined) updatePayload.clinic_id = parsed.data.clinic_id;
 
   if (parsed.data.password) {
-    updatePayload.password_hash = await argon2.hash(parsed.data.password, {
-      type:        argon2.argon2id,
-      memoryCost:  65536, // 64 MB
-      timeCost:    3,
-      parallelism: 4,
-    });
+    updatePayload.password_hash = await hashPassword(parsed.data.password);
   }
 
   const updatedUser = await UserRepository.updateUser(id, updatePayload);

@@ -8,6 +8,10 @@
       "model": "Appointment",
       "namespace": "public"
     },
+    "AuthAttempt": {
+      "model": "AuthAttempt",
+      "namespace": "public"
+    },
     "Clinic": {
       "model": "Clinic",
       "namespace": "public"
@@ -330,6 +334,47 @@
               },
               "namespaceId": "public",
               "table": "Appointment"
+            }
+          },
+          "AuthAttempt": {
+            "fields": {
+              "created_at": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "key": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "created_at": {
+                  "column": "created_at"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "key": {
+                  "column": "key"
+                }
+              },
+              "namespaceId": "public",
+              "table": "AuthAttempt"
             }
           },
           "Clinic": {
@@ -1752,6 +1797,51 @@
               },
               "uniques": []
             },
+            "AuthAttempt": {
+              "columns": {
+                "created_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "key": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [
+                {
+                  "columns": [
+                    "created_at"
+                  ],
+                  "name": "AuthAttempt_created_at_idx_225d8c0f",
+                  "prefix": "AuthAttempt_created_at_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "key",
+                    "created_at"
+                  ],
+                  "name": "AuthAttempt_key_created_at_idx_03ce7222",
+                  "prefix": "AuthAttempt_key_created_at_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
             "Clinic": {
               "checks": [
                 {
@@ -2667,10 +2757,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "ef234c61211a4ea69721ed4e36935602112745a7033d277bd2edc24876febfec"
+    "storageHash": "97c6f30da66c79c3e76d77ec34fc4cb71c3fe174b51dfcb05b082e3627c936c1"
   },
   "execution": {
-    "executionHash": "b1966046a8c8f9506ea34c852271609f898197dc54e6eb3477191f0a804493c8",
+    "executionHash": "08cb97ffc9e48c135a2531b4961fe736a259f712443bd8645d5e04ca4f3419dd",
     "mutations": {
       "defaults": [
         {
@@ -2708,6 +2798,28 @@
             "column": "updated_at",
             "namespace": "public",
             "table": "Appointment"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "created_at",
+            "namespace": "public",
+            "table": "AuthAttempt"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "AuthAttempt"
           }
         },
         {

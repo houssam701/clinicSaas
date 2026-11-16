@@ -34,9 +34,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'ef234c61211a4ea69721ed4e36935602112745a7033d277bd2edc24876febfec'>;
+  StorageHashBase<'97c6f30da66c79c3e76d77ec34fc4cb71c3fe174b51dfcb05b082e3627c936c1'>;
 export type ExecutionHash =
-  ExecutionHashBase<'b1966046a8c8f9506ea34c852271609f898197dc54e6eb3477191f0a804493c8'>;
+  ExecutionHashBase<'08cb97ffc9e48c135a2531b4961fe736a259f712443bd8645d5e04ca4f3419dd'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -262,6 +262,11 @@ export type FieldOutputTypes = {
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly user_id: CodecTypes['pg/text@1']['output'] | null;
     };
+    readonly AuthAttempt: {
+      readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly key: CodecTypes['pg/text@1']['output'];
+    };
     readonly Clinic: {
       readonly clinic_type: 'Dentistry' | 'Therapy';
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
@@ -369,6 +374,11 @@ export type FieldInputTypes = {
       readonly status: 'Scheduled' | 'Completed' | 'Canceled' | 'NoShow';
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly user_id: CodecTypes['pg/text@1']['input'] | null;
+    };
+    readonly AuthAttempt: {
+      readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly key: CodecTypes['pg/text@1']['input'];
     };
     readonly Clinic: {
       readonly clinic_type: 'Dentistry' | 'Therapy';
@@ -478,6 +488,11 @@ export type StorageColumnTypes = {
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly user_id: CodecTypes['pg/text@1']['output'] | null;
     };
+    readonly AuthAttempt: {
+      readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly key: CodecTypes['pg/text@1']['output'];
+    };
     readonly Clinic: {
       readonly clinic_type: 'Dentistry' | 'Therapy';
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
@@ -585,6 +600,11 @@ export type StorageColumnInputTypes = {
       readonly status: 'Scheduled' | 'Completed' | 'Canceled' | 'NoShow';
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly user_id: CodecTypes['pg/text@1']['input'] | null;
+    };
+    readonly AuthAttempt: {
+      readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly key: CodecTypes['pg/text@1']['input'];
     };
     readonly Clinic: {
       readonly clinic_type: 'Dentistry' | 'Therapy';
@@ -699,6 +719,12 @@ export namespace Models {
     payments: public_Payment[];
     staff: public_User | null;
     readonly [RelationKeys]?: 'clinic' | 'invoices' | 'patient' | 'payments' | 'staff';
+  };
+  export type public_AuthAttempt = {
+    created_at: CodecTypes['pg/timestamptz-string@1']['output'];
+    id: CodecTypes['pg/text@1']['output'];
+    key: CodecTypes['pg/text@1']['output'];
+    readonly [RelationKeys]?: never;
   };
   export type public_Clinic = {
     clinic_type: 'Dentistry' | 'Therapy';
@@ -829,6 +855,7 @@ export namespace Models {
 export declare const models: {
   public: {
     Appointment: Models.public_Appointment;
+    AuthAttempt: Models.public_AuthAttempt;
     Clinic: Models.public_Clinic;
     Invoice: Models.public_Invoice;
     Patient: Models.public_Patient;
@@ -985,6 +1012,42 @@ type ContractBase = Omit<
                   };
                 },
               ];
+            };
+            readonly AuthAttempt: {
+              columns: {
+                readonly created_at: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                };
+                readonly id: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly key: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'AuthAttempt_created_at_idx_225d8c0f';
+                  readonly prefix: 'AuthAttempt_created_at_idx';
+                  readonly columns: readonly ['created_at'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'AuthAttempt_key_created_at_idx_03ce7222';
+                  readonly prefix: 'AuthAttempt_key_created_at_idx';
+                  readonly columns: readonly ['key', 'created_at'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [];
             };
             readonly Clinic: {
               columns: {
@@ -1708,6 +1771,10 @@ type ContractBase = Omit<
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'Appointment';
     };
+    readonly AuthAttempt: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'AuthAttempt';
+    };
     readonly Clinic: { readonly namespace: 'public' & NamespaceId; readonly model: 'Clinic' };
     readonly Invoice: { readonly namespace: 'public' & NamespaceId; readonly model: 'Invoice' };
     readonly Patient: { readonly namespace: 'public' & NamespaceId; readonly model: 'Patient' };
@@ -1853,6 +1920,35 @@ type ContractBase = Omit<
                 readonly status: { readonly column: 'status' };
                 readonly updated_at: { readonly column: 'updated_at' };
                 readonly user_id: { readonly column: 'user_id' };
+              };
+            };
+          };
+          readonly AuthAttempt: {
+            readonly fields: {
+              readonly created_at: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly key: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+            };
+            readonly relations: Record<string, never>;
+            readonly storage: {
+              readonly table: 'AuthAttempt';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly created_at: { readonly column: 'created_at' };
+                readonly id: { readonly column: 'id' };
+                readonly key: { readonly column: 'key' };
               };
             };
           };
@@ -2745,6 +2841,22 @@ type ContractBase = Omit<
             readonly column: 'updated_at';
             readonly namespace: 'public';
             readonly table: 'Appointment';
+          };
+        },
+        {
+          readonly onCreate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly column: 'created_at';
+            readonly namespace: 'public';
+            readonly table: 'AuthAttempt';
+          };
+        },
+        {
+          readonly onCreate: { readonly id: 'uuidv4'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly column: 'id';
+            readonly namespace: 'public';
+            readonly table: 'AuthAttempt';
           };
         },
         {

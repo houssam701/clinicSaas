@@ -64,6 +64,20 @@ export const CreateTeamMemberSchema = CreateUserBaseSchema.omit({ clinic_id: tru
   role: z.enum([UserRole.Admin, UserRole.Staff], { message: "Role must be Admin or Staff." }),
 });
 
+// ─── Change Own Password Schema ───────────────────────────────────────────────
+// POST /api/auth/password: the signed-in user changes their own password.
+export const ChangePasswordSchema = z
+  .object({
+    current_password: z.string().min(1, "Enter your current password."),
+    new_password: z.string().min(8, "Use at least 8 characters.").max(200, "Use at most 200 characters."),
+  })
+  .refine((d) => d.new_password !== d.current_password, {
+    message: "Choose a password different from your current one.",
+    path: ["new_password"],
+  });
+
+export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;
+
 // ─── Update User Schema ────────────────────────────────────────────────────────
 export const UpdateUserSchema = z.object({
   email:      z.string().email().optional(),

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { IconType } from "react-icons";
 import {
   HiOutlineBuildingOffice2,
+  HiOutlineCheckCircle,
   HiOutlineCalendarDays,
   HiOutlineClock,
   HiOutlineEnvelope,
@@ -13,6 +14,8 @@ import { API_PATHS } from "@/config/path";
 import { ROLE_LABEL } from "@/config/roles";
 import { UserRole, type PublicUser } from "@/types/users";
 import type { ClinicModel } from "@/types/clinics";
+import { ChangePasswordForm } from "@/components/account/change-password-form";
+import { changePasswordAction } from "@/actions/change-password";
 
 const ROLE_HINT: Record<UserRole, string> = {
   [UserRole.SuperAdmin]: "Manages clinics and users across the whole platform.",
@@ -41,9 +44,11 @@ function Detail({ icon: Icon, label, children }: { icon: IconType; label: string
  * Server Component: Account
  *
  * The signed-in user's own profile, from GET /api/auth/me (any role).
- * Shared by the clinic workspace (/account) and the platform (/platform/account).
+ * Shared by the clinic workspace (/account) and the platform (/platform/account),
+ * with a form to change the user's own password (?password=changed: done).
  */
-export default async function AccountPage() {
+export default async function AccountPage({ searchParams }: { searchParams: Promise<{ password?: string }> }) {
+  const { password } = await searchParams;
   const res = await serverApiFetch(API_PATHS.auth.me);
   const data: { user: PublicUser; clinic: ClinicModel | null } | null = res.ok ? await res.json() : null;
 
@@ -121,6 +126,29 @@ export default async function AccountPage() {
             {formatDate(user.updated_at)}
           </Detail>
         </dl>
+      </section>
+
+      {/* Password */}
+      <section className={card} aria-labelledby="account-password">
+        <h2
+          id="account-password"
+          className="border-b border-slate-200 dark:border-slate-800 px-6 py-4 text-sm font-bold text-slate-700 dark:text-slate-300"
+        >
+          Password
+        </h2>
+        <div className="space-y-4 p-6">
+          {password === "changed" && (
+            <p
+              role="status"
+              className="flex items-start gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
+            >
+              <HiOutlineCheckCircle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
+              Password changed. You are still signed in here; your other devices were signed out.
+            </p>
+          )}
+          {/* The SuperAdmin's Account page is the platform one */}
+          <ChangePasswordForm action={changePasswordAction.bind(null, role === UserRole.SuperAdmin ? "platform" : "clinic")} />
+        </div>
       </section>
     </div>
   );

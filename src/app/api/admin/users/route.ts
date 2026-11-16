@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import * as argon2 from "argon2";
+import { hashPassword } from "@/lib/password";
 import { auth } from "../../../../lib/auth";
 import { UserRepository } from "../../../../repository/user-repository";
 import { CreateTeamMemberSchema, UserRole } from "../../../../types/users";
@@ -88,12 +88,7 @@ export async function POST(request: NextRequest) {
   }
 
   // 7. Hash password with Argon2id
-  const password_hash = await argon2.hash(parsed.data.password, {
-    type:        argon2.argon2id,
-    memoryCost:  65536, // 64 MB
-    timeCost:    3,
-    parallelism: 4,
-  });
+  const password_hash = await hashPassword(parsed.data.password);
 
   // 8. Persist — clinic_id is injected from session, not from request body
   const newUser = await UserRepository.createUser({

@@ -219,6 +219,18 @@ existing examples named below instead of inventing a new pattern.
   `clinicNavigationFor({ grid, showTeam })` hides them when the user cannot view that module.
   Pages read access with `loadMyAccess()` (cached per request) to hide buttons; the API still checks.
 
+### Passwords, sign-in and sessions
+- Hash and check passwords only with `hashPassword` / `verifyPassword` from `src/lib/password.ts`
+  (Argon2id; an unknown account still costs a full check, so timing reveals nothing).
+- Sessions re-read the user on every request (`jwt` callback in `src/lib/auth.ts`): role and clinic
+  changes apply at once; a deleted user or a changed password ends every session.
+- Limits on repeated failures live in `src/config/auth-limits.ts` and `src/services/attempt-limit.ts`
+  (stored in the `AuthAttempt` table, so they hold across servers). The sign-in limit is enforced in
+  `authorize`, not in a route, so every sign-in path is covered. Per-IP limits belong at the edge (WAF).
+- A user changes their own password only through `POST /api/auth/password` (current password required);
+  `PATCH /api/users/[id]` refuses a password for yourself. After the change the action signs in again and
+  redirects (a redirect, so the page renders with the new session cookie).
+
 ### File storage (provider-independent)
 
 - Code depends only on the `FileStorage` interface (`src/services/storage/`, get it with
