@@ -32,12 +32,6 @@ export const navigationConfig: NavigationConfig = {
       module: "Patients",
     },
     {
-      id: "doctors",
-      label: "Doctors",
-      href: PATHS.doctors,
-      icon: "doctors",
-    },
-    {
       id: "finances",
       label: "Finances",
       href: PATHS.finances.list(),

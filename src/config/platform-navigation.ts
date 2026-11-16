@@ -20,13 +20,13 @@ export const platformNavigationConfig: NavigationConfig = {
       id: "platform-clinics",
       label: "Clinics",
       href: PATHS.platform.clinics.list(),
-      icon: "patients",
+      icon: "clinics",
     },
     {
       id: "platform-users",
       label: "Users",
       href: PATHS.platform.users.list(),
-      icon: "doctors",
+      icon: "team",
     },
   ],
   bottomNav: [

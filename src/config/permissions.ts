@@ -5,14 +5,13 @@
  * typo ("appointments") can never silently deny access. Admin and Staff are
  * both checked against these rows; only the SuperAdmin bypasses them.
  * The rules (ceiling, cascade) live in src/services/access.ts.
+ * Removing a module: delete its saved rows too (see
+ * src/prisma/remove-retired-permissions.ts), or access pages flag them as unknown.
  */
 
 export const PERMISSION_MODULES = [
   "Appointments",
   "Patients",
-  "Doctors",
-  "Messages",
-  "Reviews",
   "Finances",
   // Clinic-wide figures (totals, lists across all patients); see PERMISSION_MODULE_INFO.Reports
   "Reports",
@@ -68,9 +67,6 @@ export interface PermissionModuleInfo {
 export const PERMISSION_MODULE_INFO: Record<PermissionModule, PermissionModuleInfo> = {
   Appointments: { description: "Calendar, bookings and appointment status", enforced: true },
   Patients: { description: "Patient records, history and documents", enforced: true },
-  Doctors: { description: "Doctor profiles and schedules", enforced: false },
-  Messages: { description: "Conversations with patients", enforced: false },
-  Reviews: { description: "Patient reviews and ratings", enforced: false },
   Finances: { description: "Each patient's treatments, what they owe, and recording payments", enforced: true },
   Reports: {
     description: "Clinic-wide figures: money collected and still owed, and every patient's treatments",

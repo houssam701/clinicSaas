@@ -97,6 +97,11 @@ All navigation and sidebar elements MUST adhere to SOLID principles:
     | Warning / confirm destructive | `HiOutlineExclamationTriangle` |
     | Add inside a card (e.g. Add document) | `HiOutlinePlus` |
     | External link (opens in a new tab) | `HiOutlineArrowTopRightOnSquare` |
+    | Sidebar links | `NAV_ICONS` in `src/components/icons/nav-icons.tsx` (add a name to `NavIconName`, then map it) |
+    | Open / close the mobile menu | `HiBars3` / `HiXMark` |
+    | Log out | `HiOutlineArrowRightOnRectangle` |
+    | Print / receipt | `HiOutlinePrinter` |
+    | Loading spinner (Heroicons has none) | `CgSpinner` from `react-icons/cg`, with `animate-spin` |
 - **Statuses — `<Badge>`, kept quiet (STRICT):**
   - A status (appointment, treatment) is `<Badge tone=…>` from `src/components/ui/badge.tsx`: a 6px coloured dot beside a label in the normal text colour. No pill, no ring, no tinted block: those read as generated UI.
   - `variant="tag"` (pale tint, dark text of the same hue, 4px corners) only for the one thing on a screen that needs attention, e.g. "Owes $450.00".

@@ -1,272 +1,30 @@
-import React from "react";
-import { HiOutlineChartBar, HiOutlineUserCircle, HiOutlineUserGroup } from "react-icons/hi2";
-import { NavIconName } from "@/types/navigation";
+import type { IconType } from "react-icons";
+import {
+  HiOutlineBuildingOffice2,
+  HiOutlineCalendarDays,
+  HiOutlineChartBar,
+  HiOutlineSquares2X2,
+  HiOutlineUserCircle,
+  HiOutlineUserGroup,
+  HiOutlineUsers,
+  HiOutlineWallet,
+} from "react-icons/hi2";
+import type { NavIconName } from "@/types/navigation";
 
-export interface IconProps extends React.SVGProps<SVGSVGElement> {
-  className?: string;
-  size?: number | string;
-}
+/** The icon for each sidebar link (react-icons, Heroicons v2). */
+const NAV_ICONS: Record<NavIconName, IconType> = {
+  dashboard: HiOutlineSquares2X2,
+  appointments: HiOutlineCalendarDays,
+  patients: HiOutlineUsers,
+  finances: HiOutlineWallet,
+  reports: HiOutlineChartBar,
+  clinics: HiOutlineBuildingOffice2,
+  team: HiOutlineUserGroup,
+  account: HiOutlineUserCircle,
+};
 
-/**
- * Medux Heart Logo Icon
- */
-export function HeartLogoIcon({ className = "w-8 h-8", size, ...props }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 32 32"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-      width={size}
-      height={size}
-      aria-hidden="true"
-      {...props}
-    >
-      <path
-        d="M16 27.5C16 27.5 4.5 19.8 4.5 12C4.5 7.5 8 4 12.2 4C14.7 4 16.8 5.2 16 6.8C15.2 5.2 17.3 4 19.8 4C24 4 27.5 7.5 27.5 12C27.5 19.8 16 27.5 16 27.5Z"
-        fill="#2662f0"
-      />
-      <circle cx="11.5" cy="11.5" r="4.5" fill="#3b82f6" fillOpacity="0.4" />
-      <path
-        d="M20.5 7.5C18.2 7.5 16.5 8.8 16 10.5C15.5 8.8 13.8 7.5 11.5 7.5C8.5 7.5 6 9.9 6 13C6 18.5 14.5 24.5 16 25.5C17.5 24.5 26 18.5 26 13C26 9.9 23.5 7.5 20.5 7.5Z"
-        fill="url(#heart-gradient)"
-      />
-      <defs>
-        <linearGradient id="heart-gradient" x1="6" y1="7.5" x2="25" y2="25" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#3b82f6" />
-          <stop offset="1" stopColor="#1d4ed8" />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-}
-
-/**
- * 4-Square Grid Dashboard Icon
- */
-export function DashboardIcon({ className = "w-5 h-5", size, ...props }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      width={size}
-      height={size}
-      aria-hidden="true"
-      {...props}
-    >
-      <rect x="3" y="3" width="7" height="7" rx="1.5" />
-      <rect x="14" y="3" width="7" height="7" rx="1.5" />
-      <rect x="14" y="14" width="7" height="7" rx="1.5" />
-      <rect x="3" y="14" width="7" height="7" rx="1.5" />
-    </svg>
-  );
-}
-
-/**
- * Calendar Appointments Icon
- */
-export function AppointmentsIcon({ className = "w-5 h-5", size, ...props }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      width={size}
-      height={size}
-      aria-hidden="true"
-      {...props}
-    >
-      <rect x="3" y="4" width="18" height="18" rx="2" />
-      <line x1="16" y1="2" x2="16" y2="6" />
-      <line x1="8" y1="2" x2="8" y2="6" />
-      <line x1="3" y1="10" x2="21" y2="10" />
-    </svg>
-  );
-}
-
-/**
- * Patients (User Group) Icon
- */
-export function PatientsIcon({ className = "w-5 h-5", size, ...props }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      width={size}
-      height={size}
-      aria-hidden="true"
-      {...props}
-    >
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  );
-}
-
-/**
- * Doctors (Stethoscope) Icon
- */
-export function DoctorsIcon({ className = "w-5 h-5", size, ...props }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      width={size}
-      height={size}
-      aria-hidden="true"
-      {...props}
-    >
-      <path d="M4.5 3v5a4.5 4.5 0 0 0 9 0V3" />
-      <circle cx="4.5" cy="3" r="1.5" fill="currentColor" />
-      <circle cx="13.5" cy="3" r="1.5" fill="currentColor" />
-      <path d="M9 12.5v3a4.5 4.5 0 0 0 9 0v-2.5" />
-      <circle cx="18" cy="13" r="2.5" />
-    </svg>
-  );
-}
-
-/**
- * Finances (Wallet) Icon
- */
-export function FinancesIcon({ className = "w-5 h-5", size, ...props }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      width={size}
-      height={size}
-      aria-hidden="true"
-      {...props}
-    >
-      <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2" />
-      <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4" />
-      <circle cx="18" cy="14" r="1" fill="currentColor" />
-    </svg>
-  );
-}
-
-/**
- * Logout (Door / Arrow) Icon
- */
-export function LogoutIcon({ className = "w-5 h-5", size, ...props }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      width={size}
-      height={size}
-      aria-hidden="true"
-      {...props}
-    >
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-      <polyline points="16 17 21 12 16 7" />
-      <line x1="21" y1="12" x2="9" y2="12" />
-    </svg>
-  );
-}
-
-/**
- * Mobile Hamburger Menu Icon
- */
-export function MenuIcon({ className = "w-6 h-6", size, ...props }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      width={size}
-      height={size}
-      aria-hidden="true"
-      {...props}
-    >
-      <line x1="3" y1="12" x2="21" y2="12" />
-      <line x1="3" y1="6" x2="21" y2="6" />
-      <line x1="3" y1="18" x2="21" y2="18" />
-    </svg>
-  );
-}
-
-/**
- * Close (X) Icon
- */
-export function CloseIcon({ className = "w-6 h-6", size, ...props }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      width={size}
-      height={size}
-      aria-hidden="true"
-      {...props}
-    >
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
-}
-
-/**
- * Icon Resolver by Name
- */
-export function NavIcon({ name, className = "w-5 h-5", ...props }: { name: NavIconName } & IconProps) {
-  switch (name) {
-    case "dashboard":
-      return <DashboardIcon className={className} {...props} />;
-    case "appointments":
-      return <AppointmentsIcon className={className} {...props} />;
-    case "patients":
-      return <PatientsIcon className={className} {...props} />;
-    case "doctors":
-      return <DoctorsIcon className={className} {...props} />;
-    case "finances":
-      return <FinancesIcon className={className} {...props} />;
-    case "reports":
-      return <HiOutlineChartBar aria-hidden="true" className={className} />;
-    case "account":
-      return <HiOutlineUserCircle aria-hidden="true" className={className} />;
-    case "team":
-      return <HiOutlineUserGroup aria-hidden="true" className={className} />;
-    default:
-      return <DashboardIcon className={className} {...props} />;
-  }
+/** A sidebar link's icon by name (decorative: the link carries the label). */
+export function NavIcon({ name, className = "w-5 h-5" }: { name: NavIconName; className?: string }) {
+  const Icon = NAV_ICONS[name];
+  return <Icon aria-hidden="true" className={className} />;
 }

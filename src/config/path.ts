@@ -46,7 +46,6 @@ export const PATHS = {
     detail: (id: string, query?: QueryParams) => withQuery(`/patients/${segment(id)}`, query),
     edit: (id: string) => `/patients/${segment(id)}/edit`,
   },
-  doctors: "/doctors",
   // Treatments (invoices) and the payments on them
   finances: {
     // ?status=Unpaid|Partial|Paid, ?search=, ?page=

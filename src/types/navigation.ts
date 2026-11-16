@@ -4,9 +4,9 @@ export type NavIconName =
   | "dashboard"
   | "appointments"
   | "patients"
-  | "doctors"
   | "finances"
   | "reports"
+  | "clinics"
   | "account"
   | "team";
 
