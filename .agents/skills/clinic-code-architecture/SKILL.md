@@ -158,6 +158,11 @@ existing examples named below instead of inventing a new pattern.
 - In-place mutations use `useTransition` + the server action.
 - Filters/search use `next/form` `<Form>` (client navigation), never a plain
   `<form method="GET">` (that reloads the whole page).
+- A filter bar with one search input or select uses `<FilterForm>` from
+  `src/components/ui/filter-form.tsx` (wraps `<Form>`): its submit button is
+  disabled and Enter does nothing while that field is empty; clearing an
+  applied filter is a separate Reset link. Give it `key={currentValue}` so it
+  resets after a client-side navigation. Examples: users and clinics lists.
 
 ---
 
@@ -181,6 +186,29 @@ existing examples named below instead of inventing a new pattern.
   `PATCH /api/users/[id]` — keep these checks when touching user routes.
 - Check that a referenced clinic exists before insert/update, so a foreign key
   failure never becomes a 500.
+
+---
+
+### Access (permissions)
+
+- Modules live in `src/config/permissions.ts` (`PERMISSION_MODULES`); never use a free-text
+  module name. `Staff` and `Admins` are management modules (see / add / edit + access /
+  remove team members) and are for Admins only.
+- **Only the SuperAdmin bypasses checks.** Admin and Staff both need the flag:
+  `if (caller.role !== UserRole.SuperAdmin) checkModulePermission(caller.id, "Module", "can_x")`.
+- **All rules are in `src/services/access.ts`** (pure grid math in `src/lib/permission-grid.ts`):
+  - Change anyone's access only through `applyAccessChange` (team check, Staff get no management
+    modules, ceiling, save, cascade). Gate team actions with `checkTeamAccess`.
+  - Ceiling: an Admin can add only access they hold; access the target already has may be kept.
+  - Cascade: `User.created_by_id` records the creator; access removed from a user is removed from
+    everyone below them. Every user insert must set `created_by_id`.
+  - New Admin: full access (made by the SuperAdmin) or the creator's access (made by an Admin);
+    new Staff: none. Admins cannot change roles or their own access.
+
+### Prisma 8 bulk writes
+
+- `.where(...).delete()` and `.where(...).update()` affect **one** row. For every matching row use
+  `.deleteAndCount()` / `.updateAndCount(data)` (or `deleteAll()` / `updateAll()` to get the rows).
 
 ---
 

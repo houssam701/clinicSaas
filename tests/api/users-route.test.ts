@@ -20,10 +20,20 @@ vi.mock("../../src/repository/user-repository", () => ({
 vi.mock("../../src/repository/clinic-repository", () => ({
   ClinicRepository: { exists: vi.fn() },
 }));
+// Only the permission table is mocked; the real rules in services/access.ts run.
+vi.mock("../../src/repository/permission-repository", () => ({
+  PermissionRepository: {
+    findByUserAndModule:    vi.fn(),
+    findByUserId:           vi.fn(),
+    bulkReplacePermissions: vi.fn(),
+  },
+}));
 
 import { auth } from "../../src/lib/auth";
 import { UserRepository } from "../../src/repository/user-repository";
 import { ClinicRepository } from "../../src/repository/clinic-repository";
+import { PermissionRepository } from "../../src/repository/permission-repository";
+import type { PermissionAction, PermissionModule } from "../../src/config/permissions";
 import { POST } from "../../src/app/api/users/route";
 import { GET, PATCH, DELETE } from "../../src/app/api/users/[id]/route";
 import { UserRole } from "../../src/types/users";
@@ -62,6 +72,12 @@ function request(method: string, body?: unknown) {
   });
 }
 
+/** The signed-in Admin holds these actions on this module (e.g. "Staff": ["can_edit"]). */
+function grant(module: PermissionModule, actions: PermissionAction[]) {
+  vi.mocked(PermissionRepository.findByUserAndModule).mockImplementation((async (_userId: string, m: PermissionModule) =>
+    m === module ? Object.fromEntries(actions.map((a) => [a, true])) : null) as never);
+}
+
 const routeContext = (id: string) => ({ params: Promise.resolve({ id }) });
 
 const uniqueViolation = () => Object.assign(new Error("duplicate key"), { kind: "sql_query", sqlState: "23505" });
@@ -88,15 +104,29 @@ describe("PATCH /api/users/[id]", () => {
     expect(UserRepository.updateUser).not.toHaveBeenCalled();
   });
 
-  it("forbids an Admin from editing another Admin (403)", async () => {
+  it("forbids an Admin without edit permission on Admins from editing another Admin (403)", async () => {
     signInAs(ADMIN_A);
+    grant("Staff", ["can_edit"]); // Staff only, not Admins
     targetIs({ ...ADMIN_B, clinic_id: CLINIC_A });
     const res = await PATCH(request("PATCH", { first_name: "X" }), routeContext(ADMIN_B.id));
     expect(res.status).toBe(403);
+    expect((await res.json()).error).toMatch(/do not have permission/);
+    expect(UserRepository.updateUser).not.toHaveBeenCalled();
   });
 
-  it("forbids an Admin from promoting their Staff to Admin (403)", async () => {
+  it("forbids an Admin without edit permission on Staff from editing their Staff (403)", async () => {
     signInAs(ADMIN_A);
+    grant("Staff", ["can_view"]);
+    targetIs(STAFF_A);
+    const res = await PATCH(request("PATCH", { first_name: "X" }), routeContext(STAFF_A.id));
+    expect(res.status).toBe(403);
+    expect((await res.json()).error).toMatch(/do not have permission/);
+    expect(UserRepository.updateUser).not.toHaveBeenCalled();
+  });
+
+  it("forbids an Admin from promoting their Staff to Admin, even with edit permission (403)", async () => {
+    signInAs(ADMIN_A);
+    grant("Staff", ["can_edit"]);
     targetIs(STAFF_A);
     const res = await PATCH(request("PATCH", { role: UserRole.Admin }), routeContext(STAFF_A.id));
     expect(res.status).toBe(403);
@@ -105,14 +135,16 @@ describe("PATCH /api/users/[id]", () => {
 
   it("forbids an Admin from moving their Staff to another clinic (403)", async () => {
     signInAs(ADMIN_A);
+    grant("Staff", ["can_edit"]);
     targetIs(STAFF_A);
     const res = await PATCH(request("PATCH", { clinic_id: CLINIC_B }), routeContext(STAFF_A.id));
     expect(res.status).toBe(403);
     expect(UserRepository.updateUser).not.toHaveBeenCalled();
   });
 
-  it("lets an Admin edit a Staff user in their own clinic (200)", async () => {
+  it("lets an Admin with edit permission on Staff edit a Staff user in their clinic (200)", async () => {
     signInAs(ADMIN_A);
+    grant("Staff", ["can_edit"]);
     targetIs(STAFF_A);
     vi.mocked(UserRepository.updateUser).mockResolvedValue({ ...STAFF_A, first_name: "New" } as never);
     const res = await PATCH(request("PATCH", { first_name: "New" }), routeContext(STAFF_A.id));
@@ -200,8 +232,19 @@ describe("DELETE /api/users/[id]", () => {
     expect(UserRepository.deleteUser).not.toHaveBeenCalled();
   });
 
-  it("lets an Admin delete Staff in their own clinic (204)", async () => {
+  it("forbids an Admin without delete permission on Staff from deleting their Staff (403)", async () => {
     signInAs(ADMIN_A);
+    grant("Staff", ["can_view", "can_edit"]);
+    targetIs(STAFF_A);
+    const res = await DELETE(request("DELETE"), routeContext(STAFF_A.id));
+    expect(res.status).toBe(403);
+    expect((await res.json()).error).toMatch(/do not have permission/);
+    expect(UserRepository.deleteUser).not.toHaveBeenCalled();
+  });
+
+  it("lets an Admin with delete permission on Staff delete Staff in their clinic (204)", async () => {
+    signInAs(ADMIN_A);
+    grant("Staff", ["can_delete"]);
     targetIs(STAFF_A);
     const res = await DELETE(request("DELETE"), routeContext(STAFF_A.id));
     expect(res.status).toBe(204);

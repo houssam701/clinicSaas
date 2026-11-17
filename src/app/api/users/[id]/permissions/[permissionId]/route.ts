@@ -2,24 +2,54 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "../../../../../../lib/auth";
 import { UserRepository } from "../../../../../../repository/user-repository";
 import { PermissionRepository } from "../../../../../../repository/permission-repository";
-import { UserRole } from "../../../../../../types/users";
 import { UpdatePermissionSchema } from "../../../../../../types/permissions";
 import { UUID_REGEX } from "../../../../../../services/api-guard";
+import { applyAccessChange, checkTeamAccess, getGrid } from "../../../../../../services/access";
+import { PERMISSION_MODULES, type PermissionModule } from "../../../../../../config/permissions";
 
 interface RouteContext {
   params: Promise<{ id: string; permissionId: string }>;
 }
 
+const isKnownModule = (name: string): name is PermissionModule =>
+  (PERMISSION_MODULES as readonly string[]).includes(name);
+
+/** Shared lookups for PATCH and DELETE: session, ids, target user and the permission row. */
+async function loadContext(context: RouteContext) {
+  const session = await auth();
+  if (!session?.user) {
+    return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) } as const;
+  }
+
+  const { id: userId, permissionId } = await context.params;
+  if (!UUID_REGEX.test(userId)) {
+    return { error: NextResponse.json({ error: "Invalid user ID format" }, { status: 400 }) } as const;
+  }
+  if (!UUID_REGEX.test(permissionId)) {
+    return { error: NextResponse.json({ error: "Invalid permission ID format" }, { status: 400 }) } as const;
+  }
+
+  const targetUser = await UserRepository.findById(userId);
+  if (!targetUser) {
+    return { error: NextResponse.json({ error: "User not found" }, { status: 404 }) } as const;
+  }
+
+  const permission = await PermissionRepository.findById(permissionId);
+  if (!permission || permission.user_id !== userId) {
+    return { error: NextResponse.json({ error: "Permission not found for this user" }, { status: 404 }) } as const;
+  }
+
+  return { session, targetUser, permission } as const;
+}
+
 /**
  * PATCH /api/users/[id]/permissions/[permissionId]
  *
- * Updates a single module permission for a user.
- *
- * Auth:          Required
- * Authorization: SuperAdmin or Admin (Admin restricted to their clinic)
+ * Updates a single module permission for a user. Same authorization, ceiling
+ * and cascade as PUT /api/users/[id]/permissions; create/edit/delete imply view.
  *
  * Body:
- *   module_name?: string
+ *   module_name?: one of PERMISSION_MODULES (moves the flags to that module)
  *   can_view?:    boolean
  *   can_create?:  boolean
  *   can_edit?:    boolean
@@ -27,75 +57,20 @@ interface RouteContext {
  *   (At least one field must be provided)
  *
  * Responses:
- *   200  { message: string, permission: UserPermissionModel }
- *   400  Validation error / Invalid ID format
+ *   200  { message: string, permission: UserPermissionModel | null }
+ *   400  Validation error / Invalid ID format / management modules for Staff
  *   401  Unauthorized
- *   403  Forbidden
+ *   403  Forbidden / grants more than the caller has
  *   404  User or permission not found
  *   409  Module name collision
  */
 export async function PATCH(request: NextRequest, context: RouteContext) {
-  // 1. Authenticate caller
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // 1. Session, ids, target user and permission row
+  const loaded = await loadContext(context);
+  if ("error" in loaded) return loaded.error;
+  const { session, targetUser, permission } = loaded;
 
-  // 2. Validate URL params
-  const { id: userId, permissionId } = await context.params;
-  if (!UUID_REGEX.test(userId)) {
-    return NextResponse.json(
-      { error: "Invalid user ID format" },
-      { status: 400 }
-    );
-  }
-  if (!UUID_REGEX.test(permissionId)) {
-    return NextResponse.json(
-      { error: "Invalid permission ID format" },
-      { status: 400 }
-    );
-  }
-
-  // 3. Verify target user exists
-  const targetUser = await UserRepository.findById(userId);
-  if (!targetUser) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-
-  // 4. Authorization check for mutation
-  const caller = session.user;
-  if (caller.role === UserRole.SuperAdmin) {
-    // SuperAdmin allowed
-  } else if (caller.role === UserRole.Admin) {
-    if (!caller.clinic_id || targetUser.clinic_id !== caller.clinic_id) {
-      return NextResponse.json(
-        { error: "Forbidden: Cannot manage permissions for users outside your clinic" },
-        { status: 403 }
-      );
-    }
-    if (targetUser.role === UserRole.SuperAdmin) {
-      return NextResponse.json(
-        { error: "Forbidden: Admins cannot manage SuperAdmin permissions" },
-        { status: 403 }
-      );
-    }
-  } else {
-    return NextResponse.json(
-      { error: "Forbidden: Only Admin or SuperAdmin can modify permissions" },
-      { status: 403 }
-    );
-  }
-
-  // 5. Verify permission exists and belongs to the specified user
-  const permission = await PermissionRepository.findById(permissionId);
-  if (!permission || permission.user_id !== userId) {
-    return NextResponse.json(
-      { error: "Permission not found for this user" },
-      { status: 404 }
-    );
-  }
-
-  // 6. Parse and validate body
+  // 2. Parse and validate body
   let body: unknown;
   try {
     body = await request.json();
@@ -114,36 +89,40 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
   }
 
-  // 7. Check for module name collision if module_name is being changed
-  if (
-    parsed.data.module_name &&
-    parsed.data.module_name !== permission.module_name
-  ) {
-    const conflict = await PermissionRepository.hasModuleConflict(
-      userId,
-      parsed.data.module_name,
-      permissionId
+  // 3. Module name collision if the row moves to another module
+  const { module_name: newModule, ...changes } = parsed.data;
+  const fromModule = permission.module_name;
+  const toModule = newModule ?? fromModule;
+  if (toModule !== fromModule && (await PermissionRepository.hasModuleConflict(targetUser.id, toModule, permission.id))) {
+    return NextResponse.json(
+      { error: `Permission for module '${toModule}' already exists for this user.` },
+      { status: 409 }
     );
-    if (conflict) {
-      return NextResponse.json(
-        {
-          error: `Permission for module '${parsed.data.module_name}' already exists for this user.`,
-        },
-        { status: 409 }
-      );
-    }
+  }
+  if (!isKnownModule(toModule)) {
+    return NextResponse.json({ error: `Unknown module '${toModule}'.` }, { status: 400 });
   }
 
-  // 8. Update permission
-  const updated = await PermissionRepository.updatePermission(
-    permissionId,
-    parsed.data
-  );
+  // 4. Build the new grid, then authorize, check the ceiling, save and cascade
+  const grid = await getGrid(targetUser);
+  const current = isKnownModule(fromModule)
+    ? grid[fromModule]
+    : { can_view: permission.can_view, can_create: permission.can_create, can_edit: permission.can_edit, can_delete: permission.can_delete };
+  if (isKnownModule(fromModule)) {
+    grid[fromModule] = { can_view: false, can_create: false, can_edit: false, can_delete: false };
+  }
+  grid[toModule] = { ...current, ...changes };
+
+  const result = await applyAccessChange(session.user, targetUser, grid);
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
+  }
 
   return NextResponse.json(
     {
       message: "Permission updated successfully",
-      permission: updated,
+      // null when the update left nothing granted, so the row was removed
+      permission: await PermissionRepository.findByUserAndModule(targetUser.id, toModule),
     },
     { status: 200 }
   );
@@ -152,10 +131,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 /**
  * DELETE /api/users/[id]/permissions/[permissionId]
  *
- * Removes a single module permission from a user.
- *
- * Auth:          Required
- * Authorization: SuperAdmin or Admin (Admin restricted to their clinic)
+ * Removes a single module permission from a user (and from everyone they
+ * created). Same authorization as PUT /api/users/[id]/permissions.
  *
  * Responses:
  *   200  { message: string }
@@ -165,68 +142,26 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
  *   404  User or permission not found
  */
 export async function DELETE(_request: NextRequest, context: RouteContext) {
-  // 1. Authenticate caller
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // 1. Session, ids, target user and permission row
+  const loaded = await loadContext(context);
+  if ("error" in loaded) return loaded.error;
+  const { session, targetUser, permission } = loaded;
+
+  // 2. Rows with an unknown module are ignored by every check: just remove them (still authorized)
+  if (!isKnownModule(permission.module_name)) {
+    const denied = await checkTeamAccess(session.user, targetUser, "can_edit");
+    if (denied) return NextResponse.json({ error: denied }, { status: 403 });
+    await PermissionRepository.deletePermission(permission.id);
+    return NextResponse.json({ message: "Permission deleted successfully" }, { status: 200 });
   }
 
-  // 2. Validate URL params
-  const { id: userId, permissionId } = await context.params;
-  if (!UUID_REGEX.test(userId)) {
-    return NextResponse.json(
-      { error: "Invalid user ID format" },
-      { status: 400 }
-    );
+  // 3. Authorize, save and cascade (removing access never exceeds the ceiling)
+  const grid = await getGrid(targetUser);
+  grid[permission.module_name] = { can_view: false, can_create: false, can_edit: false, can_delete: false };
+  const result = await applyAccessChange(session.user, targetUser, grid);
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
   }
-  if (!UUID_REGEX.test(permissionId)) {
-    return NextResponse.json(
-      { error: "Invalid permission ID format" },
-      { status: 400 }
-    );
-  }
-
-  // 3. Verify target user exists
-  const targetUser = await UserRepository.findById(userId);
-  if (!targetUser) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-
-  // 4. Authorization check for mutation
-  const caller = session.user;
-  if (caller.role === UserRole.SuperAdmin) {
-    // SuperAdmin allowed
-  } else if (caller.role === UserRole.Admin) {
-    if (!caller.clinic_id || targetUser.clinic_id !== caller.clinic_id) {
-      return NextResponse.json(
-        { error: "Forbidden: Cannot manage permissions for users outside your clinic" },
-        { status: 403 }
-      );
-    }
-    if (targetUser.role === UserRole.SuperAdmin) {
-      return NextResponse.json(
-        { error: "Forbidden: Admins cannot manage SuperAdmin permissions" },
-        { status: 403 }
-      );
-    }
-  } else {
-    return NextResponse.json(
-      { error: "Forbidden: Only Admin or SuperAdmin can modify permissions" },
-      { status: 403 }
-    );
-  }
-
-  // 5. Verify permission exists and belongs to the specified user
-  const permission = await PermissionRepository.findById(permissionId);
-  if (!permission || permission.user_id !== userId) {
-    return NextResponse.json(
-      { error: "Permission not found for this user" },
-      { status: 404 }
-    );
-  }
-
-  // 6. Delete permission
-  await PermissionRepository.deletePermission(permissionId);
 
   return NextResponse.json(
     { message: "Permission deleted successfully" },
