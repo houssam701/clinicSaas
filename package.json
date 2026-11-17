@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "next build",
+    "test": "vitest run",
     "composer:deploy": "prisma deploy module.ts",
     "composer:dev": "prisma dev module.ts",
     "contract:emit": "prisma contract emit",
@@ -51,7 +52,8 @@
     "prisma": "8.0.0-rc.18",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.7.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^5.1.0"
   },
   "overrides": {
     "effect": "4.0.0-rc.115",
