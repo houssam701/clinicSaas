@@ -19,7 +19,7 @@ export const platformNavigationConfig: NavigationConfig = {
     {
       id: "platform-clinics",
       label: "Clinics",
-      href: PATHS.platform.clinics,
+      href: PATHS.platform.clinics.list(),
       icon: "patients",
     },
     {
@@ -31,10 +31,10 @@ export const platformNavigationConfig: NavigationConfig = {
   ],
   bottomNav: [
     {
-      id: "platform-settings",
-      label: "Settings",
-      href: PATHS.platform.settings,
-      icon: "settings",
+      id: "platform-account",
+      label: "Account",
+      href: PATHS.platform.account,
+      icon: "account",
     },
   ],
 };
