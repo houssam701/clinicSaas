@@ -43,3 +43,31 @@ export async function toPasswordFormState(response: Response | null): Promise<Pa
       return { error: data.error ?? "Something went wrong. Please try again." };
   }
 }
+
+// ─── Forgot / reset password (signed out) ─────────────────────────────────────
+
+export type ForgotPasswordState = {
+  /** True once the request went through (the page then says "check your email") */
+  sent?: boolean;
+  error?: string;
+  fieldErrors?: { email?: string[] };
+};
+
+export type ResetPasswordState = {
+  error?: string;
+  /** The link no longer works: the page offers to ask for a new one */
+  expired?: boolean;
+  fieldErrors?: { new_password?: string[]; confirm_password?: string[] };
+};
+
+/** Maps a failed POST /api/auth/password-reset/confirm response (or null). */
+export async function toResetPasswordState(response: Response | null): Promise<ResetPasswordState> {
+  if (!response) return { error: "Network error — please try again." };
+  const data: { error?: string; details?: { fieldErrors?: { new_password?: string[] } } } =
+    await response.json().catch(() => ({}));
+  if (response.status === 410) return { expired: true, error: data.error };
+  if (response.status === 400 && data.details?.fieldErrors?.new_password) {
+    return { fieldErrors: { new_password: data.details.fieldErrors.new_password } };
+  }
+  return { error: data.error ?? "Something went wrong. Please try again." };
+}

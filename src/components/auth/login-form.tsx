@@ -11,7 +11,9 @@ import {
   HiOutlineEyeSlash,
   HiOutlineLockClosed,
 } from "react-icons/hi2";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { PATHS } from "@/config/path";
 
 // ---------------------------------------------------------------------------
 // Submit button — reads pending state from the closest <form> via useFormStatus
@@ -105,6 +107,12 @@ export function LoginForm() {
           >
             Password
           </label>
+          <Link
+            href={PATHS.forgotPassword}
+            className="text-sm font-bold text-primary hover:text-blue-700 transition-colors focus:outline-none focus-visible:underline"
+          >
+            Forgot password?
+          </Link>
         </div>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">

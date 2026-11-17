@@ -30,6 +30,11 @@ const segment = (id: string) => encodeURIComponent(id);
 export const PATHS = {
   home: "/",
   login: "/login",
+  // ?reset=done shows "password changed, sign in"
+  loginWith: (query?: QueryParams) => withQuery("/login", query),
+  // Ask for a reset link by email, then choose a new password from it (?token=)
+  forgotPassword: "/forgot-password",
+  resetPassword: (query?: QueryParams) => withQuery("/reset-password", query),
 
   // Clinic workspace (Admin / Staff)
   dashboard: "/dashboard",
@@ -96,6 +101,10 @@ export const API_PATHS = {
     me: "/api/auth/me",
     // The signed-in user changes their own password (needs the current one)
     password: "/api/auth/password",
+    // POST { email }: send a reset link; GET ?token=: is the link still valid
+    passwordReset: (query?: QueryParams) => withQuery("/api/auth/password-reset", query),
+    // POST { token, new_password }
+    passwordResetConfirm: "/api/auth/password-reset/confirm",
   },
   users: {
     list: (query?: QueryParams) => withQuery("/api/users", query),

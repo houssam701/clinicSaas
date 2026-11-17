@@ -20,6 +20,10 @@
       "model": "Invoice",
       "namespace": "public"
     },
+    "PasswordResetToken": {
+      "model": "PasswordResetToken",
+      "namespace": "public"
+    },
     "Patient": {
       "model": "Patient",
       "namespace": "public"
@@ -733,6 +737,94 @@
               },
               "namespaceId": "public",
               "table": "Invoice"
+            }
+          },
+          "PasswordResetToken": {
+            "fields": {
+              "created_at": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "expires_at": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "token_hash": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "used_at": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "user_id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "user": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "user_id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "created_at": {
+                  "column": "created_at"
+                },
+                "expires_at": {
+                  "column": "expires_at"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "token_hash": {
+                  "column": "token_hash"
+                },
+                "used_at": {
+                  "column": "used_at"
+                },
+                "user_id": {
+                  "column": "user_id"
+                }
+              },
+              "namespaceId": "public",
+              "table": "PasswordResetToken"
             }
           },
           "Patient": {
@@ -1461,6 +1553,21 @@
                   "namespace": "public"
                 }
               },
+              "password_resets": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "user_id"
+                  ]
+                },
+                "to": {
+                  "model": "PasswordResetToken",
+                  "namespace": "public"
+                }
+              },
               "permissions": {
                 "cardinality": "1:N",
                 "on": {
@@ -2071,6 +2178,80 @@
                 ]
               },
               "uniques": []
+            },
+            "PasswordResetToken": {
+              "columns": {
+                "created_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "expires_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "token_hash": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "used_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "user_id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "user_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "PasswordResetToken"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "User"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "user_id"
+                  ],
+                  "name": "PasswordResetToken_user_id_idx_6c952402",
+                  "prefix": "PasswordResetToken_user_id_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "token_hash"
+                  ]
+                }
+              ]
             },
             "Patient": {
               "columns": {
@@ -2757,10 +2938,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "97c6f30da66c79c3e76d77ec34fc4cb71c3fe174b51dfcb05b082e3627c936c1"
+    "storageHash": "38a9ed638581414bd2f901774cab93adfebd46c6ec26e1738e2559243d5cd6f9"
   },
   "execution": {
-    "executionHash": "08cb97ffc9e48c135a2531b4961fe736a259f712443bd8645d5e04ca4f3419dd",
+    "executionHash": "91b5587bf051f58028874d58398f90f58383c812bc3145c06d8f4bd617aa1e66",
     "mutations": {
       "defaults": [
         {
@@ -2894,6 +3075,28 @@
             "column": "updated_at",
             "namespace": "public",
             "table": "Invoice"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "created_at",
+            "namespace": "public",
+            "table": "PasswordResetToken"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "PasswordResetToken"
           }
         },
         {

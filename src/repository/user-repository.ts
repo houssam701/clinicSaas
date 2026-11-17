@@ -155,6 +155,9 @@ export class UserRepository {
       // 1. Delete associated permissions if any exist
       await tx.orm.public.UserPermission.where({ user_id: id }).deleteAndCount();
 
+      // 1b. Their password reset links
+      await tx.orm.public.PasswordResetToken.where({ user_id: id }).deleteAndCount();
+
       // 2. Unassign staff from appointments (set user_id to null)
       await tx.orm.public.Appointment.where({ user_id: id }).updateAndCount({ user_id: null });
 

@@ -231,6 +231,18 @@ existing examples named below instead of inventing a new pattern.
   `PATCH /api/users/[id]` refuses a password for yourself. After the change the action signs in again and
   redirects (a redirect, so the page renders with the new session cookie).
 
+- Forgot password: `POST /api/auth/password-reset` always answers the same and sends after the response
+  (`after()`), so it never reveals whether an email has an account. Links hold a random token; only its
+  SHA-256 is stored (`PasswordResetToken`), it works once (conditional update) for `RESET_LINK_MINUTES`.
+
+### Email (provider-independent)
+- Code depends only on the `EmailSender` interface (`src/services/email/`, get it with `getEmailSender()`).
+  Resend is one implementation (plain HTTP, no SDK); never call a provider anywhere else.
+- Config is `EMAIL_API_KEY` and `EMAIL_FROM` (see `.env.example`). Without a key, development prints emails
+  to the server log; production throws instead of silently dropping them.
+- Email content lives in `src/emails/<name>.ts` (returns `{ subject, html, text }`): inline styles, a table
+  layout, a plain-text version, and every interpolated value HTML-escaped. Never log links that grant access.
+
 ### File storage (provider-independent)
 
 - Code depends only on the `FileStorage` interface (`src/services/storage/`, get it with

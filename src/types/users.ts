@@ -78,6 +78,18 @@ export const ChangePasswordSchema = z
 
 export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;
 
+// ─── Forgot / reset password ──────────────────────────────────────────────────
+// POST /api/auth/password-reset: ask for a link (the answer never says whether the email exists)
+export const RequestPasswordResetSchema = z.object({
+  email: z.string().trim().min(1, "Enter your email address.").email("Enter a valid email address."),
+});
+
+// POST /api/auth/password-reset/confirm: the token from the link and the new password
+export const ResetPasswordSchema = z.object({
+  token: z.string().min(20).max(200),
+  new_password: z.string().min(8, "Use at least 8 characters.").max(200, "Use at most 200 characters."),
+});
+
 // ─── Update User Schema ────────────────────────────────────────────────────────
 export const UpdateUserSchema = z.object({
   email:      z.string().email().optional(),

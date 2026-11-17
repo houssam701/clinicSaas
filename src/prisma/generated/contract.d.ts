@@ -34,9 +34,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'97c6f30da66c79c3e76d77ec34fc4cb71c3fe174b51dfcb05b082e3627c936c1'>;
+  StorageHashBase<'38a9ed638581414bd2f901774cab93adfebd46c6ec26e1738e2559243d5cd6f9'>;
 export type ExecutionHash =
-  ExecutionHashBase<'08cb97ffc9e48c135a2531b4961fe736a259f712443bd8645d5e04ca4f3419dd'>;
+  ExecutionHashBase<'91b5587bf051f58028874d58398f90f58383c812bc3145c06d8f4bd617aa1e66'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -289,6 +289,14 @@ export type FieldOutputTypes = {
       readonly total_amount: Numeric<12, 2>;
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
     };
+    readonly PasswordResetToken: {
+      readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly expires_at: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly token_hash: CodecTypes['pg/text@1']['output'];
+      readonly used_at: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+      readonly user_id: CodecTypes['pg/text@1']['output'];
+    };
     readonly Patient: {
       readonly clinic_id: CodecTypes['pg/text@1']['output'];
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
@@ -401,6 +409,14 @@ export type FieldInputTypes = {
       readonly title: CodecTypes['pg/text@1']['input'] | null;
       readonly total_amount: CodecTypes['pg/numeric@1']['input'];
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['input'];
+    };
+    readonly PasswordResetToken: {
+      readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly expires_at: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly token_hash: CodecTypes['pg/text@1']['input'];
+      readonly used_at: CodecTypes['pg/timestamptz-string@1']['input'] | null;
+      readonly user_id: CodecTypes['pg/text@1']['input'];
     };
     readonly Patient: {
       readonly clinic_id: CodecTypes['pg/text@1']['input'];
@@ -515,6 +531,14 @@ export type StorageColumnTypes = {
       readonly total_amount: Numeric<12, 2>;
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
     };
+    readonly PasswordResetToken: {
+      readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly expires_at: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly token_hash: CodecTypes['pg/text@1']['output'];
+      readonly used_at: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+      readonly user_id: CodecTypes['pg/text@1']['output'];
+    };
     readonly Patient: {
       readonly clinic_id: CodecTypes['pg/text@1']['output'];
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
@@ -627,6 +651,14 @@ export type StorageColumnInputTypes = {
       readonly title: CodecTypes['pg/text@1']['input'] | null;
       readonly total_amount: CodecTypes['pg/numeric@1']['input'];
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['input'];
+    };
+    readonly PasswordResetToken: {
+      readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly expires_at: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly token_hash: CodecTypes['pg/text@1']['input'];
+      readonly used_at: CodecTypes['pg/timestamptz-string@1']['input'] | null;
+      readonly user_id: CodecTypes['pg/text@1']['input'];
     };
     readonly Patient: {
       readonly clinic_id: CodecTypes['pg/text@1']['input'];
@@ -759,6 +791,16 @@ export namespace Models {
     payments: public_Payment[];
     readonly [RelationKeys]?: 'appointment' | 'clinic' | 'patient' | 'payments';
   };
+  export type public_PasswordResetToken = {
+    created_at: CodecTypes['pg/timestamptz-string@1']['output'];
+    expires_at: CodecTypes['pg/timestamptz-string@1']['output'];
+    id: CodecTypes['pg/text@1']['output'];
+    token_hash: CodecTypes['pg/text@1']['output'];
+    used_at: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+    user_id: CodecTypes['pg/text@1']['output'];
+    user: public_User;
+    readonly [RelationKeys]?: 'user';
+  };
   export type public_Patient = {
     clinic_id: CodecTypes['pg/text@1']['output'];
     created_at: CodecTypes['pg/timestamptz-string@1']['output'];
@@ -835,8 +877,9 @@ export namespace Models {
     updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
     appointments: public_Appointment[];
     clinic: public_Clinic | null;
+    password_resets: public_PasswordResetToken[];
     permissions: public_UserPermission[];
-    readonly [RelationKeys]?: 'appointments' | 'clinic' | 'permissions';
+    readonly [RelationKeys]?: 'appointments' | 'clinic' | 'password_resets' | 'permissions';
   };
   export type public_UserPermission = {
     can_create: CodecTypes['pg/bool@1']['output'];
@@ -858,6 +901,7 @@ export declare const models: {
     AuthAttempt: Models.public_AuthAttempt;
     Clinic: Models.public_Clinic;
     Invoice: Models.public_Invoice;
+    PasswordResetToken: Models.public_PasswordResetToken;
     Patient: Models.public_Patient;
     PatientDocument: Models.public_PatientDocument;
     Payment: Models.public_Payment;
@@ -1219,6 +1263,64 @@ type ContractBase = Omit<
                   readonly target: {
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'Appointment';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly PasswordResetToken: {
+              columns: {
+                readonly created_at: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                };
+                readonly expires_at: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                };
+                readonly id: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly token_hash: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly used_at: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: true;
+                };
+                readonly user_id: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['token_hash'] }];
+              indexes: readonly [
+                {
+                  readonly name: 'PasswordResetToken_user_id_idx_6c952402';
+                  readonly prefix: 'PasswordResetToken_user_id_idx';
+                  readonly columns: readonly ['user_id'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'PasswordResetToken';
+                    readonly columns: readonly ['user_id'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'User';
                     readonly columns: readonly ['id'];
                   };
                 },
@@ -1777,6 +1879,10 @@ type ContractBase = Omit<
     };
     readonly Clinic: { readonly namespace: 'public' & NamespaceId; readonly model: 'Clinic' };
     readonly Invoice: { readonly namespace: 'public' & NamespaceId; readonly model: 'Invoice' };
+    readonly PasswordResetToken: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'PasswordResetToken';
+    };
     readonly Patient: { readonly namespace: 'public' & NamespaceId; readonly model: 'Patient' };
     readonly PatientDocument: {
       readonly namespace: 'public' & NamespaceId;
@@ -2181,6 +2287,66 @@ type ContractBase = Omit<
                 readonly title: { readonly column: 'title' };
                 readonly total_amount: { readonly column: 'total_amount' };
                 readonly updated_at: { readonly column: 'updated_at' };
+              };
+            };
+          };
+          readonly PasswordResetToken: {
+            readonly fields: {
+              readonly created_at: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly expires_at: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly token_hash: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly used_at: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly user_id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+            };
+            readonly relations: {
+              readonly user: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['user_id'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'PasswordResetToken';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly created_at: { readonly column: 'created_at' };
+                readonly expires_at: { readonly column: 'expires_at' };
+                readonly id: { readonly column: 'id' };
+                readonly token_hash: { readonly column: 'token_hash' };
+                readonly used_at: { readonly column: 'used_at' };
+                readonly user_id: { readonly column: 'user_id' };
               };
             };
           };
@@ -2653,6 +2819,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly password_resets: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'PasswordResetToken';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['user_id'];
+                };
+              };
               readonly permissions: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
@@ -2907,6 +3084,22 @@ type ContractBase = Omit<
             readonly column: 'updated_at';
             readonly namespace: 'public';
             readonly table: 'Invoice';
+          };
+        },
+        {
+          readonly onCreate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly column: 'created_at';
+            readonly namespace: 'public';
+            readonly table: 'PasswordResetToken';
+          };
+        },
+        {
+          readonly onCreate: { readonly id: 'uuidv4'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly column: 'id';
+            readonly namespace: 'public';
+            readonly table: 'PasswordResetToken';
           };
         },
         {

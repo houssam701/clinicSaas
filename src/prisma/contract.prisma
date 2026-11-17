@@ -64,8 +64,9 @@ model User {
   created_at    temporal.createdAtString()
   updated_at    temporal.updatedAtString()
 
-  permissions  UserPermission[]
-  appointments Appointment[]
+  permissions     UserPermission[]
+  appointments    Appointment[]
+  password_resets PasswordResetToken[]
 
   @@index([clinic_id])
   @@index([created_by_id])
@@ -83,6 +84,20 @@ model UserPermission {
   updated_at  temporal.updatedAtString()
 
   @@unique([user_id, module_name])
+  @@index([user_id])
+}
+
+// A "set a new password" link sent by email. Only the SHA-256 of the token is
+// stored (the link holds the token itself); it works once, until expires_at.
+model PasswordResetToken {
+  id         String                     @id @default(uuid())
+  user_id    String
+  user       User                       @relation(fields: [user_id], references: [id])
+  token_hash String                     @unique
+  expires_at TimestamptzString
+  used_at    TimestamptzString?
+  created_at temporal.createdAtString()
+
   @@index([user_id])
 }
 
