@@ -25,7 +25,9 @@ export default async function EditPlatformUserPage({
     serverApiFetch(API_PATHS.clinics.list()),
   ]);
 
-  if (!userRes.ok) notFound();
+  // Only a missing user is "not found"; 401/403/500 must show the error page, not a 404
+  if (userRes.status === 404) notFound();
+  if (!userRes.ok) throw new Error("Could not load user");
   const { user }: { user: PublicUser } = await userRes.json();
 
   // The single SuperAdmin is managed from settings, not from this list
