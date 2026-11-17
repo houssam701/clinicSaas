@@ -1,7 +1,5 @@
-export default function Home() {
-  return (
-    <main>
-      <h1>Clinic Management System</h1>
-    </main>
-  );
+import { redirectToRoleHome } from "@/services/page-guard";
+
+export default async function Home() {
+  await redirectToRoleHome();
 }

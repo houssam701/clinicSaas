@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import * as argon2 from "argon2";
 import { UserRepository } from "../repository/user-repository";
 import { LoginSchema, UserRole } from "../types/users";
+import { PATHS } from "../config/path";
 
 declare module "next-auth" {
   interface Session {
@@ -102,7 +103,7 @@ export const authConfig: NextAuthConfig = {
   },
 
   pages: {
-    signIn: "/auth/login", // Future frontend login page
+    signIn: PATHS.login,
   },
 };
 
