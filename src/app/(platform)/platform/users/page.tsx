@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Form from "next/form";
-import { serverApiFetch } from "@/lib/server-api";
+import { sendApiJson } from "@/lib/server-api";
 import { API_PATHS, PATHS } from "@/config/path";
 import { DeleteUserButton } from "@/components/platform/delete-user-button";
 import { HiOutlinePencilSquare, HiXMark } from "react-icons/hi2";
@@ -54,16 +54,18 @@ export default async function PlatformUsersPage({
   const page = Math.max(1, Math.floor(Number(pageParam)) || 1);
 
   const [usersRes, clinicsRes] = await Promise.all([
-    serverApiFetch(API_PATHS.users.list({ role, clinic_id, page, limit: PAGE_SIZE })),
-    serverApiFetch(API_PATHS.clinics.list()),
+    sendApiJson(API_PATHS.users.list({ role, clinic_id, page, limit: PAGE_SIZE }), "GET"),
+    sendApiJson(API_PATHS.clinics.list(), "GET"),
   ]);
 
-  const { users = [], total = 0 }: { users?: PublicUser[]; total?: number } = usersRes.ok
+  // sendApiJson returns null on a network failure instead of throwing, so the page
+  // can show its "Could not load users" message rather than crash
+  const { users = [], total = 0 }: { users?: PublicUser[]; total?: number } = usersRes?.ok
     ? await usersRes.json()
     : {};
-  const clinics: ClinicModel[] = clinicsRes.ok ? (await clinicsRes.json()).clinics : [];
+  const clinics: ClinicModel[] = clinicsRes?.ok ? (await clinicsRes.json()).clinics : [];
   const clinicName = new Map(clinics.map((c) => [c.id, c.name]));
-  const loadError = !usersRes.ok;
+  const loadError = !usersRes?.ok;
 
   // Past the last page (e.g. its last row was just deleted): go to the last real page
   const lastPage = totalPages(total, PAGE_SIZE);
