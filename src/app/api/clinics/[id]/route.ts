@@ -74,6 +74,7 @@ export async function GET(
  *   401  Unauthorized
  *   403  Forbidden
  *   404  Clinic not found
+ *   409  Another clinic already has this name
  */
 export async function PATCH(
   request: NextRequest,
@@ -125,7 +126,21 @@ export async function PATCH(
     return NextResponse.json({ error: "Clinic not found" }, { status: 404 });
   }
 
-  // 6. Update clinic
+  // 6. Clinic names are unique
+  if (parsed.data.name) {
+    const sameName = await ClinicRepository.findByName(parsed.data.name);
+    if (sameName && sameName.id !== id) {
+      return NextResponse.json(
+        {
+          error: "A clinic with this name already exists.",
+          details: { fieldErrors: { name: ["A clinic with this name already exists."] } },
+        },
+        { status: 409 }
+      );
+    }
+  }
+
+  // 7. Update clinic
   const updatedClinic = await ClinicRepository.updateClinic(id, {
     name: parsed.data.name,
     clinic_type: parsed.data.clinic_type,
