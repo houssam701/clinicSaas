@@ -3,7 +3,7 @@
 import React from "react";
 import { useFormStatus } from "react-dom";
 import { logoutAction } from "@/actions/logout";
-import { LogoutIcon } from "@/components/icons/nav-icons";
+import { HiOutlineArrowRightOnRectangle } from "react-icons/hi2";
 import { cn } from "@/lib/utils";
 
 function LogoutSubmit() {
@@ -18,7 +18,7 @@ function LogoutSubmit() {
         pending && "opacity-60 cursor-not-allowed"
       )}
     >
-      <LogoutIcon className="w-5 h-5 shrink-0" />
+      <HiOutlineArrowRightOnRectangle aria-hidden="true" className="w-5 h-5 shrink-0" />
       <span className="truncate">{pending ? "Signing out..." : "Log out"}</span>
     </button>
   );

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useTheme, Theme } from "@/context/theme-context";
-import { SunIcon, MoonIcon, MonitorIcon } from "@/components/icons/nav-icons";
+import { HiOutlineComputerDesktop, HiOutlineMoon, HiOutlineSun } from "react-icons/hi2";
 import { cn } from "@/lib/utils";
 
 interface ThemeOption {
@@ -12,9 +12,9 @@ interface ThemeOption {
 }
 
 const themeOptions: ThemeOption[] = [
-  { value: "light", label: "Light", icon: <SunIcon className="w-4 h-4" /> },
-  { value: "system", label: "Auto", icon: <MonitorIcon className="w-4 h-4" /> },
-  { value: "dark", label: "Dark", icon: <MoonIcon className="w-4 h-4" /> },
+  { value: "light", label: "Light", icon: <HiOutlineSun aria-hidden="true" className="w-4 h-4" /> },
+  { value: "system", label: "Auto", icon: <HiOutlineComputerDesktop aria-hidden="true" className="w-4 h-4" /> },
+  { value: "dark", label: "Dark", icon: <HiOutlineMoon aria-hidden="true" className="w-4 h-4" /> },
 ];
 
 export function ThemeToggle({ className }: { className?: string }) {

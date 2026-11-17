@@ -5,7 +5,7 @@ import { SidebarBrand } from "./sidebar-brand";
 import { Sidebar } from "./sidebar";
 import { navigationConfig } from "@/config/navigation";
 import type { NavigationConfig } from "@/types/navigation";
-import { MenuIcon, CloseIcon } from "@/components/icons/nav-icons";
+import { HiBars3, HiXMark } from "react-icons/hi2";
 
 interface MobileSidebarProps {
   config?: NavigationConfig;
@@ -70,7 +70,7 @@ export function MobileSidebar({ config = navigationConfig }: MobileSidebarProps)
           aria-label="Open navigation sidebar"
           aria-expanded={isOpen}
         >
-          <MenuIcon className="w-6 h-6" />
+          <HiBars3 aria-hidden="true" className="w-6 h-6" />
         </button>
       </div>
 
@@ -102,7 +102,7 @@ export function MobileSidebar({ config = navigationConfig }: MobileSidebarProps)
             className="p-1.5 rounded-md text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer focus:outline-none"
             aria-label="Close navigation sidebar"
           >
-            <CloseIcon className="w-5 h-5" />
+            <HiXMark aria-hidden="true" className="w-5 h-5" />
           </button>
         </div>
 
