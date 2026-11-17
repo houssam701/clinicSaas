@@ -9,8 +9,8 @@ export type DeleteUserResult = { error?: string };
 /**
  * Server Action: deleteUserAction
  *
- * Calls DELETE /api/users/[id]. On success the list is revalidated, so the
- * row disappears without a page reload.
+ * Calls DELETE /api/users/[id] (platform users list and an Admin's team).
+ * On success both lists are revalidated, so the row disappears without a page reload.
  */
 export async function deleteUserAction(userId: string): Promise<DeleteUserResult> {
   const response = await sendApiJson(API_PATHS.users.detail(userId), "DELETE");
@@ -19,6 +19,7 @@ export async function deleteUserAction(userId: string): Promise<DeleteUserResult
   if (response.status === 204 || response.status === 404) {
     // 404: already gone, which is the outcome the user wanted
     revalidatePath(PATHS.platform.users.list());
+    revalidatePath(PATHS.team.list());
     return {};
   }
 
