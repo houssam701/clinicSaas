@@ -16,7 +16,7 @@ import { authenticate, canAccessClinic, checkModulePermission } from "@/services
  * Authorization: SuperAdmin, Admin, or Staff
  *   - SuperAdmin: can filter by ?clinic_id; otherwise sees all clinics
  *   - Admin:      always auto-scoped to their own clinic
- *   - Staff:      auto-scoped to their clinic; requires can_view on "Appointments"
+ *   - Staff:      auto-scoped to their clinic; requires can_view on "Appointments" (Admin too)
  *
  * Query Params:
  *   page?:       number  (min 1, default 1)
@@ -45,8 +45,8 @@ export async function GET(request: NextRequest) {
 
   const caller = session.user;
 
-  // 2. Staff: check module permission
-  if (caller.role === UserRole.Staff) {
+  // 2. Admin/Staff: check module permission (only the SuperAdmin bypasses it)
+  if (caller.role !== UserRole.SuperAdmin) {
     const permError = await checkModulePermission(caller.id, "Appointments", "can_view");
     if (permError) return permError;
   }
@@ -139,8 +139,8 @@ export async function POST(request: NextRequest) {
 
   const caller = session.user;
 
-  // 2. Staff: check module permission before touching the body
-  if (caller.role === UserRole.Staff) {
+  // 2. Admin/Staff: check module permission before touching the body
+  if (caller.role !== UserRole.SuperAdmin) {
     const permError = await checkModulePermission(caller.id, "Appointments", "can_create");
     if (permError) return permError;
   }

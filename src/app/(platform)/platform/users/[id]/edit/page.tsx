@@ -6,6 +6,7 @@ import { UserForm } from "@/components/platform/user-form";
 import { updateUserAction } from "@/actions/update-user";
 import { UserRole, type PublicUser } from "@/types/users";
 import type { ClinicModel } from "@/types/clinics";
+import { MAX_PAGE_SIZE } from "@/types/pagination";
 
 /**
  * Server Component: Edit Platform User
@@ -22,7 +23,7 @@ export default async function EditPlatformUserPage({
 
   const [userRes, clinicsRes] = await Promise.all([
     serverApiFetch(API_PATHS.users.detail(id)),
-    serverApiFetch(API_PATHS.clinics.list()),
+    serverApiFetch(API_PATHS.clinics.list({ limit: MAX_PAGE_SIZE })),
   ]);
 
   // Only a missing user is "not found"; 401/403/500 must show the error page, not a 404
@@ -30,7 +31,7 @@ export default async function EditPlatformUserPage({
   if (!userRes.ok) throw new Error("Could not load user");
   const { user }: { user: PublicUser } = await userRes.json();
 
-  // The single SuperAdmin is managed from settings, not from this list
+  // The single SuperAdmin is managed from their own account page, not from this list
   if (user.role === UserRole.SuperAdmin) notFound();
 
   const clinics: ClinicModel[] = clinicsRes.ok ? (await clinicsRes.json()).clinics : [];

@@ -1,5 +1,6 @@
 import { z } from "../lib/zod";
 import type { FieldOutputTypes } from "../prisma/generated/contract";
+import { PERMISSION_MODULES, type PermissionModule } from "../config/permissions";
 
 // ─── DB Model Type ────────────────────────────────────────────────────────────
 // Derived directly from the emitted Prisma 8 contract
@@ -8,7 +9,7 @@ export type UserPermissionModel = FieldOutputTypes["public"]["UserPermission"];
 // ─── Domain Types ─────────────────────────────────────────────────────────────
 export interface CreatePermissionData {
   user_id: string;
-  module_name: string;
+  module_name: PermissionModule;
   can_view?: boolean;
   can_create?: boolean;
   can_edit?: boolean;
@@ -16,7 +17,7 @@ export interface CreatePermissionData {
 }
 
 export interface UpdatePermissionData {
-  module_name?: string;
+  module_name?: PermissionModule;
   can_view?: boolean;
   can_create?: boolean;
   can_edit?: boolean;
@@ -25,23 +26,29 @@ export interface UpdatePermissionData {
 
 // ─── Zod Schemas ──────────────────────────────────────────────────────────────
 
-// Add a single module permission: POST /api/users/[id]/permissions
-export const CreatePermissionSchema = z.object({
-  module_name: z.string().trim().min(1, "Module name is required."),
+const ModuleNameSchema = z.enum(PERMISSION_MODULES, {
+  message: `Module must be one of: ${PERMISSION_MODULES.join(", ")}.`,
+});
+
+const PermissionFlagsSchema = z.object({
+  module_name: ModuleNameSchema,
   can_view:    z.boolean().optional().default(false),
   can_create:  z.boolean().optional().default(false),
   can_edit:    z.boolean().optional().default(false),
   can_delete:  z.boolean().optional().default(false),
 });
 
-// Single item in bulk replace
-export const PermissionItemSchema = z.object({
-  module_name: z.string().trim().min(1, "Module name is required."),
-  can_view:    z.boolean().optional().default(false),
-  can_create:  z.boolean().optional().default(false),
-  can_edit:    z.boolean().optional().default(false),
-  can_delete:  z.boolean().optional().default(false),
+/** Creating, editing or deleting something you cannot see makes no sense: they imply view. */
+const withImpliedView = <T extends { can_view: boolean; can_create: boolean; can_edit: boolean; can_delete: boolean }>(p: T): T => ({
+  ...p,
+  can_view: p.can_view || p.can_create || p.can_edit || p.can_delete,
 });
+
+// Add a single module permission: POST /api/users/[id]/permissions
+export const CreatePermissionSchema = PermissionFlagsSchema.transform(withImpliedView);
+
+// Single item in bulk replace
+export const PermissionItemSchema = PermissionFlagsSchema.transform(withImpliedView);
 
 // Bulk replace: PUT /api/users/[id]/permissions
 // Accepts either an array of permissions [ ... ] or an object { permissions: [ ... ] }
@@ -64,7 +71,7 @@ export const BulkReplacePermissionsSchema = z
 // Update single permission: PATCH /api/users/[id]/permissions/[permissionId]
 export const UpdatePermissionSchema = z
   .object({
-    module_name: z.string().trim().min(1).optional(),
+    module_name: ModuleNameSchema.optional(),
     can_view:    z.boolean().optional(),
     can_create:  z.boolean().optional(),
     can_edit:    z.boolean().optional(),

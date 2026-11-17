@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'ad88bf8a783f510367b76a59a57634a09f40b9bb18d192c920e53f35c59ca5fa'>;
+  StorageHashBase<'842ce757ef146eaa331bde6eb1a433bd20f206ee4bd5def77977e34f93e950ce'>;
 export type ExecutionHash =
   ExecutionHashBase<'b1966046a8c8f9506ea34c852271609f898197dc54e6eb3477191f0a804493c8'>;
 export type ProfileHash =
@@ -327,6 +327,7 @@ export type FieldOutputTypes = {
     readonly User: {
       readonly clinic_id: CodecTypes['pg/text@1']['output'] | null;
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly created_by_id: CodecTypes['pg/text@1']['output'] | null;
       readonly email: CodecTypes['pg/text@1']['output'];
       readonly first_name: CodecTypes['pg/text@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
@@ -426,6 +427,7 @@ export type FieldInputTypes = {
     readonly User: {
       readonly clinic_id: CodecTypes['pg/text@1']['input'] | null;
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly created_by_id: CodecTypes['pg/text@1']['input'] | null;
       readonly email: CodecTypes['pg/text@1']['input'];
       readonly first_name: CodecTypes['pg/text@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
@@ -525,6 +527,7 @@ export type StorageColumnTypes = {
     readonly User: {
       readonly clinic_id: CodecTypes['pg/text@1']['output'] | null;
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly created_by_id: CodecTypes['pg/text@1']['output'] | null;
       readonly email: CodecTypes['pg/text@1']['output'];
       readonly first_name: CodecTypes['pg/text@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
@@ -624,6 +627,7 @@ export type StorageColumnInputTypes = {
     readonly User: {
       readonly clinic_id: CodecTypes['pg/text@1']['input'] | null;
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly created_by_id: CodecTypes['pg/text@1']['input'] | null;
       readonly email: CodecTypes['pg/text@1']['input'];
       readonly first_name: CodecTypes['pg/text@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
@@ -753,6 +757,7 @@ export namespace Models {
   export type public_User = {
     clinic_id: CodecTypes['pg/text@1']['output'] | null;
     created_at: CodecTypes['pg/timestamptz-string@1']['output'];
+    created_by_id: CodecTypes['pg/text@1']['output'] | null;
     email: CodecTypes['pg/text@1']['output'];
     first_name: CodecTypes['pg/text@1']['output'];
     id: CodecTypes['pg/text@1']['output'];
@@ -1402,6 +1407,11 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/timestamptz-string@1';
                   readonly nullable: false;
                 };
+                readonly created_by_id: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
                 readonly email: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
@@ -1445,6 +1455,12 @@ type ContractBase = Omit<
                   readonly name: 'User_clinic_id_idx_4265e318';
                   readonly prefix: 'User_clinic_id_idx';
                   readonly columns: readonly ['clinic_id'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'User_created_by_id_idx_2b1d9a03';
+                  readonly prefix: 'User_created_by_id_idx';
+                  readonly columns: readonly ['created_by_id'];
                   readonly unique: false;
                 },
               ];
@@ -2310,6 +2326,10 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/timestamptz-string@1';
                 };
               };
+              readonly created_by_id: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly email: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -2384,6 +2404,7 @@ type ContractBase = Omit<
               readonly fields: {
                 readonly clinic_id: { readonly column: 'clinic_id' };
                 readonly created_at: { readonly column: 'created_at' };
+                readonly created_by_id: { readonly column: 'created_by_id' };
                 readonly email: { readonly column: 'email' };
                 readonly first_name: { readonly column: 'first_name' };
                 readonly id: { readonly column: 'id' };

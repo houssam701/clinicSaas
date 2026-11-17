@@ -21,7 +21,7 @@ interface RouteContext {
  * Auth:          Required
  * Authorization: SuperAdmin, Admin, or Staff
  *   - Admin/Staff: auto-scoped to their clinic
- *   - Staff:       requires can_view on "Appointments"
+ *   - Staff:       requires can_view on "Appointments" (Admin too)
  *
  * Responses:
  *   200  { appointment: AppointmentModel }
@@ -40,8 +40,8 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
   const caller = session.user;
 
-  // Staff permission check
-  if (caller.role === UserRole.Staff) {
+  // Admin/Staff permission check (only the SuperAdmin bypasses it)
+  if (caller.role !== UserRole.SuperAdmin) {
     const permError = await checkModulePermission(caller.id, "Appointments", "can_view");
     if (permError) return permError;
   }
@@ -98,8 +98,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
   const caller = session.user;
 
-  // Staff permission check
-  if (caller.role === UserRole.Staff) {
+  // Admin/Staff permission check (only the SuperAdmin bypasses it)
+  if (caller.role !== UserRole.SuperAdmin) {
     const permError = await checkModulePermission(caller.id, "Appointments", "can_edit");
     if (permError) return permError;
   }
@@ -188,8 +188,8 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
 
   const caller = session.user;
 
-  // Staff permission check
-  if (caller.role === UserRole.Staff) {
+  // Admin/Staff permission check (only the SuperAdmin bypasses it)
+  if (caller.role !== UserRole.SuperAdmin) {
     const permError = await checkModulePermission(caller.id, "Appointments", "can_delete");
     if (permError) return permError;
   }

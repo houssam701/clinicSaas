@@ -1,16 +1,16 @@
 import Link from "next/link";
-import Form from "next/form";
 import { sendApiJson } from "@/lib/server-api";
 import { API_PATHS, PATHS } from "@/config/path";
 import { DeleteUserButton } from "@/components/platform/delete-user-button";
-import { HiOutlinePencilSquare, HiXMark } from "react-icons/hi2";
+import { HiOutlineKey, HiOutlinePencilSquare, HiXMark } from "react-icons/hi2";
 import { UserRole, type PublicUser } from "@/types/users";
 import type { ClinicModel } from "@/types/clinics";
 import { redirect } from "next/navigation";
 import { Pagination } from "@/components/ui/pagination";
 import { Select } from "@/components/ui/select";
+import { FilterForm } from "@/components/ui/filter-form";
 import { totalPages } from "@/lib/pagination";
-import { DEFAULT_PAGE_SIZE } from "@/types/pagination";
+import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "@/types/pagination";
 
 const ROLE_FILTERS: { label: string; value?: UserRole }[] = [
   // No SuperAdmin tab: the only SuperAdmin is the signed-in user, whom the API excludes
@@ -55,7 +55,7 @@ export default async function PlatformUsersPage({
 
   const [usersRes, clinicsRes] = await Promise.all([
     sendApiJson(API_PATHS.users.list({ role, clinic_id, page, limit: PAGE_SIZE }), "GET"),
-    sendApiJson(API_PATHS.clinics.list(), "GET"),
+    sendApiJson(API_PATHS.clinics.list({ limit: MAX_PAGE_SIZE }), "GET"),
   ]);
 
   // sendApiJson returns null on a network failure instead of throwing, so the page
@@ -121,15 +121,35 @@ export default async function PlatformUsersPage({
           })}
         </nav>
 
-        {/* next/form navigates on the client instead of reloading the page */}
-        <Form action={PATHS.platform.users.list()} className="flex items-center gap-2">
+        {/* Apply stays disabled on "All clinics"; key resets it after a client-side Reset */}
+        <FilterForm
+          key={clinic_id ?? "all"}
+          action={PATHS.platform.users.list()}
+          field="clinic_id"
+          initialValue={clinic_id}
+          submitLabel="Apply"
+          trailing={
+            // Shown once a clinic filter is applied; clears it but keeps the role tab
+            clinic_id && (
+              <>
+                <span aria-hidden="true" className="mx-1 h-6 w-px shrink-0 bg-slate-300 dark:bg-slate-700" />
+                <Link
+                  href={PATHS.platform.users.list({ role })}
+                  aria-label="Reset clinic filter"
+                  className="group inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-sm font-semibold text-slate-600 dark:text-slate-300 transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 dark:hover:border-rose-900 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+                >
+                  <HiXMark aria-hidden="true" className="h-4 w-4 transition-transform duration-150 group-hover:rotate-90" />
+                  Reset
+                </Link>
+              </>
+            )
+          }
+        >
           {role && <input type="hidden" name="role" value={role} />}
           <label htmlFor="clinic-filter" className="sr-only">
             Filter by clinic
           </label>
-          {/* key remounts it so defaultValue follows the URL after a client-side Reset */}
           <Select
-            key={clinic_id ?? "all"}
             id="clinic-filter"
             name="clinic_id"
             size="sm"
@@ -143,27 +163,7 @@ export default async function PlatformUsersPage({
               </option>
             ))}
           </Select>
-          <button
-            type="submit"
-            className="h-9 px-3 text-sm font-semibold rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
-          >
-            Apply
-          </button>
-          {/* Shown once a clinic filter is applied; clears it but keeps the role tab */}
-          {clinic_id && (
-            <>
-              <span aria-hidden="true" className="mx-1 h-6 w-px shrink-0 bg-slate-300 dark:bg-slate-700" />
-              <Link
-                href={PATHS.platform.users.list({ role })}
-                aria-label="Reset clinic filter"
-                className="group inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-sm font-semibold text-slate-600 dark:text-slate-300 transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 dark:hover:border-rose-900 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
-              >
-                <HiXMark aria-hidden="true" className="h-4 w-4 transition-transform duration-150 group-hover:rotate-90" />
-                Reset
-              </Link>
-            </>
-          )}
-        </Form>
+        </FilterForm>
       </div>
 
       {/* Table */}
@@ -216,6 +216,18 @@ export default async function PlatformUsersPage({
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-end gap-2">
+                      {/* Admins and Staff both have module permissions; only the SuperAdmin has none */}
+                      {user.role !== UserRole.SuperAdmin && (
+                        <Link
+                          href={PATHS.platform.users.access(user.id)}
+                          prefetch={false}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-xs hover:border-primary/40 hover:bg-primary/5 hover:text-primary focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 transition-colors"
+                          aria-label={`Manage access for ${user.first_name} ${user.last_name}`}
+                        >
+                          <HiOutlineKey aria-hidden="true" className="h-3.5 w-3.5" />
+                          Access
+                        </Link>
+                      )}
                       <Link
                         href={PATHS.platform.users.edit(user.id)}
                         prefetch={false}

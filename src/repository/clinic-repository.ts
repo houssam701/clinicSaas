@@ -5,6 +5,12 @@ import type {
   CreateClinicData,
   UpdateClinicData,
 } from "../types/clinics";
+import { pageOffset, type PaginatedResult, type PaginationInput } from "../types/pagination";
+
+type ClinicListFilter = {
+  clinic_type?: ClinicType;
+  search?: string;
+};
 
 export class ClinicRepository {
   // ── Queries ──────────────────────────────────────────────────────────────────
@@ -33,10 +39,33 @@ export class ClinicRepository {
    * Lists all clinics with optional filtering by clinic_type and case-insensitive search on name.
    * Results are sorted by creation date descending.
    */
-  static async findAll(filter?: {
-    clinic_type?: ClinicType;
-    search?: string;
-  }): Promise<ClinicModel[]> {
+  static async findAll(filter?: ClinicListFilter): Promise<ClinicModel[]> {
+    return await ClinicRepository.listQuery(filter)
+      .orderBy((c) => c.created_at.desc())
+      .all();
+  }
+
+  /**
+   * Same filters as findAll, one page at a time.
+   * The page rows and the total count run in parallel.
+   */
+  static async findPage(
+    filter: ClinicListFilter & PaginationInput
+  ): Promise<PaginatedResult<ClinicModel>> {
+    const query = ClinicRepository.listQuery(filter);
+    const [data, agg] = await Promise.all([
+      query
+        .orderBy((c) => c.created_at.desc())
+        .limit(filter.limit)
+        .offset(pageOffset(filter))
+        .all(),
+      query.aggregate((a) => ({ count: a.count() })),
+    ]);
+    return { data, total: agg.count };
+  }
+
+  /** Builds the filtered clinic query shared by findAll and findPage. */
+  private static listQuery(filter?: ClinicListFilter) {
     let query = db.orm.public.Clinic.select(
       "id",
       "name",
@@ -45,17 +74,17 @@ export class ClinicRepository {
       "updated_at"
     );
 
-    if (filter?.clinic_type) {
-      query = query.where({ clinic_type: filter.clinic_type });
+    const clinicType = filter?.clinic_type;
+    if (clinicType) {
+      query = query.where({ clinic_type: clinicType });
     }
 
-    if (filter?.search) {
-      const search = filter.search;
+    const search = filter?.search;
+    if (search) {
       query = query.where((c) => c.name.ilike(`%${search}%`));
     }
 
-    const clinics = await query.orderBy((c) => c.created_at.desc()).all();
-    return clinics;
+    return query;
   }
 
   // ── Mutations ────────────────────────────────────────────────────────────────
@@ -95,13 +124,13 @@ export class ClinicRepository {
   static async deleteClinic(id: string): Promise<boolean> {
     return await db.transaction(async (tx) => {
       // 1. Delete all payments associated with this clinic
-      await tx.orm.public.Payment.where({ clinic_id: id }).delete();
+      await tx.orm.public.Payment.where({ clinic_id: id }).deleteAndCount();
 
       // 2. Delete all invoices associated with this clinic
-      await tx.orm.public.Invoice.where({ clinic_id: id }).delete();
+      await tx.orm.public.Invoice.where({ clinic_id: id }).deleteAndCount();
 
       // 3. Delete all appointments belonging to this clinic
-      await tx.orm.public.Appointment.where({ clinic_id: id }).delete();
+      await tx.orm.public.Appointment.where({ clinic_id: id }).deleteAndCount();
 
       // 4. Clean up patient documents and medical history before removing patients
       const patients = await tx.orm.public.Patient
@@ -110,11 +139,11 @@ export class ClinicRepository {
         .all();
 
       for (const patient of patients) {
-        await tx.orm.public.SharedMedicalHistory.where({ patient_id: patient.id }).delete();
-        await tx.orm.public.PatientDocument.where({ patient_id: patient.id }).delete();
+        await tx.orm.public.SharedMedicalHistory.where({ patient_id: patient.id }).deleteAndCount();
+        await tx.orm.public.PatientDocument.where({ patient_id: patient.id }).deleteAndCount();
       }
 
-      await tx.orm.public.Patient.where({ clinic_id: id }).delete();
+      await tx.orm.public.Patient.where({ clinic_id: id }).deleteAndCount();
 
       // 5. Delete permissions for users tied to this clinic before removing the users
       const users = await tx.orm.public.User
@@ -123,10 +152,10 @@ export class ClinicRepository {
         .all();
 
       for (const user of users) {
-        await tx.orm.public.UserPermission.where({ user_id: user.id }).delete();
+        await tx.orm.public.UserPermission.where({ user_id: user.id }).deleteAndCount();
       }
 
-      await tx.orm.public.User.where({ clinic_id: id }).delete();
+      await tx.orm.public.User.where({ clinic_id: id }).deleteAndCount();
 
       // 6. Delete the clinic itself
       await tx.orm.public.Clinic.where({ id }).delete();

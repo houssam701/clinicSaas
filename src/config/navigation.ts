@@ -1,4 +1,4 @@
-import { NavigationConfig } from "@/types/navigation";
+import type { NavigationConfig, NavItem } from "@/types/navigation";
 import { PATHS } from "@/config/path";
 
 export const navigationConfig: NavigationConfig = {
@@ -62,10 +62,23 @@ export const navigationConfig: NavigationConfig = {
   ],
   bottomNav: [
     {
-      id: "settings",
-      label: "Settings",
-      href: PATHS.settings,
-      icon: "settings",
+      id: "account",
+      label: "Account",
+      href: PATHS.account,
+      icon: "account",
     },
   ],
 };
+/** Shown only to Admins who can see staff or admins (see clinicNavigationFor). */
+export const teamNavItem: NavItem = {
+  id: "team",
+  label: "Team",
+  href: PATHS.team.list(),
+  icon: "team",
+};
+
+/** The clinic sidebar for the signed-in user: Team is added before Account when allowed. */
+export function clinicNavigationFor({ showTeam }: { showTeam: boolean }): NavigationConfig {
+  if (!showTeam) return navigationConfig;
+  return { ...navigationConfig, bottomNav: [teamNavItem, ...navigationConfig.bottomNav] };
+}
