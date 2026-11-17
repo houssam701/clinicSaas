@@ -4,7 +4,7 @@ import { MedicalHistoryRepository } from "../../../../../repository/patient-repo
 import { MedicalHistoryUpsertSchema } from "../../../../../types/patients";
 import {
   UUID_REGEX,
-  authenticate,
+  authenticateForModule,
   canAccessClinic,
 } from "../../../../../services/api-guard";
 
@@ -18,7 +18,7 @@ interface RouteContext {
  * Returns the shared medical history for a patient.
  *
  * Auth:          Required
- * Authorization: SuperAdmin or Admin (Admin scoped to their clinic)
+ * Authorization: SuperAdmin, or Admin/Staff with can_view on "Patients" (scoped to their clinic)
  *
  * Responses:
  *   200  { medicalHistory: MedicalHistoryModel }
@@ -28,7 +28,7 @@ interface RouteContext {
  *   404  Patient or medical history not found
  */
 export async function GET(_request: NextRequest, context: RouteContext) {
-  const { session, error } = await authenticate();
+  const { session, error } = await authenticateForModule("Patients", "can_view");
   if (error) return error;
 
   const { id } = await context.params;
@@ -60,7 +60,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
  * The record is 1:1 with the patient.
  *
  * Auth:          Required
- * Authorization: SuperAdmin or Admin (Admin scoped to their clinic)
+ * Authorization: SuperAdmin, or Admin/Staff with can_edit on "Patients" (scoped to their clinic)
  *
  * Body: MedicalHistoryUpsertSchema fields
  *
@@ -73,7 +73,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
  *   422  Validation error
  */
 export async function PUT(request: NextRequest, context: RouteContext) {
-  const { session, error } = await authenticate();
+  const { session, error } = await authenticateForModule("Patients", "can_edit");
   if (error) return error;
 
   const { id } = await context.params;
@@ -114,7 +114,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
  * Deletes the shared medical history record for a patient.
  *
  * Auth:          Required
- * Authorization: SuperAdmin or Admin (Admin scoped to their clinic)
+ * Authorization: SuperAdmin, or Admin/Staff with can_delete on "Patients" (scoped to their clinic)
  *
  * Responses:
  *   204  (no body)
@@ -124,7 +124,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
  *   404  Patient or medical history not found
  */
 export async function DELETE(_request: NextRequest, context: RouteContext) {
-  const { session, error } = await authenticate();
+  const { session, error } = await authenticateForModule("Patients", "can_delete");
   if (error) return error;
 
   const { id } = await context.params;

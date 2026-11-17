@@ -4,6 +4,7 @@ import { API_PATHS, PATHS } from "@/config/path";
 import { UserForm } from "@/components/platform/user-form";
 import { createUserAction } from "@/actions/create-user";
 import type { ClinicModel } from "@/types/clinics";
+import { MAX_PAGE_SIZE } from "@/types/pagination";
 
 /**
  * Server Component: New Platform User
@@ -12,7 +13,7 @@ import type { ClinicModel } from "@/types/clinics";
  * The form itself posts to POST /api/users through createUserAction.
  */
 export default async function NewPlatformUserPage() {
-  const clinicsRes = await serverApiFetch(API_PATHS.clinics.list());
+  const clinicsRes = await serverApiFetch(API_PATHS.clinics.list({ limit: MAX_PAGE_SIZE }));
   const clinics: ClinicModel[] = clinicsRes.ok ? (await clinicsRes.json()).clinics : [];
 
   return (
