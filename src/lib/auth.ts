@@ -70,13 +70,24 @@ export const authConfig: NextAuthConfig = {
   },
 
   callbacks: {
-    // Persist role + clinic_id into the JWT at sign-in
-    jwt({ token, user }) {
+    // At sign-in: store id, role and clinic_id in the JWT.
+    // On every later request: reload them from the database, so a user who was
+    // deleted, demoted or moved to another clinic loses the old access right away
+    // instead of keeping it until the token expires. Returning null ends the session.
+    async jwt({ token, user }) {
       if (user) {
         token.role      = user.role;
         token.clinic_id = user.clinic_id;
         token.id        = user.id;
+        return token;
       }
+
+      if (!token.id) return null;
+      const freshUser = await UserRepository.findById(token.id);
+      if (!freshUser) return null;
+
+      token.role      = freshUser.role as UserRole;
+      token.clinic_id = freshUser.clinic_id;
       return token;
     },
     // Expose role + clinic_id + id on the session object readable in route handlers
