@@ -1210,6 +1210,13 @@
                   "kind": "scalar"
                 }
               },
+              "created_by_id": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "email": {
                 "nullable": false,
                 "type": {
@@ -1321,6 +1328,9 @@
                 },
                 "created_at": {
                   "column": "created_at"
+                },
+                "created_by_id": {
+                  "column": "created_by_id"
                 },
                 "email": {
                   "column": "email"
@@ -2222,6 +2232,11 @@
                   "nativeType": "timestamptz",
                   "nullable": false
                 },
+                "created_by_id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "email": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -2289,6 +2304,14 @@
                   ],
                   "name": "User_clinic_id_idx_4265e318",
                   "prefix": "User_clinic_id_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "created_by_id"
+                  ],
+                  "name": "User_created_by_id_idx_2b1d9a03",
+                  "prefix": "User_created_by_id_idx",
                   "unique": false
                 }
               ],
@@ -2455,7 +2478,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "ad88bf8a783f510367b76a59a57634a09f40b9bb18d192c920e53f35c59ca5fa"
+    "storageHash": "842ce757ef146eaa331bde6eb1a433bd20f206ee4bd5def77977e34f93e950ce"
   },
   "execution": {
     "executionHash": "b1966046a8c8f9506ea34c852271609f898197dc54e6eb3477191f0a804493c8",
