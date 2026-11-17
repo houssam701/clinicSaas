@@ -39,18 +39,30 @@ export const PATHS = {
   messages: "/messages",
   reviews: "/reviews",
   finances: "/finances",
-  settings: "/settings",
+  account: "/account",
   emergency: "/emergency",
+  // An Admin's own Staff and Admins (gated by the "Staff" / "Admins" permissions)
+  team: {
+    list: (query?: QueryParams) => withQuery("/team", query),
+    new: "/team/new",
+    edit: (id: string) => `/team/${segment(id)}/edit`,
+    access: (id: string) => `/team/${segment(id)}/access`,
+  },
 
   // Platform administration (SuperAdmin)
   platform: {
     dashboard: "/platform/dashboard",
-    clinics: "/platform/clinics",
-    settings: "/platform/settings",
+    clinics: {
+      list: (query?: QueryParams) => withQuery("/platform/clinics", query),
+      new: "/platform/clinics/new",
+      edit: (id: string) => `/platform/clinics/${segment(id)}/edit`,
+    },
+    account: "/platform/account",
     users: {
       list: (query?: QueryParams) => withQuery("/platform/users", query),
       new: "/platform/users/new",
       edit: (id: string) => `/platform/users/${segment(id)}/edit`,
+      access: (id: string) => `/platform/users/${segment(id)}/access`,
     },
   },
 } as const;

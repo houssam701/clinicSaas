@@ -17,11 +17,13 @@ import {
  * Authorization: SuperAdmin only
  *
  * Query Params (optional):
+ *   page?:        number (min 1, default 1)
+ *   limit?:       number (min 1, max 200, default 20)
  *   clinic_type?: "Dentistry" | "Therapy"
  *   search?:      string (matches clinic name case-insensitively)
  *
  * Responses:
- *   200  { clinics: ClinicModel[] }
+ *   200  { clinics: ClinicModel[], total: number, page: number, limit: number }
  *   400  Invalid query parameters
  *   401  Unauthorized
  *   403  Forbidden
@@ -43,10 +45,12 @@ export async function GET(request: NextRequest) {
 
   // 3. Parse optional query parameters
   const searchParams = request.nextUrl.searchParams;
-  const clinic_type = searchParams.get("clinic_type") ?? undefined;
-  const search = searchParams.get("search") ?? undefined;
-
-  const parsedQuery = ListClinicsQuerySchema.safeParse({ clinic_type, search });
+  const parsedQuery = ListClinicsQuerySchema.safeParse({
+    page:        searchParams.get("page") ?? undefined,
+    limit:       searchParams.get("limit") ?? undefined,
+    clinic_type: searchParams.get("clinic_type") ?? undefined,
+    search:      searchParams.get("search") ?? undefined,
+  });
   if (!parsedQuery.success) {
     return NextResponse.json(
       { error: "Invalid query parameters", details: parsedQuery.error.flatten() },
@@ -54,13 +58,11 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // 4. Retrieve clinics via repository
-  const clinics = await ClinicRepository.findAll({
-    clinic_type: parsedQuery.data.clinic_type,
-    search: parsedQuery.data.search,
-  });
+  // 4. Retrieve one page of clinics via repository
+  const { page, limit, clinic_type, search } = parsedQuery.data;
+  const result = await ClinicRepository.findPage({ clinic_type, search, page, limit });
 
-  return NextResponse.json({ clinics }, { status: 200 });
+  return NextResponse.json({ clinics: result.data, total: result.total, page, limit }, { status: 200 });
 }
 
 /**
@@ -81,6 +83,7 @@ export async function GET(request: NextRequest) {
  *   400  Validation error
  *   401  Unauthorized
  *   403  Forbidden
+ *   409  A clinic with this name already exists
  */
 export async function POST(request: NextRequest) {
   // 1. Auth guard
@@ -114,7 +117,18 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 5. Persist via repository
+  // 5. Clinic names are unique
+  if (await ClinicRepository.findByName(parsed.data.name)) {
+    return NextResponse.json(
+      {
+        error: "A clinic with this name already exists.",
+        details: { fieldErrors: { name: ["A clinic with this name already exists."] } },
+      },
+      { status: 409 }
+    );
+  }
+
+  // 6. Persist via repository
   const clinic = await ClinicRepository.createClinic(parsed.data);
 
   return NextResponse.json(
