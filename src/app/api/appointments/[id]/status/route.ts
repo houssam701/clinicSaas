@@ -57,8 +57,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
   const caller = session.user;
 
-  // Staff: require can_edit permission on "Appointments"
-  if (caller.role === UserRole.Staff) {
+  // Admin/Staff: require can_edit permission on "Appointments"
+  if (caller.role !== UserRole.SuperAdmin) {
     const permError = await checkModulePermission(caller.id, "Appointments", "can_edit");
     if (permError) return permError;
   }

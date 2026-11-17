@@ -8,6 +8,8 @@ import {
   CreatePermissionSchema,
 } from "../../../../../types/permissions";
 import { UUID_REGEX } from "../../../../../services/api-guard";
+import { applyAccessChange, emptyGrid, getGrid } from "../../../../../services/access";
+import type { PermissionGrid } from "../../../../../config/permissions";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -21,7 +23,7 @@ interface RouteContext {
  * Auth:          Required
  * Authorization:
  *   - SuperAdmin: Can view permissions for any user across all clinics.
- *   - Admin:      Can view permissions for users within their own clinic.
+ *   - Admin:      Can view permissions for users within their own clinic (including their own).
  *   - Staff:      Can only view their own permissions.
  *
  * Responses:
@@ -83,16 +85,19 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 /**
  * PUT /api/users/[id]/permissions
  *
- * Bulk replaces all module permissions for a user.
- * Existing permissions for the user are removed and replaced with the provided set.
+ * Replaces all module permissions for a user, then trims the access of every
+ * user they created (recursively) so nobody keeps more than their creator.
  *
  * Auth:          Required
- * Authorization: SuperAdmin or Admin (Admin restricted to their clinic)
+ * Authorization: SuperAdmin, or an Admin of the same clinic with can_edit on
+ *                "Staff" (target is Staff) or "Admins" (target is Admin).
+ *                An Admin can only grant access they have themselves, and
+ *                cannot change their own access.
  *
  * Body:
  *   Array of:
- *     module_name: string
- *     can_view?:   boolean (default: false)
+ *     module_name: one of PERMISSION_MODULES (src/config/permissions.ts)
+ *     can_view?:   boolean (default: false; implied by the other three)
  *     can_create?: boolean (default: false)
  *     can_edit?:   boolean (default: false)
  *     can_delete?: boolean (default: false)
@@ -100,9 +105,9 @@ export async function GET(_request: NextRequest, context: RouteContext) {
  *
  * Responses:
  *   200  { message: string, permissions: UserPermissionModel[] }
- *   400  Validation error / Duplicate modules
+ *   400  Validation error / duplicate modules / management modules for Staff
  *   401  Unauthorized
- *   403  Forbidden
+ *   403  Forbidden / grants more than the caller has
  *   404  User not found
  */
 export async function PUT(request: NextRequest, context: RouteContext) {
@@ -127,31 +132,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  // 4. Authorization check for mutation
-  const caller = session.user;
-  if (caller.role === UserRole.SuperAdmin) {
-    // SuperAdmin can manage any user's permissions
-  } else if (caller.role === UserRole.Admin) {
-    if (!caller.clinic_id || targetUser.clinic_id !== caller.clinic_id) {
-      return NextResponse.json(
-        { error: "Forbidden: Cannot manage permissions for users outside your clinic" },
-        { status: 403 }
-      );
-    }
-    if (targetUser.role === UserRole.SuperAdmin) {
-      return NextResponse.json(
-        { error: "Forbidden: Admins cannot manage SuperAdmin permissions" },
-        { status: 403 }
-      );
-    }
-  } else {
-    return NextResponse.json(
-      { error: "Forbidden: Only Admin or SuperAdmin can modify permissions" },
-      { status: 403 }
-    );
-  }
-
-  // 5. Parse and validate body
+  // 4. Parse and validate body
   let body: unknown;
   try {
     body = await request.json();
@@ -170,16 +151,19 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     );
   }
 
-  // 6. Execute atomic bulk replace inside database transaction
-  const updatedPermissions = await PermissionRepository.bulkReplacePermissions(
-    userId,
-    parsed.data
-  );
+  // 5. Authorize, check the ceiling, save and cascade
+  const requested: PermissionGrid = emptyGrid();
+  for (const { module_name, ...flags } of parsed.data) requested[module_name] = flags;
+
+  const result = await applyAccessChange(session.user, targetUser, requested);
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
+  }
 
   return NextResponse.json(
     {
       message: "Permissions replaced successfully",
-      permissions: updatedPermissions,
+      permissions: await PermissionRepository.findByUserId(userId),
     },
     { status: 200 }
   );
@@ -188,23 +172,21 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 /**
  * POST /api/users/[id]/permissions
  *
- * Adds a single module permission for a user.
- *
- * Auth:          Required
- * Authorization: SuperAdmin or Admin (Admin restricted to their clinic)
+ * Adds a single module permission for a user. Same authorization, ceiling and
+ * cascade as PUT.
  *
  * Body:
- *   module_name  string  (required)
- *   can_view     boolean (optional, default: false)
+ *   module_name  one of PERMISSION_MODULES (required)
+ *   can_view     boolean (optional, default: false; implied by the other three)
  *   can_create   boolean (optional, default: false)
  *   can_edit     boolean (optional, default: false)
  *   can_delete   boolean (optional, default: false)
  *
  * Responses:
  *   201  { message: string, permission: UserPermissionModel }
- *   400  Validation error
+ *   400  Validation error / management modules for Staff
  *   401  Unauthorized
- *   403  Forbidden
+ *   403  Forbidden / grants more than the caller has
  *   404  User not found
  *   409  Module permission already exists for this user
  */
@@ -230,31 +212,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  // 4. Authorization check for mutation
-  const caller = session.user;
-  if (caller.role === UserRole.SuperAdmin) {
-    // SuperAdmin allowed
-  } else if (caller.role === UserRole.Admin) {
-    if (!caller.clinic_id || targetUser.clinic_id !== caller.clinic_id) {
-      return NextResponse.json(
-        { error: "Forbidden: Cannot manage permissions for users outside your clinic" },
-        { status: 403 }
-      );
-    }
-    if (targetUser.role === UserRole.SuperAdmin) {
-      return NextResponse.json(
-        { error: "Forbidden: Admins cannot manage SuperAdmin permissions" },
-        { status: 403 }
-      );
-    }
-  } else {
-    return NextResponse.json(
-      { error: "Forbidden: Only Admin or SuperAdmin can modify permissions" },
-      { status: 403 }
-    );
-  }
-
-  // 5. Parse and validate body
+  // 4. Parse and validate body
   let body: unknown;
   try {
     body = await request.json();
@@ -273,34 +231,29 @@ export async function POST(request: NextRequest, context: RouteContext) {
     );
   }
 
-  // 6. Check unique constraint (user_id, module_name)
-  const existing = await PermissionRepository.findByUserAndModule(
-    userId,
-    parsed.data.module_name
-  );
-  if (existing) {
+  // 5. Check unique constraint (user_id, module_name)
+  const { module_name, ...flags } = parsed.data;
+  if (await PermissionRepository.findByUserAndModule(userId, module_name)) {
     return NextResponse.json(
       {
-        error: `Permission for module '${parsed.data.module_name}' already exists for this user. Use PATCH or PUT to update it.`,
+        error: `Permission for module '${module_name}' already exists for this user. Use PATCH or PUT to update it.`,
       },
       { status: 409 }
     );
   }
 
-  // 7. Create permission
-  const permission = await PermissionRepository.createPermission({
-    user_id:     userId,
-    module_name: parsed.data.module_name,
-    can_view:    parsed.data.can_view,
-    can_create:  parsed.data.can_create,
-    can_edit:    parsed.data.can_edit,
-    can_delete:  parsed.data.can_delete,
-  });
+  // 6. Authorize, check the ceiling, save and cascade
+  const requested = await getGrid(targetUser);
+  requested[module_name] = flags;
+  const result = await applyAccessChange(session.user, targetUser, requested);
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
+  }
 
   return NextResponse.json(
     {
       message: "Permission created successfully",
-      permission,
+      permission: await PermissionRepository.findByUserAndModule(userId, module_name),
     },
     { status: 201 }
   );
