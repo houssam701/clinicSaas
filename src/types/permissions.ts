@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../lib/zod";
 import type { FieldOutputTypes } from "../prisma/generated/contract";
 
 // ─── DB Model Type ────────────────────────────────────────────────────────────
@@ -27,7 +27,7 @@ export interface UpdatePermissionData {
 
 // Add a single module permission: POST /api/users/[id]/permissions
 export const CreatePermissionSchema = z.object({
-  module_name: z.string().trim().min(1, "module_name is required"),
+  module_name: z.string().trim().min(1, "Module name is required."),
   can_view:    z.boolean().optional().default(false),
   can_create:  z.boolean().optional().default(false),
   can_edit:    z.boolean().optional().default(false),
@@ -36,7 +36,7 @@ export const CreatePermissionSchema = z.object({
 
 // Single item in bulk replace
 export const PermissionItemSchema = z.object({
-  module_name: z.string().trim().min(1, "module_name is required"),
+  module_name: z.string().trim().min(1, "Module name is required."),
   can_view:    z.boolean().optional().default(false),
   can_create:  z.boolean().optional().default(false),
   can_edit:    z.boolean().optional().default(false),
@@ -58,7 +58,7 @@ export const BulkReplacePermissionsSchema = z
       const names = items.map((i) => i.module_name.toLowerCase());
       return new Set(names).size === names.length;
     },
-    { message: "Duplicate module_name found in permissions list" }
+    { message: "Each module can only appear once in the permissions list." }
   );
 
 // Update single permission: PATCH /api/users/[id]/permissions/[permissionId]
@@ -72,7 +72,7 @@ export const UpdatePermissionSchema = z
   })
   .refine(
     (data) => Object.keys(data).length > 0,
-    { message: "At least one permission field must be provided for update" }
+    { message: "Change at least one permission before saving." }
   );
 
 // Inferred Types

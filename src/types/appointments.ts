@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../lib/zod";
 import type { FieldOutputTypes } from "../prisma/generated/contract";
 
 // ─── DB Model — derived directly from Prisma 8 generated contract ──────────────
@@ -15,10 +15,10 @@ export enum AppointmentStatus {
 // ─── Zod Schemas ───────────────────────────────────────────────────────────────
 
 export const CreateAppointmentSchema = z.object({
-  clinic_id:        z.string().uuid("Invalid clinic_id format"),
-  patient_id:       z.string().uuid("Invalid patient_id format"),
-  user_id:          z.string().uuid("Invalid user_id format").optional(),
-  scheduled_time:   z.string().datetime({ message: "scheduled_time must be a valid ISO-8601 datetime" }),
+  clinic_id:        z.string().uuid("Please select a valid clinic."),
+  patient_id:       z.string().uuid("Please select a valid patient."),
+  user_id:          z.string().uuid("Please select a valid staff member.").optional(),
+  scheduled_time:   z.string().datetime({ message: "Scheduled time must be a valid date and time." }),
   duration_minutes: z.number().int().min(1).default(30),
   reason_for_visit: z.string().optional(),
 });
@@ -27,12 +27,12 @@ export const UpdateAppointmentSchema = z
   .object({
     patient_id:       z.string().uuid().optional(),
     user_id:          z.string().uuid().optional().nullable(),
-    scheduled_time:   z.string().datetime({ message: "scheduled_time must be a valid ISO-8601 datetime" }).optional(),
+    scheduled_time:   z.string().datetime({ message: "Scheduled time must be a valid date and time." }).optional(),
     duration_minutes: z.number().int().min(1).optional(),
     reason_for_visit: z.string().optional(),
   })
   .refine((d) => Object.keys(d).length > 0, {
-    message: "At least one field must be provided for update",
+    message: "Change at least one field before saving.",
   });
 
 export const AppointmentStatusUpdateSchema = z.object({

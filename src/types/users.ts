@@ -1,5 +1,6 @@
-import { z } from "zod";
+import { z } from "../lib/zod";
 import type { FieldOutputTypes } from "../prisma/generated/contract";
+import { PaginationQuerySchema } from "./pagination";
 
 // ─── Enum ─────────────────────────────────────────────────────────────────────
 // String enum so values match what Prisma 8 stores/returns ('SuperAdmin' etc.)
@@ -19,11 +20,16 @@ export type PublicUser = Omit<UsersModel, "password_hash">;
 
 // ─── Zod Schemas (used inside route.ts files only) ────────────────────────────
 export const LoginSchema = z.object({
-  email:    z.string().email(),
-  password: z.string().min(8),
+  email:    z.string()
+              .min(1, "Email is required.")
+              .email("Enter a valid email address."),
+  password: z.string()
+              .min(1, "Password is required.")
+              .min(8, "Password must be at least 8 characters."),
 });
 
-export const CreateUserSchema = z.object({
+// Base shape without refinements — Zod 4 cannot .omit() a refined schema.
+const CreateUserBaseSchema = z.object({
   email:      z.string().email(),
   password:   z.string().min(8),
   first_name: z.string().min(1),
@@ -32,10 +38,28 @@ export const CreateUserSchema = z.object({
   clinic_id:  z.string().uuid().optional(),
 });
 
+// Mirrors the contract: clinic_id is null for SuperAdmin and required for Admin/Staff.
+export const CreateUserSchema = CreateUserBaseSchema.superRefine((data, ctx) => {
+  if (data.role === UserRole.SuperAdmin && data.clinic_id) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["clinic_id"],
+      message: "A SuperAdmin cannot belong to a clinic.",
+    });
+  }
+  if (data.role !== UserRole.SuperAdmin && !data.clinic_id) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["clinic_id"],
+      message: "Admin and Staff users must be assigned to a clinic.",
+    });
+  }
+});
+
 // Admin can only create Staff for their own clinic.
 // Role is locked to "Staff" and clinic_id is omitted because the client cannot specify it;
 // it is always injected securely from the calling Admin's verified session.
-export const CreateStaffSchema = CreateUserSchema.omit({ clinic_id: true }).extend({
+export const CreateStaffSchema = CreateUserBaseSchema.omit({ clinic_id: true }).extend({
   role: z.literal(UserRole.Staff),
 });
 
@@ -49,11 +73,12 @@ export const UpdateUserSchema = z.object({
   clinic_id:  z.string().uuid().nullable().optional(),
 }).refine(
   (data) => Object.keys(data).length > 0,
-  { message: "At least one field must be provided for update" }
+  { message: "Change at least one field before saving." }
 );
 
 // ─── Query Schema for listing users ───────────────────────────────────────────
-export const ListUsersQuerySchema = z.object({
+// Pagination (page, limit) comes from the shared schema
+export const ListUsersQuerySchema = PaginationQuerySchema.extend({
   clinic_id: z.string().uuid().optional(),
   role:      z.nativeEnum(UserRole).optional(),
 });
