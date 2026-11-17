@@ -3,6 +3,7 @@ import * as argon2 from "argon2";
 import { auth } from "../../../lib/auth";
 import { UserRepository } from "../../../repository/user-repository";
 import { ClinicRepository } from "../../../repository/clinic-repository";
+import { isUniqueViolation } from "../../../lib/db-errors";
 import { CreateUserSchema, ListUsersQuerySchema, UserRole } from "../../../types/users";
 
 /**
@@ -161,7 +162,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 6. Check email uniqueness before touching the DB further
+  // 6. Check email uniqueness first for a clear message (step 8 still catches a race)
   const exists = await UserRepository.emailExists(parsed.data.email);
   if (exists) {
     return NextResponse.json({ error: "Email already in use" }, { status: 409 });
@@ -175,11 +176,19 @@ export async function POST(request: NextRequest) {
     parallelism: 4,
   });
 
-  // 8. Persist via repository — raw password never touches the DB layer
-  const newUser = await UserRepository.createUser({
-    ...parsed.data, 
-    password_hash,
-  });
-
-  return NextResponse.json({ user: newUser }, { status: 201 });
+  // 8. Persist via repository — raw password never touches the DB layer.
+  //    Two requests at once (e.g. a double-click) can both pass step 6; the
+  //    @unique on email then rejects the second insert, which we report as 409.
+  try {
+    const newUser = await UserRepository.createUser({
+      ...parsed.data,
+      password_hash,
+    });
+    return NextResponse.json({ user: newUser }, { status: 201 });
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      return NextResponse.json({ error: "Email already in use" }, { status: 409 });
+    }
+    throw error;
+  }
 }

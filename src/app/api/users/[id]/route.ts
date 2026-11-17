@@ -3,6 +3,7 @@ import * as argon2 from "argon2";
 import { auth } from "../../../../lib/auth";
 import { UserRepository } from "../../../../repository/user-repository";
 import { ClinicRepository } from "../../../../repository/clinic-repository";
+import { isUniqueViolation } from "../../../../lib/db-errors";
 import { UpdateUserData, UpdateUserSchema, UserRole } from "../../../../types/users";
 
 interface RouteContext {
@@ -238,11 +239,20 @@ export async function PATCH(
     });
   }
 
-  const updatedUser = await UserRepository.updateUser(id, updatePayload);
-  return NextResponse.json(
-    { message: "User updated successfully", user: updatedUser },
-    { status: 200 }
-  );
+  // Another request can take the email between the check above and this write;
+  // the @unique on email then rejects it, which we report as 409, not 500.
+  try {
+    const updatedUser = await UserRepository.updateUser(id, updatePayload);
+    return NextResponse.json(
+      { message: "User updated successfully", user: updatedUser },
+      { status: 200 }
+    );
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      return NextResponse.json({ error: "Email already in use" }, { status: 409 });
+    }
+    throw error;
+  }
 }
 
 /**
