@@ -5,8 +5,8 @@ import { requirePageRole } from "@/services/page-guard";
 import { UserRole } from "@/types/users";
 
 export const metadata: Metadata = {
-  title: "Dashboard | Medux Clinic OS",
-  description: "Modern clinical SaaS dashboard with real-time appointments and patient telemetry.",
+  title: "Dashboard | BienSync Clinic OS",
+  description: "Your clinic's appointments and patients at a glance.",
 };
 
 export default async function DashboardLayout({
