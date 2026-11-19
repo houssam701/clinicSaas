@@ -19,8 +19,12 @@ export type UsersModel = FieldOutputTypes["public"]["User"];
 export type PublicUser = Omit<UsersModel, "password_hash">;
 
 // ─── Zod Schemas (used inside route.ts files only) ────────────────────────────
+
+// Account emails are trimmed and lowercased on the way in (see src/lib/email-address.ts)
+const AccountEmail = z.string().trim().toLowerCase();
+
 export const LoginSchema = z.object({
-  email:    z.string()
+  email:    AccountEmail
               .min(1, "Email is required.")
               .email("Enter a valid email address."),
   password: z.string()
@@ -30,7 +34,7 @@ export const LoginSchema = z.object({
 
 // Base shape without refinements — Zod 4 cannot .omit() a refined schema.
 const CreateUserBaseSchema = z.object({
-  email:      z.string().email(),
+  email:      AccountEmail.email(),
   password:   z.string().min(8),
   first_name: z.string().min(1),
   last_name:  z.string().min(1),
@@ -81,7 +85,7 @@ export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;
 // ─── Forgot / reset password ──────────────────────────────────────────────────
 // POST /api/auth/password-reset: ask for a link (the answer never says whether the email exists)
 export const RequestPasswordResetSchema = z.object({
-  email: z.string().trim().min(1, "Enter your email address.").email("Enter a valid email address."),
+  email: AccountEmail.min(1, "Enter your email address.").email("Enter a valid email address."),
 });
 
 // POST /api/auth/password-reset/confirm: the token from the link and the new password
@@ -92,7 +96,7 @@ export const ResetPasswordSchema = z.object({
 
 // ─── Update User Schema ────────────────────────────────────────────────────────
 export const UpdateUserSchema = z.object({
-  email:      z.string().email().optional(),
+  email:      AccountEmail.email().optional(),
   password:   z.string().min(8).optional(),
   first_name: z.string().min(1).optional(),
   last_name:  z.string().min(1).optional(),

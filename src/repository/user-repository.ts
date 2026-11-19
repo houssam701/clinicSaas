@@ -2,6 +2,7 @@ import { db } from "../prisma/db";
 import type { UsersModel, PublicUser, CreateUserInput, UpdateUserData } from "../types/users";
 import { UserRole } from "../types/users";
 import { pageOffset, type PaginatedResult, type PaginationInput } from "../types/pagination";
+import { normalizeEmail } from "../lib/email-address";
 
 type UserListFilter = {
   clinic_id?: string;
@@ -19,7 +20,7 @@ export class UserRepository {
    */
   static async findByEmail(email: string): Promise<UsersModel | null> {
     const user = await db.orm.public.User
-      .where((u) => u.email.eq(email))
+      .where((u) => u.email.eq(normalizeEmail(email)))
       .first();
     // Prisma 8 .first() returns the model row or null — shape matches UsersModel
     return user ?? null;
@@ -61,6 +62,7 @@ export class UserRepository {
   ): Promise<PublicUser> {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...rest } = data; // strip raw password before insert
+    rest.email = normalizeEmail(rest.email);
     // .select() before .create() narrows the returned row — password_hash is not listed
     const user = await db.orm.public.User
       .select("id", "clinic_id", "role", "first_name", "last_name", "email", "created_by_id", "created_at", "updated_at")
@@ -142,7 +144,7 @@ export class UserRepository {
     const updated = await db.orm.public.User
       .where({ id })
       .select("id", "clinic_id", "role", "first_name", "last_name", "email", "created_by_id", "created_at", "updated_at")
-      .update(data);
+      .update(data.email === undefined ? data : { ...data, email: normalizeEmail(data.email) });
     return updated ?? null;
   }
 
@@ -187,7 +189,7 @@ export class UserRepository {
   /** Returns true if an account with this email already exists. */
   static async emailExists(email: string): Promise<boolean> {
     const result = await db.orm.public.User
-      .where((u) => u.email.eq(email))
+      .where((u) => u.email.eq(normalizeEmail(email)))
       .aggregate((a) => ({ count: a.count() }));
     return result.count > 0;
   }
@@ -195,7 +197,7 @@ export class UserRepository {
   /** Returns true if an account with this email already exists for another user. */
   static async emailExistsExcept(email: string, excludeUserId: string): Promise<boolean> {
     const result = await db.orm.public.User
-      .where((u) => u.email.eq(email))
+      .where((u) => u.email.eq(normalizeEmail(email)))
       .where((u) => u.id.neq(excludeUserId))
       .aggregate((a) => ({ count: a.count() }));
     return result.count > 0;

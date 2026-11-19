@@ -220,6 +220,9 @@ existing examples named below instead of inventing a new pattern.
   Pages read access with `loadMyAccess()` (cached per request) to hide buttons; the API still checks.
 
 ### Passwords, sign-in and sessions
+- Account emails are case-insensitive: stored trimmed and lowercase (`normalizeEmail` in
+  `src/lib/email-address.ts`). The user schemas lowercase on input and `UserRepository` normalizes on every
+  read and write; never compare or store an account email any other way.
 - Hash and check passwords only with `hashPassword` / `verifyPassword` from `src/lib/password.ts`
   (Argon2id; an unknown account still costs a full check, so timing reveals nothing).
 - Sessions re-read the user on every request (`jwt` callback in `src/lib/auth.ts`): role and clinic
