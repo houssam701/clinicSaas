@@ -2,6 +2,7 @@ import { z } from "../lib/zod";
 import { PaginationQuerySchema } from "./pagination";
 import type { FieldOutputTypes } from "../prisma/generated/contract";
 import { isValidCurrency, isValidTimeZone } from "../lib/time-zone";
+import { MAX_REMINDER_DAYS } from "../config/reminders";
 
 /** An IANA time zone such as "Asia/Beirut". */
 const TimeZoneSchema = z.string().trim().refine(isValidTimeZone, "Choose a valid time zone.");
@@ -54,9 +55,17 @@ export const ClinicSettingsSchema = z
     name: z.string().trim().min(1, "Clinic name is required.").max(120, "Use at most 120 characters.").optional(),
     timezone: TimeZoneSchema.optional(),
     currency: CurrencySchema.optional(),
+    // Appointment reminder emails to patients
+    reminders_enabled: z.boolean().optional(),
+    reminder_days_before: z
+      .number()
+      .int()
+      .min(1, "Choose between 1 and 7 days.")
+      .max(MAX_REMINDER_DAYS, "Choose between 1 and 7 days.")
+      .optional(),
   })
-  .refine((d) => d.name !== undefined || d.timezone !== undefined || d.currency !== undefined, {
-    message: "Provide a clinic name, time zone or currency to update.",
+  .refine((d) => Object.values(d).some((v) => v !== undefined), {
+    message: "Provide a setting to update.",
   });
 
 export const DeleteClinicSchema = z.object({
@@ -86,4 +95,6 @@ export type UpdateClinicData = {
   clinic_type?: ClinicType;
   timezone?: string;
   currency?: string;
+  reminders_enabled?: boolean;
+  reminder_days_before?: number;
 };

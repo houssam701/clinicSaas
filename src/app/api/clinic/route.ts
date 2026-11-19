@@ -48,14 +48,16 @@ export async function GET() {
 /**
  * PATCH /api/clinic
  *
- * Updates the caller's own clinic: name, time zone and currency. The clinic
+ * Updates the caller's own clinic: name, time zone, currency and appointment
+ * reminders (on/off, days before). The clinic
  * type is the SuperAdmin's decision (it sets which clinical fields exist).
  * Changing the currency relabels amounts (no conversion); changing the time
  * zone keeps every appointment's moment and changes the hour shown.
  *
  * Auth:          Required
  * Authorization: Admin with can_edit on "Settings"
- * Body:          { name?, timezone? (IANA), currency? (ISO 4217) }
+ * Body:          { name?, timezone? (IANA), currency? (ISO 4217),
+ *                  reminders_enabled?: boolean, reminder_days_before?: 1–7 }
  *
  * Responses:
  *   200  { message, clinic: ClinicModel }
@@ -100,6 +102,8 @@ export async function PATCH(request: NextRequest) {
     name: parsed.data.name,
     timezone: parsed.data.timezone,
     currency: parsed.data.currency,
+    reminders_enabled: parsed.data.reminders_enabled,
+    reminder_days_before: parsed.data.reminder_days_before,
   });
   return NextResponse.json({ message: "Clinic updated", clinic }, { status: 200 });
 }

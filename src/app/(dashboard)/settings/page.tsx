@@ -41,7 +41,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     <div className="max-w-2xl space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">Settings</h1>
-        <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-1">Your clinic&apos;s name, time zone and currency.</p>
+        <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-1">Your clinic&apos;s name, time zone, currency and appointment reminders.</p>
       </div>
 
       {saved && (
@@ -66,7 +66,13 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             <ClinicSettingsForm
               action={updateClinicSettingsAction}
               readOnly={!can.can_edit}
-              initial={{ name: clinic.name, timezone: clinic.timezone, currency: clinic.currency }}
+              initial={{
+                name: clinic.name,
+                timezone: clinic.timezone,
+                currency: clinic.currency,
+                reminders_enabled: clinic.reminders_enabled,
+                reminder_days_before: clinic.reminder_days_before,
+              }}
               timeZones={timeZoneOptions(clinic.timezone)}
               currencies={currencyOptions(clinic.currency)}
             />

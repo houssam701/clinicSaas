@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'38a9ed638581414bd2f901774cab93adfebd46c6ec26e1738e2559243d5cd6f9'>;
+  StorageHashBase<'a252fc9eb38efe7114863704cf2c068fa1bc255d933d38c242846116fed3c441'>;
 export type ExecutionHash =
   ExecutionHashBase<'91b5587bf051f58028874d58398f90f58383c812bc3145c06d8f4bd617aa1e66'>;
 export type ProfileHash =
@@ -257,6 +257,7 @@ export type FieldOutputTypes = {
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly patient_id: CodecTypes['pg/text@1']['output'];
       readonly reason_for_visit: CodecTypes['pg/text@1']['output'] | null;
+      readonly reminder_sent_at: CodecTypes['pg/timestamptz-string@1']['output'] | null;
       readonly scheduled_time: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly status: 'Scheduled' | 'Completed' | 'Canceled' | 'NoShow';
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
@@ -273,6 +274,8 @@ export type FieldOutputTypes = {
       readonly currency: CodecTypes['pg/text@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
+      readonly reminder_days_before: CodecTypes['pg/int4@1']['output'];
+      readonly reminders_enabled: CodecTypes['pg/bool@1']['output'];
       readonly timezone: CodecTypes['pg/text@1']['output'];
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
     };
@@ -378,6 +381,7 @@ export type FieldInputTypes = {
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly patient_id: CodecTypes['pg/text@1']['input'];
       readonly reason_for_visit: CodecTypes['pg/text@1']['input'] | null;
+      readonly reminder_sent_at: CodecTypes['pg/timestamptz-string@1']['input'] | null;
       readonly scheduled_time: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly status: 'Scheduled' | 'Completed' | 'Canceled' | 'NoShow';
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['input'];
@@ -394,6 +398,8 @@ export type FieldInputTypes = {
       readonly currency: CodecTypes['pg/text@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
+      readonly reminder_days_before: CodecTypes['pg/int4@1']['input'];
+      readonly reminders_enabled: CodecTypes['pg/bool@1']['input'];
       readonly timezone: CodecTypes['pg/text@1']['input'];
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['input'];
     };
@@ -499,6 +505,7 @@ export type StorageColumnTypes = {
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly patient_id: CodecTypes['pg/text@1']['output'];
       readonly reason_for_visit: CodecTypes['pg/text@1']['output'] | null;
+      readonly reminder_sent_at: CodecTypes['pg/timestamptz-string@1']['output'] | null;
       readonly scheduled_time: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly status: 'Scheduled' | 'Completed' | 'Canceled' | 'NoShow';
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
@@ -515,6 +522,8 @@ export type StorageColumnTypes = {
       readonly currency: CodecTypes['pg/text@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
+      readonly reminder_days_before: CodecTypes['pg/int4@1']['output'];
+      readonly reminders_enabled: CodecTypes['pg/bool@1']['output'];
       readonly timezone: CodecTypes['pg/text@1']['output'];
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
     };
@@ -620,6 +629,7 @@ export type StorageColumnInputTypes = {
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly patient_id: CodecTypes['pg/text@1']['input'];
       readonly reason_for_visit: CodecTypes['pg/text@1']['input'] | null;
+      readonly reminder_sent_at: CodecTypes['pg/timestamptz-string@1']['input'] | null;
       readonly scheduled_time: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly status: 'Scheduled' | 'Completed' | 'Canceled' | 'NoShow';
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['input'];
@@ -636,6 +646,8 @@ export type StorageColumnInputTypes = {
       readonly currency: CodecTypes['pg/text@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
+      readonly reminder_days_before: CodecTypes['pg/int4@1']['input'];
+      readonly reminders_enabled: CodecTypes['pg/bool@1']['input'];
       readonly timezone: CodecTypes['pg/text@1']['input'];
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['input'];
     };
@@ -741,6 +753,7 @@ export namespace Models {
     id: CodecTypes['pg/text@1']['output'];
     patient_id: CodecTypes['pg/text@1']['output'];
     reason_for_visit: CodecTypes['pg/text@1']['output'] | null;
+    reminder_sent_at: CodecTypes['pg/timestamptz-string@1']['output'] | null;
     scheduled_time: CodecTypes['pg/timestamptz-string@1']['output'];
     status: 'Scheduled' | 'Completed' | 'Canceled' | 'NoShow';
     updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
@@ -764,6 +777,8 @@ export namespace Models {
     currency: CodecTypes['pg/text@1']['output'];
     id: CodecTypes['pg/text@1']['output'];
     name: CodecTypes['pg/text@1']['output'];
+    reminder_days_before: CodecTypes['pg/int4@1']['output'];
+    reminders_enabled: CodecTypes['pg/bool@1']['output'];
     timezone: CodecTypes['pg/text@1']['output'];
     updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
     appointments: public_Appointment[];
@@ -965,6 +980,11 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/text@1';
                   readonly nullable: true;
                 };
+                readonly reminder_sent_at: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: true;
+                };
                 readonly scheduled_time: {
                   readonly nativeType: 'timestamptz';
                   readonly codecId: 'pg/timestamptz-string@1';
@@ -1009,6 +1029,12 @@ type ContractBase = Omit<
                   readonly name: 'Appointment_patient_id_idx_2f641dda';
                   readonly prefix: 'Appointment_patient_id_idx';
                   readonly columns: readonly ['patient_id'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'Appointment_scheduled_time_idx_3b0fc2b9';
+                  readonly prefix: 'Appointment_scheduled_time_idx';
+                  readonly columns: readonly ['scheduled_time'];
                   readonly unique: false;
                 },
                 {
@@ -1123,6 +1149,24 @@ type ContractBase = Omit<
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
+                };
+                readonly reminder_days_before: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 1>;
+                  };
+                };
+                readonly reminders_enabled: {
+                  readonly nativeType: 'bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', false>;
+                  };
                 };
                 readonly timezone: {
                   readonly nativeType: 'text';
@@ -1932,6 +1976,13 @@ type ContractBase = Omit<
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly reminder_sent_at: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
               readonly scheduled_time: {
                 readonly nullable: false;
                 readonly type: {
@@ -2022,6 +2073,7 @@ type ContractBase = Omit<
                 readonly id: { readonly column: 'id' };
                 readonly patient_id: { readonly column: 'patient_id' };
                 readonly reason_for_visit: { readonly column: 'reason_for_visit' };
+                readonly reminder_sent_at: { readonly column: 'reminder_sent_at' };
                 readonly scheduled_time: { readonly column: 'scheduled_time' };
                 readonly status: { readonly column: 'status' };
                 readonly updated_at: { readonly column: 'updated_at' };
@@ -2082,6 +2134,14 @@ type ContractBase = Omit<
               readonly name: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly reminder_days_before: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly reminders_enabled: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
               };
               readonly timezone: {
                 readonly nullable: false;
@@ -2158,6 +2218,8 @@ type ContractBase = Omit<
                 readonly currency: { readonly column: 'currency' };
                 readonly id: { readonly column: 'id' };
                 readonly name: { readonly column: 'name' };
+                readonly reminder_days_before: { readonly column: 'reminder_days_before' };
+                readonly reminders_enabled: { readonly column: 'reminders_enabled' };
                 readonly timezone: { readonly column: 'timezone' };
                 readonly updated_at: { readonly column: 'updated_at' };
               };

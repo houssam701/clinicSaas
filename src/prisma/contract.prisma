@@ -41,6 +41,9 @@ model Clinic {
   clinic_type ClinicType
   timezone    String                     @default("UTC") // IANA zone (e.g. "Asia/Beirut"): what "today" and "09:00" mean for this clinic
   currency    String                     @default("USD") // ISO 4217 code (e.g. "USD", "EUR"): how this clinic's amounts are shown
+  // Appointment reminder emails to patients: off until an admin turns them on
+  reminders_enabled    Boolean @default(false)
+  reminder_days_before Int     @default(1) // 1–7: the reminder goes out this many days before the visit
   created_at  temporal.createdAtString()
   updated_at  temporal.updatedAtString()
 
@@ -176,6 +179,7 @@ model Appointment {
   duration_minutes Int                        @default(30)
   status           AppointmentStatus          @default(Scheduled)
   reason_for_visit String?
+  reminder_sent_at TimestamptzString? // When the reminder email went out (reset when the time changes)
   created_at       temporal.createdAtString()
   updated_at       temporal.updatedAtString()
 
@@ -183,6 +187,7 @@ model Appointment {
   payments Payment[]
 
   @@index([clinic_id, scheduled_time])
+  @@index([scheduled_time]) // the reminder job scans upcoming visits across clinics
   @@index([patient_id])
   @@index([user_id])
 }

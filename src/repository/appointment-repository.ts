@@ -24,6 +24,7 @@ const APPOINTMENT_FIELDS = [
   "duration_minutes",
   "status",
   "reason_for_visit",
+  "reminder_sent_at",
   "created_at",
   "updated_at",
 ] as const;
@@ -139,10 +140,17 @@ export class AppointmentRepository {
     id:   string,
     data: UpdateAppointmentData
   ): Promise<AppointmentModel | null> {
+    // A new time needs a new reminder: forget the one already sent (the edit
+    // form always sends the time, so only a real change counts)
+    let resetReminder = false;
+    if (data.scheduled_time !== undefined) {
+      const current = await db.orm.public.Appointment.select("scheduled_time").first({ id });
+      resetReminder = !!current && Date.parse(current.scheduled_time) !== Date.parse(data.scheduled_time);
+    }
     const updated = await db.orm.public.Appointment
       .where({ id })
       .select(...APPOINTMENT_FIELDS)
-      .update(data);
+      .update(resetReminder ? { ...data, reminder_sent_at: null } : data);
     return updated ?? null;
   }
 

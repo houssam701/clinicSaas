@@ -20,7 +20,7 @@ export class ClinicRepository {
    */
   static async findById(id: string): Promise<ClinicModel | null> {
     const clinic = await db.orm.public.Clinic
-      .select("id", "name", "clinic_type", "timezone", "currency", "created_at", "updated_at")
+      .select("id", "name", "clinic_type", "timezone", "currency", "reminders_enabled", "reminder_days_before", "created_at", "updated_at")
       .first({ id });
     return clinic ?? null;
   }
@@ -72,6 +72,8 @@ export class ClinicRepository {
       "clinic_type",
       "timezone",
       "currency",
+      "reminders_enabled",
+      "reminder_days_before",
       "created_at",
       "updated_at"
     );
@@ -96,7 +98,7 @@ export class ClinicRepository {
    */
   static async createClinic(data: CreateClinicData): Promise<ClinicModel> {
     const clinic = await db.orm.public.Clinic
-      .select("id", "name", "clinic_type", "timezone", "currency", "created_at", "updated_at")
+      .select("id", "name", "clinic_type", "timezone", "currency", "reminders_enabled", "reminder_days_before", "created_at", "updated_at")
       .create({
         name: data.name,
         clinic_type: data.clinic_type,
@@ -113,7 +115,7 @@ export class ClinicRepository {
   ): Promise<ClinicModel | null> {
     const updated = await db.orm.public.Clinic
       .where({ id })
-      .select("id", "name", "clinic_type", "timezone", "currency", "created_at", "updated_at")
+      .select("id", "name", "clinic_type", "timezone", "currency", "reminders_enabled", "reminder_days_before", "created_at", "updated_at")
       .update(data);
     return updated ?? null;
   }

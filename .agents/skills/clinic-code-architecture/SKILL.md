@@ -250,6 +250,17 @@ existing examples named below instead of inventing a new pattern.
 - Email content lives in `src/emails/<name>.ts` (returns `{ subject, html, text }`): inline styles, a table
   layout, a plain-text version, and every interpolated value HTML-escaped. Never log links that grant access.
 
+### Scheduled jobs (appointment reminders)
+- A job is an API route under `/api/cron/` (`API_PATHS.cron.*`) that any scheduler calls with
+  `Authorization: Bearer <CRON_SECRET>` (compared in constant time; under 32 characters or unset = job off).
+  It answers with counts only, never personal data.
+- Keep each run light: indexed queries, a batch cap (`REMINDER_BATCH_SIZE`), pacing under the provider's rate
+  limit; whatever is left waits for the next run.
+- Claim each item with a conditional update (`reminder_sent_at` null → now) before acting, so overlapping
+  runs never repeat work. Give the claim back on a temporary failure; keep it on a permanent one (no loops).
+- Reminders follow the clinic's `reminders_enabled` / `reminder_days_before` (Settings page). Moving an
+  appointment clears `reminder_sent_at`. Emails never include the reason for the visit.
+
 ### File storage (provider-independent)
 
 - Code depends only on the `FileStorage` interface (`src/services/storage/`, get it with

@@ -6,7 +6,7 @@
  * helpers belong here.
  */
 
-type ClinicFormField = "name" | "clinic_type" | "timezone" | "currency";
+type ClinicFormField = "name" | "clinic_type" | "timezone" | "currency" | "reminder_days_before";
 
 export type ClinicFormState = {
   error?: string;

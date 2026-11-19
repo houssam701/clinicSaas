@@ -116,6 +116,10 @@ export const API_PATHS = {
       `/api/users/${segment(id)}/permissions/${segment(permissionId)}`,
   },
   adminUsers: "/api/admin/users",
+  // Scheduled jobs (called by a scheduler with Authorization: Bearer CRON_SECRET)
+  cron: {
+    appointmentReminders: "/api/cron/appointment-reminders",
+  },
   // The caller's own clinic (GET / PATCH), gated by "Settings"
   myClinic: "/api/clinic",
   // The SuperAdmin's platform overview

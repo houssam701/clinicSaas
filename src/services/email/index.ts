@@ -1,6 +1,7 @@
 import type { EmailSender } from "./email-sender";
 import { ResendEmailSender } from "./resend-sender";
 
+export { EmailSendError } from "./email-sender";
 export type { EmailMessage, EmailSender } from "./email-sender";
 
 /** Used until EMAIL_FROM is set: Resend's shared test sender (delivers only to your own Resend address). */

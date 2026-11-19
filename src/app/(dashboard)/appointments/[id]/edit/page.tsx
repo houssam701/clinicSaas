@@ -20,7 +20,7 @@ import {
   type AppointmentStaffMember,
   type AppointmentWithPeople,
 } from "@/types/appointments";
-import { HiOutlineBanknotes, HiOutlinePrinter } from "react-icons/hi2";
+import { HiOutlineBanknotes, HiOutlineBellAlert, HiOutlinePrinter } from "react-icons/hi2";
 import { formatMoney, fromCents, sumCents, toCents } from "@/lib/money";
 import { RecordPaymentForm } from "@/components/finances/record-payment-form";
 import { recordVisitPaymentAction } from "@/actions/record-visit-payment";
@@ -101,6 +101,12 @@ export default async function AppointmentPage({
           {formatDay(start.date, "long")}, {formatTime(appointment.scheduled_time, zone)}–{formatTime(end, zone)} ·{" "}
           {appointment.staff ? patientName(appointment.staff) : "Unassigned"}
         </p>
+        {appointment.reminder_sent_at && (
+          <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+            <HiOutlineBellAlert aria-hidden="true" className="h-3.5 w-3.5" />
+            Reminder emailed {formatDay(zonedParts(new Date(appointment.reminder_sent_at), zone).date)}, {formatTime(appointment.reminder_sent_at, zone)}
+          </p>
+        )}
       </div>
 
       {/* Status + delete */}

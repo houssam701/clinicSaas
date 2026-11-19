@@ -188,6 +188,13 @@
                   "kind": "scalar"
                 }
               },
+              "reminder_sent_at": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
               "scheduled_time": {
                 "nullable": false,
                 "type": {
@@ -323,6 +330,9 @@
                 "reason_for_visit": {
                   "column": "reason_for_visit"
                 },
+                "reminder_sent_at": {
+                  "column": "reminder_sent_at"
+                },
                 "scheduled_time": {
                   "column": "scheduled_time"
                 },
@@ -421,6 +431,20 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "reminder_days_before": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "reminders_enabled": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
                   "kind": "scalar"
                 }
               },
@@ -532,6 +556,12 @@
                 },
                 "name": {
                   "column": "name"
+                },
+                "reminder_days_before": {
+                  "column": "reminder_days_before"
+                },
+                "reminders_enabled": {
+                  "column": "reminders_enabled"
                 },
                 "timezone": {
                   "column": "timezone"
@@ -1781,6 +1811,11 @@
                   "nativeType": "text",
                   "nullable": true
                 },
+                "reminder_sent_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
                 "scheduled_time": {
                   "codecId": "pg/timestamptz-string@1",
                   "nativeType": "timestamptz",
@@ -1890,6 +1925,14 @@
                 },
                 {
                   "columns": [
+                    "scheduled_time"
+                  ],
+                  "name": "Appointment_scheduled_time_idx_3b0fc2b9",
+                  "prefix": "Appointment_scheduled_time_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
                     "user_id"
                   ],
                   "name": "Appointment_user_id_idx_6c952402",
@@ -1991,6 +2034,24 @@
                 "name": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
+                  "nullable": false
+                },
+                "reminder_days_before": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 1
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "reminders_enabled": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
                   "nullable": false
                 },
                 "timezone": {
@@ -2938,7 +2999,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "38a9ed638581414bd2f901774cab93adfebd46c6ec26e1738e2559243d5cd6f9"
+    "storageHash": "a252fc9eb38efe7114863704cf2c068fa1bc255d933d38c242846116fed3c441"
   },
   "execution": {
     "executionHash": "91b5587bf051f58028874d58398f90f58383c812bc3145c06d8f4bd617aa1e66",

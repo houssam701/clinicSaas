@@ -9,13 +9,21 @@ import { readClinicForm, toClinicFormState, type ClinicFormState } from "@/lib/c
 /**
  * Server Action: updateClinicSettingsAction
  *
- * An Admin saves their own clinic's name, time zone and currency through
+ * An Admin saves their own clinic's name, time zone, currency and appointment
+ * reminders (on/off, days before) through
  * PATCH /api/clinic. Every page shows the clinic name, times and amounts,
  * so the whole layout is revalidated.
  */
 export async function updateClinicSettingsAction(_prev: ClinicFormState, formData: FormData): Promise<ClinicFormState> {
   const { name, timezone, currency } = readClinicForm(formData);
-  const response = await sendApiJson(API_PATHS.myClinic, "PATCH", { name, timezone, currency });
+  const response = await sendApiJson(API_PATHS.myClinic, "PATCH", {
+    name,
+    timezone,
+    currency,
+    // A checkbox sends "on" only when ticked
+    reminders_enabled: formData.get("reminders_enabled") === "on",
+    reminder_days_before: Number(formData.get("reminder_days_before")),
+  });
 
   if (response?.ok) {
     revalidatePath(PATHS.dashboard, "layout");
