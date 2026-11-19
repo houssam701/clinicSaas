@@ -48,6 +48,13 @@ export const navigationConfig: NavigationConfig = {
   ],
   bottomNav: [
     {
+      id: "settings",
+      label: "Settings",
+      href: PATHS.settings(),
+      icon: "settings",
+      module: "Settings",
+    },
+    {
       id: "account",
       label: "Account",
       href: PATHS.account(),
@@ -65,7 +72,8 @@ export const teamNavItem: NavItem = {
 
 /**
  * The clinic sidebar for the signed-in user: links tied to a module are kept
- * only when they can view it, and Team is added before Account when allowed.
+ * only when they can view it (in both lists), and Team is added first in the
+ * bottom list when allowed.
  */
 export function clinicNavigationFor({
   grid,
@@ -78,6 +86,6 @@ export function clinicNavigationFor({
   return {
     ...navigationConfig,
     mainNav: navigationConfig.mainNav.filter(canSee),
-    bottomNav: showTeam ? [teamNavItem, ...navigationConfig.bottomNav] : navigationConfig.bottomNav,
+    bottomNav: [...(showTeam ? [teamNavItem] : []), ...navigationConfig.bottomNav.filter(canSee)],
   };
 }

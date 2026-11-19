@@ -47,6 +47,18 @@ export const UpdateClinicSchema = z
     { message: "Provide a clinic name, type, time zone or currency to update." }
   );
 
+// PATCH /api/clinic: an Admin updates their own clinic. The type is not here:
+// it decides which clinical fields exist, so only the SuperAdmin changes it.
+export const ClinicSettingsSchema = z
+  .object({
+    name: z.string().trim().min(1, "Clinic name is required.").max(120, "Use at most 120 characters.").optional(),
+    timezone: TimeZoneSchema.optional(),
+    currency: CurrencySchema.optional(),
+  })
+  .refine((d) => d.name !== undefined || d.timezone !== undefined || d.currency !== undefined, {
+    message: "Provide a clinic name, time zone or currency to update.",
+  });
+
 export const DeleteClinicSchema = z.object({
   id: z.string().uuid("Clinic is not a valid ID."),
 });

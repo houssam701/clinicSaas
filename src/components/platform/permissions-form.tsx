@@ -55,7 +55,7 @@ export interface PermissionsFormProps {
   /** Server action bound to the user id */
   action: (state: PermissionsFormState, formData: FormData) => Promise<PermissionsFormState>;
   initialGrid: PermissionGrid;
-  /** Rows to show: Staff never get the management modules (Staff, Admins) */
+  /** Rows to show: Staff never get the Admin-only modules (Settings, Staff, Admins) */
   modules: readonly PermissionModule[];
   /** What the signed-in user can give: their own access (all of it for the SuperAdmin) */
   ceiling: PermissionGrid;

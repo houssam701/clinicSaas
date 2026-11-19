@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useMemo, useState, useActionState, useSyncExternalStore } from "react";
+import React, { useState, useActionState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useFormStatus } from "react-dom";
 import type { ClinicFormState } from "@/lib/clinic-form";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
-import { listCurrencies, listTimeZones } from "@/lib/time-zone";
+import type { PickerOption } from "@/lib/clinic-options";
 import { ClinicType } from "@/types/clinics";
 import { PATHS } from "@/config/path";
 
@@ -73,9 +73,6 @@ const initialState: ClinicFormState = {};
 
 const noSubscribe = () => () => {};
 
-const currencyNames = new Intl.DisplayNames(["en"], { type: "currency" });
-/** "EUR" → "Euro" (the code itself if the runtime has no name for it). */
-const currencyName = (code: string) => currencyNames.of(code) ?? code;
 const browserTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
 export interface ClinicFormProps {
@@ -83,13 +80,16 @@ export interface ClinicFormProps {
   /** Server action to submit to — the form does not know which API it calls */
   action: (state: ClinicFormState, formData: FormData) => Promise<ClinicFormState>;
   initialValues?: ClinicFormValues;
+  /** Built on the server (timeZoneOptions / currencyOptions), so the text matches when hydrating */
+  timeZones: PickerOption[];
+  currencies: PickerOption[];
 }
 
 /**
  * Shared create/edit form for clinics.
  * The caller injects the server action, so the same UI serves both flows.
  */
-export function ClinicForm({ mode, action, initialValues = EMPTY_VALUES }: ClinicFormProps) {
+export function ClinicForm({ mode, action, initialValues = EMPTY_VALUES, timeZones, currencies }: ClinicFormProps) {
   const [state, formAction] = useActionState(action, initialState);
   const copy = MODE_COPY[mode];
 
@@ -101,8 +101,6 @@ export function ClinicForm({ mode, action, initialValues = EMPTY_VALUES }: Clini
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setValues((prev) => ({ ...prev, [field]: e.target.value }));
 
-  const timeZones = useMemo(() => listTimeZones(), []);
-  const currencies = useMemo(() => listCurrencies(), []);
   // A new clinic starts in the browser's zone ("" while rendering on the server)
   const browserZone = useSyncExternalStore(noSubscribe, browserTimeZone, () => "");
   const timezone = values.timezone || browserZone;
@@ -184,9 +182,11 @@ export function ClinicForm({ mode, action, initialValues = EMPTY_VALUES }: Clini
           aria-describedby={errors.timezone ? "timezone-error" : "timezone-hint"}
         >
           {!timezone && <option value="">Detecting…</option>}
-          {timeZones.map((zone) => (
-            <option key={zone} value={zone}>
-              {zone.replace(/_/g, " ")}
+          {/* The browser's own zone, if the server list lacks it (only after hydration) */}
+          {timezone && !timeZones.some((o) => o.value === timezone) && <option value={timezone}>{timezone.replace(/_/g, " ")}</option>}
+          {timeZones.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
             </option>
           ))}
         </Select>
@@ -212,9 +212,9 @@ export function ClinicForm({ mode, action, initialValues = EMPTY_VALUES }: Clini
           invalid={!!errors.currency}
           aria-describedby={errors.currency ? "currency-error" : "currency-hint"}
         >
-          {currencies.map((code) => (
-            <option key={code} value={code}>
-              {code} · {currencyName(code)}
+          {currencies.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
             </option>
           ))}
         </Select>

@@ -87,7 +87,7 @@ export async function applyAccessChange(
   if (denied) return { ok: false, status: 403, error: denied };
 
   if (target.role === UserRole.Staff && MANAGEMENT_MODULES.some((m) => PERMISSION_ACTIONS.some((a) => requested[m][a]))) {
-    return { ok: false, status: 400, error: "Staff cannot manage other users. Make them an Admin first." };
+    return { ok: false, status: 400, error: "Staff cannot manage people or the clinic settings. Make them an Admin first." };
   }
 
   const grid = normalizeForRole(requested, target.role);

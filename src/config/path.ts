@@ -63,6 +63,8 @@ export const PATHS = {
   reports: (query?: QueryParams) => withQuery("/reports", query),
   // A printable receipt for one payment (a page of its own, no sidebar)
   receipt: (invoiceId: string, paymentId: string) => `/receipts/${segment(invoiceId)}/${segment(paymentId)}`,
+  // The clinic's own settings (Admins with the "Settings" permission); ?saved=1 shows a notice
+  settings: (query?: QueryParams) => withQuery("/settings", query),
   // ?password=changed shows the "password changed" notice
   account: (query?: QueryParams) => withQuery("/account", query),
   // An Admin's own Staff and Admins (gated by the "Staff" / "Admins" permissions)
@@ -114,6 +116,8 @@ export const API_PATHS = {
       `/api/users/${segment(id)}/permissions/${segment(permissionId)}`,
   },
   adminUsers: "/api/admin/users",
+  // The caller's own clinic (GET / PATCH), gated by "Settings"
+  myClinic: "/api/clinic",
   // The SuperAdmin's platform overview
   platform: {
     overview: "/api/platform/overview",

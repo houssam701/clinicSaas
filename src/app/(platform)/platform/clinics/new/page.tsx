@@ -2,6 +2,7 @@ import { PATHS } from "@/config/path";
 import { BackLink } from "@/components/ui/back-link";
 import { ClinicForm } from "@/components/platform/clinic-form";
 import { createClinicAction } from "@/actions/create-clinic";
+import { currencyOptions, timeZoneOptions } from "@/lib/clinic-options";
 
 /**
  * Server Component: New Clinic
@@ -22,7 +23,7 @@ export default function NewClinicPage() {
       </div>
 
       <div className="rounded-md border border-slate-300/50 dark:border-slate-800/80 bg-white dark:bg-slate-900/70 p-6 sm:p-8">
-        <ClinicForm mode="create" action={createClinicAction} />
+        <ClinicForm mode="create" action={createClinicAction} timeZones={timeZoneOptions()} currencies={currencyOptions()} />
       </div>
     </div>
   );

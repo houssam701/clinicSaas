@@ -3,6 +3,7 @@ import {
   HiOutlineBuildingOffice2,
   HiOutlineCalendarDays,
   HiOutlineChartBar,
+  HiOutlineCog6Tooth,
   HiOutlineSquares2X2,
   HiOutlineUserCircle,
   HiOutlineUserGroup,
@@ -20,6 +21,7 @@ const NAV_ICONS: Record<NavIconName, IconType> = {
   reports: HiOutlineChartBar,
   clinics: HiOutlineBuildingOffice2,
   team: HiOutlineUserGroup,
+  settings: HiOutlineCog6Tooth,
   account: HiOutlineUserCircle,
 };
 

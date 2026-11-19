@@ -15,6 +15,8 @@ export const PERMISSION_MODULES = [
   "Finances",
   // Clinic-wide figures (totals, lists across all patients); see PERMISSION_MODULE_INFO.Reports
   "Reports",
+  // The clinic itself: name, time zone, currency (View / Edit)
+  "Settings",
   // Management: who may see, add, edit (incl. their access) and remove team members
   "Staff",
   "Admins",
@@ -22,8 +24,8 @@ export const PERMISSION_MODULES = [
 
 export type PermissionModule = (typeof PERMISSION_MODULES)[number];
 
-/** Modules about managing people. Only Admins can hold them; never Staff. */
-export const MANAGEMENT_MODULES: readonly PermissionModule[] = ["Staff", "Admins"];
+/** Admin-only modules (managing people, and the clinic's own settings). Never Staff. */
+export const MANAGEMENT_MODULES: readonly PermissionModule[] = ["Settings", "Staff", "Admins"];
 
 export const PERMISSION_ACTIONS = ["can_view", "can_create", "can_edit", "can_delete"] as const;
 
@@ -72,6 +74,11 @@ export const PERMISSION_MODULE_INFO: Record<PermissionModule, PermissionModuleIn
     description: "Clinic-wide figures: money collected and still owed, and every patient's treatments",
     enforced: true,
     actions: ["can_view"],
+  },
+  Settings: {
+    description: "The clinic's name, time zone and currency",
+    enforced: true,
+    actions: ["can_view", "can_edit"],
   },
   Staff: { description: "See, add, edit and remove staff, and set their access", enforced: true },
   Admins: { description: "See, add, edit and remove other admins, and set their access", enforced: true },

@@ -113,6 +113,11 @@ All navigation and sidebar elements MUST adhere to SOLID principles:
   - The same screens serve every tenant type (Dentistry, Therapy, and future ones) and every country. Never put a specialty, a condition, a drug, a person's name, a phone format or a brand in a placeholder or hint ("tooth pain", "Smile Dental Center", "Sara", "+961 ...", "Metformin").
   - Describe what goes in the field instead: "First name", "name@example.com", "Phone number", "Why is the patient coming?", "Any known allergies", "Document name".
   - Wording that only fits one clinic type belongs in that type's own config, not in shared components.
+- **Lists from `Intl` are built on the server (STRICT):**
+  - Time zones, currencies and their names come from the JavaScript runtime, and Node and the browser can differ.
+    Build picker options on the server (`timeZoneOptions` / `currencyOptions` in `src/lib/clinic-options.ts`) and
+    pass them to the client form; building them in a client component breaks hydration.
+  - The saved value is always one of the options, so a picker never shows (and saves) a different one.
 - **Dropdowns — always `<Select>` (STRICT):**
   - Never style a raw `<select>`. Use `<Select>` from `src/components/ui/select.tsx`: it keeps the native element (works in Server Components, forms and phone pickers) but hides the browser arrow (`appearance-none`) and draws a `HiChevronUpDown` that turns `text-primary` on hover/focus.
   - `size="md"` (default) matches form inputs; `size="sm"` (h-9) matches toolbar buttons and filters. Pass `invalid` for validation errors (red border/ring, `aria-invalid`), and widths through `wrapperClassName`.

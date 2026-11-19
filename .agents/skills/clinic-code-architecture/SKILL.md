@@ -215,7 +215,11 @@ existing examples named below instead of inventing a new pattern.
   - New Admin: full access (made by the SuperAdmin) or the creator's access (made by an Admin);
     new Staff: none. Admins cannot change roles or their own access.
 
-- Clinic sidebar links tied to a module set `module` on the `NavItem` (`src/config/navigation.ts`);
+- Admin-only modules (`MANAGEMENT_MODULES`: Settings, Staff, Admins) are never given to Staff, and routes for
+  them also check the Admin role itself. "Settings" (View / Edit) covers the clinic's own name, time zone and
+  currency through `GET/PATCH /api/clinic`; the clinic type stays SuperAdmin-only (it decides clinical fields).
+- Clinic sidebar links tied to a module set `module` on the `NavItem` (`src/config/navigation.ts`), in both
+  `mainNav` and `bottomNav`;
   `clinicNavigationFor({ grid, showTeam })` hides them when the user cannot view that module.
   Pages read access with `loadMyAccess()` (cached per request) to hide buttons; the API still checks.
 

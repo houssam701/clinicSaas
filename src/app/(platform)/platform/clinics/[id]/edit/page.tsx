@@ -5,6 +5,7 @@ import { BackLink } from "@/components/ui/back-link";
 import { ClinicForm } from "@/components/platform/clinic-form";
 import { updateClinicAction } from "@/actions/update-clinic";
 import type { ClinicModel, ClinicType } from "@/types/clinics";
+import { currencyOptions, timeZoneOptions } from "@/lib/clinic-options";
 
 /**
  * Server Component: Edit Clinic
@@ -40,6 +41,8 @@ export default async function EditClinicPage({
           mode="edit"
           action={updateClinicAction.bind(null, clinic.id)}
           initialValues={{ name: clinic.name, clinic_type: clinic.clinic_type as ClinicType, timezone: clinic.timezone, currency: clinic.currency }}
+          timeZones={timeZoneOptions(clinic.timezone)}
+          currencies={currencyOptions(clinic.currency)}
         />
       </div>
     </div>
