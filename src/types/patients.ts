@@ -39,6 +39,8 @@ export const CreatePatientSchema = z.object({
   first_name:       z.string().trim().min(1, "First name is required."),
   last_name:        z.string().trim().min(1, "Last name is required."),
   email:            z.string().email("Enter a valid email address.").optional(),
+  // Appointment reminder emails (default on); off when the patient opts out
+  email_reminders:  z.boolean().optional(),
   phone:            z.string().trim().min(1).optional(),
   date_of_birth:    DateOfBirthSchema.optional(),
   gender:           z.string().optional(),
@@ -51,6 +53,7 @@ export const UpdatePatientSchema = z
     first_name:       z.string().trim().min(1, "First name is required.").optional(),
     last_name:        z.string().trim().min(1, "Last name is required.").optional(),
     email:            z.string().email("Enter a valid email address.").nullable().optional(),
+    email_reminders:  z.boolean().optional(),
     phone:            z.string().trim().min(1).nullable().optional(),
     date_of_birth:    DateOfBirthSchema.nullable().optional(),
     gender:           z.string().nullable().optional(),
@@ -149,6 +152,7 @@ export type CreatePatientData = {
   first_name:        string;
   last_name:         string;
   email?:            string;
+  email_reminders?:  boolean;
   phone?:            string;
   date_of_birth?:    string;
   gender?:           string;
@@ -159,6 +163,7 @@ export type UpdatePatientData = {
   first_name?:       string;
   last_name?:        string;
   email?:            string | null;
+  email_reminders?:  boolean;
   phone?:            string | null;
   date_of_birth?:    string | null;
   gender?:           string | null;

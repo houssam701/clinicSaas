@@ -260,6 +260,10 @@ existing examples named below instead of inventing a new pattern.
   runs never repeat work. Give the claim back on a temporary failure; keep it on a permanent one (no loops).
 - Reminders follow the clinic's `reminders_enabled` / `reminder_days_before` (Settings page). Moving an
   appointment clears `reminder_sent_at`. Emails never include the reason for the visit.
+- Patients can opt out (`Patient.email_reminders`): a checkbox on the patient form, and a signed link in every
+  reminder (`src/services/reminder-unsubscribe.ts`, HMAC of the patient id). The link's page only asks; the change
+  happens on POST (mail scanners open links). Every reminder also carries `List-Unsubscribe` +
+  `List-Unsubscribe-Post` (one-click, RFC 8058), which mail providers expect from senders.
 
 ### File storage (provider-independent)
 

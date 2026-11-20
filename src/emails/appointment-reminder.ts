@@ -15,6 +15,8 @@ export function appointmentReminderEmail({
   day,
   time,
   withName,
+  unsubscribeUrl,
+  oneClickUrl,
 }: {
   to: string;
   firstName: string;
@@ -25,6 +27,10 @@ export function appointmentReminderEmail({
   time: string;
   /** Who the visit is with, if assigned */
   withName?: string;
+  /** The patient's signed "stop reminders" page */
+  unsubscribeUrl: string;
+  /** The same, for mail apps' one-click unsubscribe (RFC 8058) */
+  oneClickUrl: string;
 }): EmailMessage {
   const subject = `Reminder: your appointment at ${clinicName} on ${day}`;
   const withText = withName ? ` with ${withName}` : "";
@@ -38,6 +44,8 @@ export function appointmentReminderEmail({
     "If you cannot come, please contact the clinic to change or cancel it.",
     "",
     clinicName,
+    "",
+    `Don't want these reminders? ${unsubscribeUrl}`,
   ].join("\n");
 
   const e = escapeHtml;
@@ -75,6 +83,11 @@ export function appointmentReminderEmail({
                 If you cannot come, please contact the clinic to change or cancel it.
               </td>
             </tr>
+            <tr>
+              <td style="padding:0 32px 24px 32px;font-size:12px;line-height:1.6;color:#94a3b8;">
+                <p style="margin:0;border-top:1px solid #f1f5f9;padding-top:16px;">Don't want these reminders? <a href="${e(unsubscribeUrl)}" style="color:#64748b;">Unsubscribe</a></p>
+              </td>
+            </tr>
           </table>
         </td>
       </tr>
@@ -82,5 +95,12 @@ export function appointmentReminderEmail({
   </body>
 </html>`;
 
-  return { to, subject, html, text };
+  return {
+    to,
+    subject,
+    html,
+    text,
+    // Mail apps show their own "Unsubscribe" button and POST to this link (RFC 8058)
+    headers: { "List-Unsubscribe": `<${oneClickUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
+  };
 }

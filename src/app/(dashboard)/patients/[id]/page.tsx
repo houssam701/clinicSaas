@@ -204,9 +204,14 @@ export default async function PatientPage({
         <dl className="grid grid-cols-1 sm:grid-cols-2">
           <Detail icon={HiOutlineEnvelope} label="Email">
             {patient.email ? (
-              <a href={`mailto:${patient.email}`} className="hover:text-primary">
-                {patient.email}
-              </a>
+              <>
+                <a href={`mailto:${patient.email}`} className="hover:text-primary">
+                  {patient.email}
+                </a>
+                <span className="block text-xs font-normal text-slate-500 dark:text-slate-400">
+                  {patient.email_reminders ? "Gets appointment reminders" : "No reminder emails (opted out)"}
+                </span>
+              </>
             ) : (
               <Missing />
             )}

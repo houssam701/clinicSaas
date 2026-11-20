@@ -9,13 +9,13 @@ export class ResendEmailSender implements EmailSender {
     private readonly from: string
   ) {}
 
-  async send({ to, subject, html, text }: EmailMessage): Promise<void> {
+  async send({ to, subject, html, text, headers }: EmailMessage): Promise<void> {
     let res: Response;
     try {
       res = await fetch(RESEND_API_URL, {
         method: "POST",
         headers: { Authorization: `Bearer ${this.apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ from: this.from, to: [to], subject, html, text }),
+        body: JSON.stringify({ from: this.from, to: [to], subject, html, text, ...(headers ? { headers } : {}) }),
         signal: AbortSignal.timeout(10_000),
       });
     } catch (error) {

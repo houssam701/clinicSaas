@@ -6,7 +6,7 @@ export interface DueReminder {
   id: string;
   scheduled_time: string;
   clinic: { name: string; timezone: string } | null;
-  patient: { first_name: string; email: string | null } | null;
+  patient: { id: string; first_name: string; email: string | null } | null;
   staff: { first_name: string; last_name: string } | null;
 }
 
@@ -15,7 +15,8 @@ export class ReminderRepository {
   /**
    * Up to `limit` scheduled visits that still need a reminder: their clinic
    * has reminders on, the patient has an email, and the visit starts between
-   * `earliest` and the clinic's "days before" from `now`. One small indexed
+   * `earliest` and the clinic's "days before" from `now`. Patients who opted
+   * out (email_reminders false) are left out. One small indexed
    * query per possible setting (1–7 days), soonest visits first.
    */
   static async due(now: Date, earliest: Date, limit: number): Promise<DueReminder[]> {
@@ -33,8 +34,9 @@ export class ReminderRepository {
         .where((a) => a.patient.some((p) => p.email.isNotNull()))
         .where((a) => a.patient.some((p) => p.email.neq("")))
         .where((a) => a.patient.some((p) => p.deleted_at.isNull()))
+        .where((a) => a.patient.some((p) => p.email_reminders.eq(true)))
         .include("clinic", (c) => c.select("name", "timezone"))
-        .include("patient", (p) => p.select("first_name", "email"))
+        .include("patient", (p) => p.select("id", "first_name", "email"))
         .include("staff", (s) => s.select("first_name", "last_name"))
         .orderBy((a) => a.scheduled_time.asc())
         .limit(limit - out.length)
@@ -55,6 +57,26 @@ export class ReminderRepository {
       .where((a) => a.reminder_sent_at.isNull())
       .updateAndCount({ reminder_sent_at: at });
     return count === 1;
+  }
+
+  /**
+   * For the unsubscribe page: the patient's clinic name and whether they still
+   * get reminders. Null for an unknown or deleted patient.
+   */
+  static async unsubscribeTarget(patientId: string): Promise<{ clinicName: string; subscribed: boolean } | null> {
+    const patient = await db.orm.public.Patient
+      .select("email_reminders")
+      .where((p) => p.deleted_at.isNull())
+      .include("clinic", (c) => c.select("name"))
+      .first({ id: patientId });
+    if (!patient) return null;
+    const { clinic } = patient as unknown as { clinic: { name: string } | null };
+    return { clinicName: clinic?.name ?? "the clinic", subscribed: patient.email_reminders };
+  }
+
+  /** Stops reminder emails for a patient (they opted out). */
+  static async optOut(patientId: string): Promise<void> {
+    await db.orm.public.Patient.where({ id: patientId }).updateAndCount({ email_reminders: false });
   }
 
   /** Gives a claim back after a temporary failure, so the next run retries. */

@@ -123,6 +123,7 @@ model Patient {
   first_name       String
   last_name        String
   email            String?
+  email_reminders  Boolean @default(true) // Appointment reminder emails; off when the patient opts out
   phone            String?
   date_of_birth    DateString?
   gender           String?

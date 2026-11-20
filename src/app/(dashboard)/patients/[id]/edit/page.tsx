@@ -48,6 +48,7 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
             date_of_birth: patient.date_of_birth?.slice(0, 10) ?? "",
             gender: patient.gender ?? "",
           }}
+          initialEmailReminders={patient.email_reminders}
         />
       </div>
     </div>

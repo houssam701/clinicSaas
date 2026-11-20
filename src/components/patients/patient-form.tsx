@@ -54,18 +54,21 @@ export interface PatientFormProps {
   /** Where Cancel goes, from PATHS */
   cancelHref: string;
   initialValues?: PatientFormValues;
+  /** Appointment reminder emails (default on for a new patient) */
+  initialEmailReminders?: boolean;
 }
 
 /**
  * Shared create/edit form for a patient's shared details (the same for every
  * clinic type). The caller injects the server action.
  */
-export function PatientForm({ mode, action, cancelHref, initialValues = EMPTY_VALUES }: PatientFormProps) {
+export function PatientForm({ mode, action, cancelHref, initialValues = EMPTY_VALUES, initialEmailReminders = true }: PatientFormProps) {
   const [state, formAction] = useActionState(action, initialState);
   const copy = MODE_COPY[mode];
 
   // Controlled so React 19 does not clear the fields after a failed attempt
   const [values, setValues] = useState(initialValues);
+  const [emailReminders, setEmailReminders] = useState(initialEmailReminders);
   const set =
     (field: PatientFormField) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -102,6 +105,25 @@ export function PatientForm({ mode, action, cancelHref, initialValues = EMPTY_VA
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{NAME_FIELDS.map(renderText)}</div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{CONTACT_FIELDS.map(renderText)}</div>
+
+      {/* Appointment reminders: the clinic decides if reminders are sent at all (Settings) */}
+      <label className="flex cursor-pointer items-start gap-3 rounded-md border border-slate-200 dark:border-slate-700 px-4 py-3">
+        <input
+          type="checkbox"
+          name="email_reminders"
+          checked={emailReminders}
+          onChange={(e) => setEmailReminders(e.target.checked)}
+          className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+        />
+        <span>
+          <span className="block text-sm font-semibold text-slate-700 dark:text-slate-200">Send appointment reminders by email</span>
+          <span className="block text-xs text-slate-500 dark:text-slate-400">
+            {values.email.trim()
+              ? "Untick if the patient does not want reminder emails. They can also unsubscribe from the email itself."
+              : "Needs an email address above."}
+          </span>
+        </span>
+      </label>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>

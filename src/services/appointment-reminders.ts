@@ -2,6 +2,9 @@ import { ReminderRepository } from "../repository/reminder-repository";
 import { getEmailSender, EmailSendError, type EmailSender } from "./email";
 import { appointmentReminderEmail } from "../emails/appointment-reminder";
 import { formatDay, formatTime, zonedParts } from "../lib/time-zone";
+import { getBaseUrl } from "../lib/api";
+import { API_PATHS, PATHS } from "../config/path";
+import { unsubscribeSignature } from "./reminder-unsubscribe";
 import { REMINDER_BATCH_SIZE, REMINDER_MIN_LEAD_HOURS, REMINDER_SEND_INTERVAL_MS } from "../config/reminders";
 
 export interface ReminderRunResult {
@@ -42,6 +45,8 @@ export async function sendDueReminders(now = new Date(), sender?: EmailSender): 
     if (i > 0) await sleep(REMINDER_SEND_INTERVAL_MS);
 
     const zone = appt.clinic.timezone;
+    // The patient's own signed "stop reminders" link (the page asks; mail apps one-click)
+    const link = { p: appt.patient.id, s: unsubscribeSignature(appt.patient.id) };
     try {
       await mailer.send(
         appointmentReminderEmail({
@@ -51,6 +56,8 @@ export async function sendDueReminders(now = new Date(), sender?: EmailSender): 
           day: formatDay(zonedParts(new Date(appt.scheduled_time), zone).date, "long"),
           time: formatTime(appt.scheduled_time, zone),
           withName: appt.staff ? `${appt.staff.first_name} ${appt.staff.last_name}` : undefined,
+          unsubscribeUrl: `${getBaseUrl()}${PATHS.reminderUnsubscribe(link)}`,
+          oneClickUrl: `${getBaseUrl()}${API_PATHS.reminders.unsubscribe(link)}`,
         })
       );
       result.sent++;

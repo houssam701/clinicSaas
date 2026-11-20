@@ -894,6 +894,13 @@
                   "kind": "scalar"
                 }
               },
+              "email_reminders": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
               "first_name": {
                 "nullable": false,
                 "type": {
@@ -1039,6 +1046,9 @@
                 },
                 "email": {
                   "column": "email"
+                },
+                "email_reminders": {
+                  "column": "email_reminders"
                 },
                 "first_name": {
                   "column": "first_name"
@@ -2341,6 +2351,15 @@
                   "nativeType": "text",
                   "nullable": true
                 },
+                "email_reminders": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
                 "first_name": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -2999,7 +3018,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "a252fc9eb38efe7114863704cf2c068fa1bc255d933d38c242846116fed3c441"
+    "storageHash": "f862d2dbd5d391069c16ed7ef778c5c9a548297fd3e7c7cee6ee304bb170fda2"
   },
   "execution": {
     "executionHash": "91b5587bf051f58028874d58398f90f58383c812bc3145c06d8f4bd617aa1e66",

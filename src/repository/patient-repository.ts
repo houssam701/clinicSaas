@@ -25,7 +25,7 @@ export class PatientRepository {
   static async findById(id: string): Promise<PatientModel | null> {
     const patient = await db.orm.public.Patient
       .select(
-        "id", "clinic_id", "first_name", "last_name", "email", "phone",
+        "id", "clinic_id", "first_name", "last_name", "email", "email_reminders", "phone",
         "date_of_birth", "gender", "specialized_data", "created_at", "updated_at", "deleted_at"
       )
       .where((p) => p.deleted_at.isNull())
@@ -54,7 +54,7 @@ export class PatientRepository {
 
     let query = db.orm.public.Patient
       .select(
-        "id", "clinic_id", "first_name", "last_name", "email", "phone",
+        "id", "clinic_id", "first_name", "last_name", "email", "email_reminders", "phone",
         "date_of_birth", "gender", "specialized_data", "created_at", "updated_at", "deleted_at"
       )
       .where((p) => p.deleted_at.isNull());
@@ -98,7 +98,7 @@ export class PatientRepository {
   static async createPatient(data: CreatePatientData): Promise<PatientModel> {
     return db.orm.public.Patient
       .select(
-        "id", "clinic_id", "first_name", "last_name", "email", "phone",
+        "id", "clinic_id", "first_name", "last_name", "email", "email_reminders", "phone",
         "date_of_birth", "gender", "specialized_data", "created_at", "updated_at", "deleted_at"
       )
       .create(data);
@@ -113,7 +113,7 @@ export class PatientRepository {
       .where({ id })
       .where((p) => p.deleted_at.isNull())
       .select(
-        "id", "clinic_id", "first_name", "last_name", "email", "phone",
+        "id", "clinic_id", "first_name", "last_name", "email", "email_reminders", "phone",
         "date_of_birth", "gender", "specialized_data", "created_at", "updated_at", "deleted_at"
       )
       .update(data);

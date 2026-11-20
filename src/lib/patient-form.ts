@@ -48,6 +48,8 @@ export function readPatientForm(formData: FormData) {
     first_name:    text("first_name"),
     last_name:     text("last_name"),
     email:         optional("email"),
+    // A checkbox is sent only when ticked
+    email_reminders: formData.get("email_reminders") === "on",
     phone:         optional("phone"),
     date_of_birth: optional("date_of_birth"),
     gender:        optional("gender"),

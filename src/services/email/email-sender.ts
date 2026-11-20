@@ -4,6 +4,8 @@ export interface EmailMessage {
   subject: string;
   html: string;
   text: string;
+  /** Extra headers, e.g. List-Unsubscribe for one-click unsubscribe in mail apps */
+  headers?: Record<string, string>;
 }
 
 /**

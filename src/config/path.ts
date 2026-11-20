@@ -61,6 +61,8 @@ export const PATHS = {
   },
   // Clinic-wide figures (gated by the "Reports" permission); ?from=&to= (YYYY-MM-DD) or ?range=
   reports: (query?: QueryParams) => withQuery("/reports", query),
+  // Patients stop appointment reminder emails from the link in the email (?p=&s=, signed)
+  reminderUnsubscribe: (query?: QueryParams) => withQuery("/reminders/unsubscribe", query),
   // A printable receipt for one payment (a page of its own, no sidebar)
   receipt: (invoiceId: string, paymentId: string) => `/receipts/${segment(invoiceId)}/${segment(paymentId)}`,
   // The clinic's own settings (Admins with the "Settings" permission); ?saved=1 shows a notice
@@ -119,6 +121,10 @@ export const API_PATHS = {
   // Scheduled jobs (called by a scheduler with Authorization: Bearer CRON_SECRET)
   cron: {
     appointmentReminders: "/api/cron/appointment-reminders",
+  },
+  reminders: {
+    // GET ?p=&s=: who it is for; POST: stop reminders (also one-click from mail apps)
+    unsubscribe: (query?: QueryParams) => withQuery("/api/reminders/unsubscribe", query),
   },
   // The caller's own clinic (GET / PATCH), gated by "Settings"
   myClinic: "/api/clinic",
